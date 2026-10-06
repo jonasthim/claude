@@ -13,6 +13,8 @@ Environment:
   UNIFI_CLOUD_API_KEY   Site Manager API key (unifi.ui.com -> API); UNIFI_SITE_MANAGER_API_KEY also accepted
   UNIFI_MOCK_DIR        serve fixture JSON from this directory instead of HTTP
   UNIFI_TIMEOUT         HTTP timeout seconds, default 20
+  UNIFI_CACHE_DIR       where the resolved base path and site ids are cached between
+                        invocations (default ~/.cache/unifi-ops, TTL 6 h; "0" disables)
 
 Write safety: every mutating command prints the exact request and exits with
 code 3 unless --yes is given. --dry-run always prints and never sends. A dry run
@@ -21,6 +23,7 @@ proves the request shape, not that the controller accepts the action: on Network
 are documented but unverified, and a 400 lists the valid values.
 """
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -371,6 +374,48 @@ def http_json(method, url, headers, body=None, timeout=20, verify=False):
         die("cannot reach %s (%s). Check UNIFI_HOST / network / VPN." % (url, e.reason))
 
 
+CACHE_TTL = 6 * 3600
+
+
+class DiscoveryCache:
+    """Remembers the Integration API base path and site name->id map per host so
+    that each CLI invocation does not spend two requests re-discovering them."""
+
+    def __init__(self, host):
+        d = env("UNIFI_CACHE_DIR", os.path.join(os.path.expanduser("~"), ".cache", "unifi-ops"))
+        self.path = None
+        if d and d != "0":
+            self.path = os.path.join(d, hashlib.sha1(host.encode()).hexdigest()[:16] + ".json")
+        self.data = {}
+        if self.path and os.path.exists(self.path):
+            try:
+                with open(self.path) as f:
+                    data = json.load(f)
+                if time.time() - data.get("ts", 0) < CACHE_TTL:
+                    self.data = data
+            except (OSError, ValueError):
+                self.data = {}
+
+    def save(self):
+        if not self.path:
+            return
+        try:
+            os.makedirs(os.path.dirname(self.path), exist_ok=True)
+            self.data["ts"] = self.data.get("ts") or time.time()
+            with open(self.path, "w") as f:
+                json.dump(self.data, f)
+        except OSError:
+            pass
+
+    def clear(self):
+        self.data = {}
+        if self.path and os.path.exists(self.path):
+            try:
+                os.remove(self.path)
+            except OSError:
+                pass
+
+
 class NetworkApi:
     """Local UniFi Network Integration API."""
 
@@ -388,6 +433,11 @@ class NetworkApi:
                 die("UNIFI_HOST and UNIFI_API_KEY must be set (or UNIFI_MOCK_DIR for offline use)", EXIT_USAGE)
             if not self.host.startswith("http"):
                 self.host = "https://" + self.host
+            self.cache = DiscoveryCache(self.host)
+            if getattr(args, "group", None) == "info":
+                self.cache.clear()  # `info` is the health check; always probe fresh
+            self._base = self.cache.data.get("base")
+            self._site_id = (self.cache.data.get("sites") or {}).get(self.site_name)
 
     @property
     def base(self):
@@ -402,6 +452,8 @@ class NetworkApi:
                 http_json("GET", self.host + prefix + "/v1/info", headers,
                           timeout=self.timeout, verify=self.verify)
                 self._base = self.host + prefix
+                self.cache.data["base"] = self._base
+                self.cache.save()
                 return self._base
             except ApiError as e:
                 if e.status in (401, 403):
@@ -420,7 +472,13 @@ class NetworkApi:
         if query:
             url += "?" + urllib.parse.urlencode(query)
         headers = {"X-API-Key": self.key, "Accept": "application/json"}
-        return http_json(method, url, headers, body, self.timeout, self.verify)
+        try:
+            return http_json(method, url, headers, body, self.timeout, self.verify)
+        except ApiError as e:
+            if e.status == 404 and self.cache.data:
+                # a cached base path or site id may be stale; forget it so the next run re-discovers
+                self.cache.clear()
+            raise
 
     def list_all(self, path, query=None, limit=None):
         """Follow offset/limit pagination and return the full data list."""
@@ -453,9 +511,13 @@ class NetworkApi:
             if s.get("internalReference") == self.site_name or s.get("name") == self.site_name \
                     or s.get("id") == self.site_name:
                 self._site_id = s["id"]
-                return self._site_id
-        if len(sites) == 1:
+                break
+        if not self._site_id and len(sites) == 1:
             self._site_id = sites[0]["id"]
+        if self._site_id:
+            if not self.mock:
+                self.cache.data.setdefault("sites", {})[self.site_name] = self._site_id
+                self.cache.save()
             return self._site_id
         die("site %r not found; available: %s" % (
             self.site_name, ", ".join("%s (%s)" % (s.get("name"), s.get("internalReference")) for s in sites)))
