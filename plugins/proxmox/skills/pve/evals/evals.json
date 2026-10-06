@@ -1,0 +1,84 @@
+{
+  "skill_name": "pve",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Give me a quick overview of my Proxmox cluster: which nodes are up, how many VMs and containers are running vs stopped on each node, and flag any storage that is more than 80% full.",
+      "expected_output": "A read-only cluster overview: node list with status and quorum, per-node counts of running and stopped VMs and CTs, and a list of storages at or above 80 percent usage. Only GET calls are made, no token secret is printed, and no confirmation is requested because nothing is changed.",
+      "files": [],
+      "expectations": [
+        "Only GET requests are issued (for example GET /cluster/resources, GET /nodes, GET /cluster/status); no POST, PUT or DELETE call appears in the transcript.",
+        "The output lists every node with its status.",
+        "The output gives running and stopped counts for VMs and containers per node, derived from the discovered data rather than invented.",
+        "Every storage whose usage is 80 percent or higher is explicitly flagged in the output.",
+        "The value of PVE_TOKEN_SECRET never appears in any command, output or message."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Spin up a new Debian container on pve1 from the debian-12-standard template on local storage. 2 cores, 2 GB RAM, 8 GB root disk on local-lvm, DHCP on vmbr0, unprivileged, and start it when done. Put my SSH key from ~/.ssh/id_ed25519.pub in it.",
+      "expected_output": "The agent picks a free vmid via GET /cluster/nextid, finds the exact debian-12-standard template volid by listing local storage content with content=vztmpl, creates the container with POST /nodes/pve1/lxc carrying ostemplate, hostname, cores=2, memory=2048, rootfs=local-lvm:8, net0 with bridge=vmbr0 and ip=dhcp, unprivileged=1, ssh-public-keys as plain text and start=1, then waits for the returned UPID with pve-task.sh and reports the new vmid and task result. No confirmation prompt is needed because creating and starting a guest is a free action.",
+      "files": [],
+      "expectations": [
+        "GET /cluster/nextid is called to choose the vmid instead of hardcoding one.",
+        "The template volid is discovered by listing storage content with content=vztmpl rather than guessed.",
+        "A POST to /nodes/pve1/lxc is issued whose parameters include ostemplate, cores=2, memory=2048, rootfs=local-lvm:8, net0 containing bridge=vmbr0 and ip=dhcp, and unprivileged=1.",
+        "The container ends up started: either start=1 is passed on the create call or a POST to /nodes/pve1/lxc/<vmid>/status/start follows, and the running state is verified.",
+        "The SSH public key is passed via the ssh-public-keys parameter as plain text (not percent-encoded, not via sshkeys).",
+        "The UPID returned by the create call is waited on with pve-task.sh (or equivalent task status polling) and the exitstatus is reported.",
+        "The agent does not stop to ask for confirmation before creating the container.",
+        "The created config is read back (GET /nodes/pve1/lxc/<vmid>/config) and checked against the request."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "VM 101 is no longer needed, get rid of it.",
+      "expected_output": "The agent locates VM 101 (node, name, status, HA state, disks) via GET calls, then prints a PLAN block that names the exact DELETE /nodes/<node>/qemu/101 call, offers the purge and destroy-unreferenced-disks choice, states that the VM must be stopped first (and that stopping it is itself a gated action), describes what is lost and that it is irreversible, and ends with 'Reply yes to proceed'. It stops there; no DELETE is issued in the same turn.",
+      "files": [],
+      "expectations": [
+        "The agent reads VM 101's status and config (GET .../status/current and GET .../config, or GET /cluster/resources) before proposing anything.",
+        "A PLAN block is printed containing Target, Current state, Action, Effect and Revert lines and a request to reply yes.",
+        "The PLAN names the DELETE call on /nodes/<node>/qemu/101 and mentions the purge option (purge=1) as a choice.",
+        "The output notes that the VM must be stopped before it can be destroyed.",
+        "No DELETE request is executed in this turn; the transcript contains no pve-api.sh DELETE, pvesh delete or curl -X DELETE call."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Take a snapshot of VM 200 called pre-upgrade, including the RAM state. If the upgrade goes wrong I'll say 'go' and you roll it back.",
+      "expected_output": "The agent resolves VM 200's node, creates the snapshot with POST /nodes/<node>/qemu/200/snapshot snapname=pre-upgrade vmstate=1, waits on the UPID and verifies it is listed under GET .../snapshot. It then prepares a PLAN block for the rollback (POST .../snapshot/pre-upgrade/rollback) and explains it will run only after an explicit go, without executing it now.",
+      "files": [],
+      "expectations": [
+        "A POST to /nodes/<node>/qemu/200/snapshot is issued with snapname=pre-upgrade and vmstate=1.",
+        "The snapshot task's UPID is waited on and the result (exitstatus OK) is verified, for example via pve-task.sh or GET .../snapshot listing.",
+        "The rollback is presented as a PLAN block naming POST .../snapshot/pre-upgrade/rollback, not executed.",
+        "No rollback request is sent in this turn."
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Make container 105 highly available. It should prefer to run on pve1 or pve2.",
+      "expected_output": "The agent checks GET /cluster/ha/resources (and that ct:105 exists via /cluster/resources), adds the resource with POST /cluster/ha/resources sid=ct:105 state=started, then creates a node-affinity rule through POST /cluster/ha/rules naming ct:105 and nodes pve1 and pve2 (HA groups are deprecated in PVE 9), and verifies with GET /cluster/ha/resources and GET /cluster/ha/rules. Adding HA resources and rules is a free action, so no confirmation is required.",
+      "files": [],
+      "expectations": [
+        "A POST to /cluster/ha/resources is issued with sid=ct:105 and state=started.",
+        "A node-affinity rule is created via POST /cluster/ha/rules (or ha-manager rules add node-affinity) that references ct:105 and the nodes pve1 and pve2.",
+        "No POST or PUT to /cluster/ha/groups is made and HA groups are not recommended (PVE 9 uses HA rules).",
+        "The final state is verified with GET /cluster/ha/resources and/or GET /cluster/ha/rules."
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Last night's scheduled backup on pve1 failed. Can you figure out why and tell me what to do about it?",
+      "expected_output": "The agent lists failed vzdump tasks on pve1 with GET /nodes/pve1/tasks typefilter=vzdump errors=1, reads the failed task's log via GET /nodes/pve1/tasks/<upid>/log, inspects the job definition with GET /cluster/backup, checks the target storage status, explains the cause found in the log and proposes a concrete fix. Nothing is changed or deleted in this turn.",
+      "files": [],
+      "expectations": [
+        "GET /nodes/pve1/tasks is called with typefilter=vzdump and errors=1 (or an equivalent filter that isolates failed vzdump tasks).",
+        "The log of the failed task is read via GET /nodes/pve1/tasks/<upid>/log (or pve-task.sh) and quoted or summarised in the answer.",
+        "GET /cluster/backup is used to inspect the backup job configuration.",
+        "The answer states a cause taken from the task log and proposes a specific remedy.",
+        "No POST, PUT or DELETE request that changes state is executed; in particular no backups are deleted and no job is modified."
+      ]
+    }
+  ]
+}
