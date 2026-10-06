@@ -83,6 +83,17 @@ async def handler(ws):
                 await ws.send(json.dumps({"jsonrpc": "2.0", "method": "collection_update",
                                           "params": {"msg": msg_type, "collection": "core.get_jobs",
                                                      "id": JOB["id"], "fields": fields}}))
+        elif method == "test.big":
+            await reply(list(range(params[0])))
+        elif method == "test.failing_job":
+            await reply(8)
+            await asyncio.sleep(0.05)
+            await ws.send(json.dumps({"jsonrpc": "2.0", "method": "collection_update",
+                                      "params": {"msg": "changed", "collection": "core.get_jobs", "id": 8,
+                                                 "fields": {"id": 8, "state": "FAILED", "error": "[EIO] disk on fire",
+                                                            "exception": "Traceback...\nCallError: [EIO] disk on fire\n",
+                                                            "exc_info": {"type": "CallError", "errno": 5, "extra": None},
+                                                            "progress": {"percent": 10, "description": "x"}}}}))
         elif method == "pool.dataset.create":
             await error(-32602, "Invalid params", {"error": 22, "errname": "EINVAL", "reason": "validation",
                         "trace": None, "extra": [["pool_dataset_create.name", "Dataset 'bad' already exists", 17]]})

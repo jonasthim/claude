@@ -7,19 +7,22 @@ description: Operate, inspect and troubleshoot a TrueNAS SCALE 25.x NAS through 
 
 You operate a single TrueNAS SCALE 25.x system on the user's behalf. Two tools:
 
-- **`tn.py`** (bundled): talks to the middleware over the JSON-RPC websocket API. This is the
-  primary tool for reading state and making changes, because the middleware keeps its own
-  database in sync and enforces validation.
-- **SSH** to the box: for read-only inspection with `zpool`, `zfs`, `docker`, `journalctl`, and
-  for local `midclt` when the websocket is unreachable.
+- **`tn.py`** (bundled, standard library only, nothing to install): talks to the middleware
+  API. This is the primary tool for reading state and making changes, because the middleware
+  keeps its own database in sync and enforces validation. It has two transports that behave
+  identically: `ws` (JSON-RPC over the web port with an API key) and `ssh` (runs `midclt`,
+  the middleware's own CLI, on the NAS over SSH). It picks `ws` when `TRUENAS_API_KEY` is set
+  and `ssh` otherwise; `TRUENAS_TRANSPORT` or `--transport` overrides.
+- **SSH shell commands** on the box: for read-only inspection with `zpool`, `zfs`, `docker`,
+  `journalctl`.
 
 ```
 TN="python3 ${CLAUDE_PLUGIN_ROOT}/skills/truenas/scripts/tn.py"
 ```
 
-Use `$TN` as shown below. It reads `TRUENAS_HOST` and `TRUENAS_API_KEY` from the environment,
-re-executes itself inside the skill's virtualenv, prints JSON to stdout and errors as JSON to
-stderr. Exit codes: 0 ok, 1 API or connection error, 2 blocked by the safety gate, 3 setup problem.
+Use `$TN` as shown below. It reads its connection from the environment, prints JSON to
+stdout and errors as JSON to stderr. Exit codes: 0 ok, 1 API or connection error, 2 blocked by
+the safety gate, 3 setup problem.
 
 ## 1. Start every session with a connectivity check
 
@@ -27,27 +30,25 @@ stderr. Exit codes: 0 ok, 1 API or connection error, 2 blocked by the safety gat
 $TN info
 ```
 
-This prints version, hostname, uptime, an alert summary and running jobs. Exit code 3 means a
-setup problem; the message says which:
-
-- **Client library missing**: run `bash ${CLAUDE_PLUGIN_ROOT}/skills/truenas/scripts/setup.sh`
-  yourself (it only creates a virtualenv under `~/.cache/truenas-skill` and pip-installs the
-  official client from GitHub), then retry `info`.
-- **`TRUENAS_HOST` / `TRUENAS_API_KEY` unset**: tell the user how to create a key (user menu →
-  API Keys) and export both variables, then stop. Do not guess hostnames or ask for the key in
-  chat; it belongs in the environment, not the transcript.
+This prints the transport in use, version, hostname, uptime, an alert summary and running
+jobs. Exit code 3 means nothing is configured: tell the user the two options (an API key plus
+`TRUENAS_HOST` for `ws`, or `TRUENAS_SSH_HOST` for `ssh`; both in the README) and stop. Do
+not guess hostnames or ask for the key in chat; it belongs in the environment, not the
+transcript.
 
 Exit code 1 from `info` is a connection problem; the JSON names a `cause`:
 
-- **`timeout`**: the NAS is on a network this machine cannot reach (typical when the NAS sits
-  on a server VLAN and the workstation is firewalled from its web ports). Do not keep
-  retrying. Offer the SSH port-forward recipe in `references/api-basics.md` ("Reaching a NAS
-  on another VLAN") and let the user set it up.
+- **`timeout`**: the NAS web port is on a network this machine cannot reach (typical when the
+  NAS sits on a server VLAN and the workstation is firewalled from it). Do not keep retrying.
+  If SSH to the NAS works, switch to `--transport ssh` (or set `TRUENAS_SSH_HOST`) and carry
+  on; the API is the same. Otherwise offer the port-forward recipe in
+  `references/api-basics.md` ("Transports").
 - **`certificate`**: the NAS uses a self-signed certificate, or the name you connect through
-  (for example a forwarded `127.0.0.1:8443`) is not on it. Report it and stop. Disabling
-  verification is the user's call, never yours.
+  is not on it. The `ssh` transport sidesteps TLS entirely; otherwise report it and stop.
+  Disabling verification is the user's call, never yours.
 - **`refused`** or **`dns`**: wrong port or hostname, or the middleware is down. If SSH works,
   `midclt call system.info` on the box tells the two apart.
+- **`ssh`**: ssh itself failed (key, host, jump). The ssh error text is in the message.
 
 Note the version from `info`. 25.04 and 25.10 differ in a few argument shapes (SMB share
 options, update methods), which is why the next rule exists.
@@ -134,7 +135,8 @@ Habits that make the gate rarely matter:
 
 The API covers state and changes; the shell is better for live diagnostics. Use
 `TRUENAS_SSH_HOST` if set; otherwise build the target from the bare hostname (`TRUENAS_HOST`
-may carry a scheme or port, which ssh would misread, so never paste it into ssh directly):
+may carry a scheme or port, which ssh would misread, so never paste it into ssh directly).
+When `tn.py` is already using the `ssh` transport, this is the same connection:
 
 ```
 SSH_TARGET="${TRUENAS_SSH_HOST:-root@$($TN host)}"
@@ -144,11 +146,12 @@ ssh "$SSH_TARGET" zfs list -t snapshot -r -o name,used,creation tank/photos
 ssh "$SSH_TARGET" docker ps --format '{{.Names}}\t{{.Status}}'   # containers are named ix-<app>-<service>-1
 ssh "$SSH_TARGET" docker logs --tail 200 ix-jellyfin-jellyfin-1
 ssh "$SSH_TARGET" journalctl -u middlewared -n 200 --no-pager
-ssh "$SSH_TARGET" midclt call system.info                        # local API when the websocket is down
+ssh "$SSH_TARGET" midclt call system.info                        # what the ssh transport does under the hood
 ```
 
-When the API goes through a port-forward, `TRUENAS_SSH_HOST` should point at the real NAS
-(possibly via `ssh -J jump`), not at the forwarded address.
+Add `$TRUENAS_SSH_OPTS` (for example `-J jump.lan`) to these commands when it is set, since
+`tn.py` uses it too. When the API goes through a port-forward, `TRUENAS_SSH_HOST` should point
+at the real NAS, not at the forwarded address.
 
 Keep SSH read-only unless the user asks for a shell-level change and the API has no equivalent.
 If SSH is not configured, say so and continue with the API alone.

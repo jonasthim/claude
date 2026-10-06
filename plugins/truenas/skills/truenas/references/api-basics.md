@@ -10,36 +10,48 @@
 - Per-method docs live at https://api.truenas.com/v<version>/ but the live schema from
   `core.get_methods` is authoritative for the box you are talking to.
 
-## Reaching a NAS on another VLAN
+## Transports
+
+`tn.py` speaks to the same middleware two ways. Pick by what the machine you run on can reach.
+
+| | `ws` | `ssh` |
+|---|---|---|
+| Needs | web port (443) reachable, API key, trusted or accepted certificate | SSH login to the NAS (root, or a sudoer with NOPASSWD) |
+| Env | `TRUENAS_HOST`, `TRUENAS_API_KEY`, optional `TRUENAS_USER`, `TRUENAS_VERIFY_SSL`, `TRUENAS_SCHEME` | `TRUENAS_SSH_HOST` (default `root@<bare TRUENAS_HOST>`), optional `TRUENAS_SSH_OPTS`, `TRUENAS_SSH_SUDO` |
+| Per call | one websocket, one login, then as many calls as you like | one `ssh` process per call (a second or two each); fine for interactive use, slow for loops |
+| Jobs | progress events with percent | `midclt call -j` prints description lines; no percent |
+| Audit | calls are logged under the API key's user | calls run as root (or via sudo) on the box |
+| Chosen when | `TRUENAS_API_KEY` is set | otherwise, or `TRUENAS_TRANSPORT=ssh` / `--transport ssh` |
+
+Both produce the same JSON, the same error shape, and honour the same `--confirm` gate.
+
+### A NAS on another VLAN
 
 A common homelab layout puts the NAS on a server VLAN and firewalls its web ports (443, 80,
-8080) from the admin workstation, while SSH to a jump host (a hypervisor node, a bastion) is
-allowed. `tn.py info` then fails with `"cause": "timeout"`. Two ways through, both the user's
-to set up:
-
-**SSH port-forward from the workstation** (keeps the skill running locally):
+8080) from the admin workstation, while SSH is allowed, directly or through a jump host. `tn.py
+info` over `ws` then fails with `"cause": "timeout"`. The straightforward answer is the `ssh`
+transport:
 
 ```
-ssh -fN -L 8443:<nas-ip>:443 <user>@<jump-host>      # background tunnel
+export TRUENAS_SSH_HOST=root@<nas-ip>
+export TRUENAS_SSH_OPTS="-J <user>@<jump-host>"     # only if SSH itself must hop
+tn.py --transport ssh info
+```
+
+No key, no tunnel, no certificate decision. If the user would rather keep the API key path
+(for audit trails under a named user, or many calls in a loop), forward the port instead:
+
+```
+ssh -fN -L 8443:<nas-ip>:443 <user>@<jump-host>
 export TRUENAS_HOST=127.0.0.1:8443
-export TRUENAS_SSH_HOST=root@<nas-ip>                  # shell access goes via the jump too:
-#   ~/.ssh/config:  Host <nas-ip>\n  ProxyJump <user>@<jump-host>
 ```
 
-The certificate on the NAS will not carry `127.0.0.1`, so `info` fails next with
-`"cause": "certificate"` unless the NAS cert is trusted on this machine. Options, in order of
-preference: forward to the NAS's real hostname instead (add `127.0.0.1 nas.example.lan` to
-`/etc/hosts` and connect by name, which works if the cert has that SAN), import the NAS CA
-into the system trust store, or `TRUENAS_VERIFY_SSL=0`. The last one sends the API key over a
-connection whose peer is not verified; the tunnel itself is SSH-protected, so the exposure
-is limited to the jump-host-to-NAS hop. State that trade-off and let the user choose.
-
-**Run the skill on the jump host** instead: copy the plugin directory there, run `setup.sh`
-there, and run `tn.py` over SSH. This installs a Python virtualenv on that host, which some
-people will not want on a hypervisor; ask first.
-
-The quickest proof that the NAS is fine and only the path is blocked:
-`ssh <jump> curl -sk -m 5 https://<nas-ip>/api/versions`.
+The certificate on the NAS will not carry `127.0.0.1`, so `info` then fails with
+`"cause": "certificate"`. Options, in order of preference: forward to the NAS's real hostname
+instead (add `127.0.0.1 nas.example.lan` to `/etc/hosts` and connect by name, if the cert has
+that SAN), import the NAS CA into the system trust store, or `TRUENAS_VERIFY_SSL=0`. The last
+sends the API key over an unverified TLS session inside an SSH tunnel, so the exposure is the
+jump-host-to-NAS hop. State the trade-off and let the user choose.
 
 ## Authentication
 
@@ -127,9 +139,10 @@ midclt call -j pool.scrub.run tank              # -j waits on the job
 cli -c "storage dataset query"                  # the interactive TrueNAS CLI (midcli)
 ```
 
-`midclt` installed by `setup.sh` also works remotely:
-`~/.cache/truenas-skill/venv/bin/midclt --uri wss://<host>/api/current -K <key> call system.info`
-(25.10 client: `-K` takes the raw key; `--plain` is not needed against 25.x).
+The `ssh` transport is exactly `ssh <target> midclt call <method> <json args...>` with `-j`
+for jobs and `sudo -n` prefixed when the SSH user is not root. `tn.py --transport ssh` is
+preferable to typing that by hand because it JSON-quotes arguments, parses the result, applies
+the destructive gate, and turns midclt's stderr into the same error JSON as the `ws` path.
 
 ## Useful read-only methods
 
