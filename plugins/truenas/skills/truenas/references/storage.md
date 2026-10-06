@@ -16,6 +16,17 @@ Health rules of thumb: `status` should be `ONLINE`, `healthy` true, `warning` fa
 `scan.errors`. Degraded topology shows in `topology.data[].children[].status`.
 SSH gives the richest view: `zpool status -v tank`, `zpool list -o name,size,alloc,free,cap,frag,health`.
 
+`healthy: true` says nothing about where the space went. A pool can be healthy while a
+snapshot policy pins terabytes a retention policy believes it pruned. One query turns a
+health check into something actionable:
+
+```
+tn.py query pool.dataset --filter name~^tank/ --select name,used.parsed,usedbydataset.parsed,usedbysnapshots.parsed,usedbychildren.parsed --extra '{"flat": true}'
+```
+
+Report any dataset where `usedbysnapshots` rivals `usedbydataset`, with the snapshot count
+from `pool.dataset.snapshot_count`.
+
 Mutations (all gated, all jobs, all need the user's explicit yes):
 - `pool.create {name, topology:{data:[{type:"MIRROR"|"RAIDZ1"|..., disks:[...]}], ...}}` wipes disks.
 - `pool.export id {destroy: false, cascade: true}` removes shares/tasks tied to the pool.
@@ -27,8 +38,8 @@ Mutations (all gated, all jobs, all need the user's explicit yes):
 
 ```
 tn.py query pool.scrub                              # scheduled scrub tasks
-tn.py call pool.scrub.run tank --job                # start a scrub now (threshold check)
-tn.py call pool.scrub.scrub tank START --job        # START | STOP | PAUSE, no threshold check
+tn.py call pool.scrub.run tank                      # start a scrub now (threshold check); returns at once, not a job
+tn.py call pool.scrub.scrub tank START --job        # START | STOP | PAUSE, no threshold check; this one is a job
 tn.py query pool --select name,scan                 # progress: scan.percentage, scan.state
 ```
 
@@ -92,8 +103,8 @@ Dataset-level quota/refquota go through `pool.dataset.update`.
 
 ## Snapshots
 
-25.04 renamed `zfs.snapshot.*` to `pool.snapshot.*`. If `pool.snapshot` is missing in
-`tn.py methods`, use `zfs.snapshot` with the same arguments.
+The namespace is `pool.snapshot.*` (25.04 renamed it from `zfs.snapshot.*`, which no longer
+exists on 25.10).
 
 ```
 tn.py query pool.snapshot --filter dataset=tank/photos --select name,properties.used.parsed,properties.creation.parsed --order-by=-properties.creation.parsed
@@ -133,11 +144,18 @@ browsable over SSH; copy from there instead of rolling back.
 ```
 tn.py query disk --select name,serial,model,size,type,pool,zfs_guid,bus
 tn.py call disk.temperatures '["sda", "sdb"]'
-tn.py query smart.test                              # scheduled SMART tests
-tn.py call smart.test.results '[["disk", "=", "sda"]]'
-tn.py call smart.test.manual_test '[{"identifier": "sda", "type": "SHORT"}]'   # SHORT | LONG
+tn.py call disk.temperature_alerts '["sda", "sdb"]'
+tn.py call disk.temperature_agg '["sda"]' 7              # days; check --schema
 ```
 
-Over SSH: `smartctl -a /dev/sda`, `lsblk -o NAME,SIZE,SERIAL,MODEL`. Disk `name` can change
-across reboots; identify disks by `serial` or `zfs_guid` when talking to the user.
-`disk.wipe` is gated and destroys data.
+There is no `smart.*` namespace on 25.10 (a sweep of the live method list found none), so
+SMART tests and results go through SSH:
+
+```
+smartctl -a /dev/sda                 # attributes, self-test log, errors
+smartctl -t short /dev/sda           # start a short self-test (long: -t long); results in the log above later
+lsblk -o NAME,SIZE,SERIAL,MODEL
+```
+
+Disk `name` can change across reboots; identify disks by `serial` or `zfs_guid` when
+talking to the user. `disk.wipe` is gated and destroys data.
