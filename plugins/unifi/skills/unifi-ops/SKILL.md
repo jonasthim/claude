@@ -52,7 +52,8 @@ Run `$U info`. Three outcomes:
 
 Environment the scripts read: `UNIFI_HOST`, `UNIFI_API_KEY`, `UNIFI_SITE` (default `default`),
 `UNIFI_VERIFY_TLS` (off by default; consoles have self-signed certs), `UNIFI_CLOUD_API_KEY`
-(cloud commands), `UNIFI_MOCK_DIR` (fixtures for offline testing).
+or `UNIFI_SITE_MANAGER_API_KEY` (cloud commands; this is the unifi.ui.com key, and the two keys
+are not interchangeable), `UNIFI_MOCK_DIR` (fixtures for offline testing).
 
 ## Pick the workflow
 

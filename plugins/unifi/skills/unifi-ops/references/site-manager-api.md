@@ -5,7 +5,9 @@ console is unreachable, for ISP/WAN quality history, and for a cross-console inv
 
 ## Auth and limits
 
-- Key: unifi.ui.com → (account) → **API** → Create API Key. Env: `UNIFI_CLOUD_API_KEY`.
+- Key: unifi.ui.com → (account) → **API** → Create API Key. Env: `UNIFI_CLOUD_API_KEY`
+  (`UNIFI_SITE_MANAGER_API_KEY` is accepted too). It is a different credential from the local
+  Integration API key; each endpoint rejects the other's key with a 401.
 - Header: `X-API-KEY: <key>`, `Accept: application/json`. TLS is real, verification stays on.
 - Rate limit: 10,000 requests/min on v1 (100/min on `/ea/`). On 429 `unifi.py` honours
   `Retry-After` and retries up to twice.

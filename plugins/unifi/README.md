@@ -24,10 +24,25 @@ send a mutating request unless `--yes` is passed, so Claude cannot change your n
 
 ## Install
 
+If the repository is public:
+
 ```
 /plugin marketplace add jonasthim/claude-unifi-skill
 /plugin install unifi@claude-unifi-skill
 ```
+
+While the repository is private, the marketplace add over HTTPS has no credential, so clone it
+with an authenticated client first and add the local path:
+
+```bash
+gh repo clone jonasthim/claude-unifi-skill ~/src/claude-unifi-skill     # or: git clone git@github.com:jonasthim/claude-unifi-skill.git
+claude plugin marketplace add ~/src/claude-unifi-skill
+claude plugin install unifi@claude-unifi-skill
+```
+
+Updating later is `git pull` in that clone followed by `claude plugin update unifi@claude-unifi-skill`.
+The scripts also run directly from the clone without installing the plugin:
+`python3 ~/src/claude-unifi-skill/plugins/unifi/skills/unifi-ops/scripts/unifi.py info`.
 
 ## Configure
 
@@ -44,7 +59,8 @@ send a mutating request unless `--yes` is passed, so Claude cannot change your n
 export UNIFI_HOST=192.168.1.1            # console IP or hostname
 export UNIFI_API_KEY=...                 # Integration API key
 export UNIFI_SITE=default                # optional
-export UNIFI_CLOUD_API_KEY=...           # optional, Site Manager
+export UNIFI_CLOUD_API_KEY=...           # optional, Site Manager key from unifi.ui.com
+                                         # (UNIFI_SITE_MANAGER_API_KEY works too; not the same key as UNIFI_API_KEY)
 # export UNIFI_VERIFY_TLS=1              # only if your console has a trusted certificate
 ```
 

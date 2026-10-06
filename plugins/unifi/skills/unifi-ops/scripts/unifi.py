@@ -10,7 +10,7 @@ Environment:
   UNIFI_API_KEY         Integration API key (Settings -> Control Plane -> Integrations)
   UNIFI_SITE            site name, default "default"
   UNIFI_VERIFY_TLS      "1" to verify TLS; default off because consoles ship self-signed certs
-  UNIFI_CLOUD_API_KEY   Site Manager API key (unifi.ui.com -> API)
+  UNIFI_CLOUD_API_KEY   Site Manager API key (unifi.ui.com -> API); UNIFI_SITE_MANAGER_API_KEY also accepted
   UNIFI_MOCK_DIR        serve fixture JSON from this directory instead of HTTP
   UNIFI_TIMEOUT         HTTP timeout seconds, default 20
 
@@ -448,9 +448,10 @@ class CloudApi:
     def __init__(self):
         self.timeout = int(env("UNIFI_TIMEOUT", "20"))
         self.mock = MockBackend(env("UNIFI_MOCK_DIR")) if env("UNIFI_MOCK_DIR") else None
-        self.key = env("UNIFI_CLOUD_API_KEY")
+        self.key = env("UNIFI_CLOUD_API_KEY") or env("UNIFI_SITE_MANAGER_API_KEY")
         if not self.mock and not self.key:
-            die("UNIFI_CLOUD_API_KEY must be set for cloud commands", EXIT_USAGE)
+            die("UNIFI_CLOUD_API_KEY (or UNIFI_SITE_MANAGER_API_KEY) must be set for cloud commands. "
+                "This is the unifi.ui.com key; the local Integration key is not accepted by api.ui.com.", EXIT_USAGE)
 
     def request(self, method, path, query=None, body=None):
         query = {k: v for k, v in (query or {}).items() if v is not None}
