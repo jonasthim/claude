@@ -14,7 +14,7 @@ Arguments: `$ARGUMENTS` = one of the forms in the argument hint. Use `${CLAUDE_P
 ## list [vmid] (free)
 
 1. `${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh GET /nodes` and, per node, `GET /nodes/<node>/storage content=backup` to find backup-capable storages (skip shared storages already visited).
-2. Per storage: `GET /nodes/<node>/storage/<storage>/content content=backup [vmid=<vmid>]`. Print the volid, vmid, size, format and any notes or protected fields the response contains (other field names UNVERIFIED).
+2. Per storage: `GET /nodes/<node>/storage/<storage>/content content=backup [vmid=<vmid>]`. Print the volid, vmid, size, format and any notes or protected fields the response contains (other field names UNVERIFIED). An empty list from a storage whose `GET /nodes/<node>/storage` entry shows non-zero `used` is suspect (a PVEAuditor token got HTTP 200 and `[]` from a storage holding 431 backups on a PVE 9.2 cluster; cause UNVERIFIED): report "could not enumerate contents with this token", never "no backups", and suggest `pvesm list <storage>` over the SSH tier or a token with more privileges. Never conclude that no backups exist from an empty list alone.
 3. Sort newest first per vmid.
 
 ## run <vmid> [key=value ...] (free unless pruning)
@@ -38,7 +38,7 @@ Arguments: `$ARGUMENTS` = one of the forms in the argument hint. Use `${CLAUDE_P
 
 ## failures (free)
 
-1. Per node from `GET /nodes`: `${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh GET /nodes/<node>/tasks typefilter=vzdump errors=1 limit=20`.
+1. Per node from `GET /nodes`: `${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh GET /nodes/<node>/tasks typefilter=vzdump errors=1 limit=20`. Items carry `endtime, id, node, pid, pstart, starttime, status, type, upid, user`; `status` is the task's final status text, `OK` or the error message itself (confirmed on a PVE 9.2 cluster), so quote it before reading the log.
 2. For each failed task: `GET /nodes/<node>/tasks/<url-encoded UPID>/log limit=500` and quote the lines that mention `ERROR`, the vmid and the storage.
 3. Map the cause: no space on storage, snapshot not possible on that storage (suggest `mode=suspend` or `stop`), guest locked, storage not active, timeout. Compare with `GET /cluster/backup` to find the job and its options.
 4. Propose the fix as a plan; do not change jobs, delete backups or re-run a backup without the user asking.

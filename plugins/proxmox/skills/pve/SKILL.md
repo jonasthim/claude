@@ -7,7 +7,8 @@ argument-hint: "[task or question about your Proxmox cluster]"
 # Proxmox VE 9 operations
 
 Facts in this skill and its references are condensed from Proxmox 9.x sources; items
-marked UNVERIFIED were not confirmed. When in doubt, ask the API: `pvesh usage <path> -v`
+marked UNVERIFIED were not confirmed, items marked "confirmed on a PVE 9.2 cluster" were
+checked against a live 3-node cluster. When in doubt, ask the API: `pvesh usage <path> -v`
 over SSH, or the node-served docs at `https://NODE:8006/pve-docs/`.
 
 ## 1. Safety contract (read first)
@@ -42,6 +43,8 @@ Rules (they exist because the API has no undo and the guard hook is the only bac
 - Never hardcode VMIDs, node names or storage ids; discover them via the API every time.
 - Never work around the guard hook's permission prompt: no `eval`, no base64 wrapping, no
   copying `pve-api.sh` to another name, no `pvesh`/`curl` substitutes to dodge a rule.
+- The guard hook is one gate among several: a session's own permission policy may still
+  refuse an approved action. Report that refusal; never work around it.
 - Do not auto-retry a failed gated task; report the task log and ask.
 
 ## 2. Setup
@@ -143,7 +146,7 @@ Paths are relative to `/api2/json`; `N` is a node, `V` a vmid, `S` a storage id.
 
 | Task | Call |
 |---|---|
-| Cluster/quorum | `GET /cluster/status`; `GET /nodes`; `GET /nodes/N/status` |
+| Cluster/quorum | `GET /cluster/status` (mixed array, branch on `type`: one `cluster` item with `name, nodes, quorate, version`, one `node` item per node with `name, nodeid, ip, online, local, level`; confirmed on a PVE 9.2 cluster); `GET /nodes`; `GET /nodes/N/status` |
 | Inventory | `GET /cluster/resources type=vm` (or `type=storage`, `type=node`, `type=sdn`) |
 | VM list/state | `GET /nodes/N/qemu`; `GET /nodes/N/qemu/V/status/current`; `GET .../config`; `GET .../pending` |
 | VM start | `POST /nodes/N/qemu/V/status/start` (timeout, machine, targetstorage) |
@@ -162,17 +165,17 @@ Paths are relative to `/api2/json`; `N` is a node, `V` a vmid, `S` a storage id.
 | Create VM | `GET /cluster/nextid`; `POST /nodes/N/qemu vmid=V name=X memory=2048 cores=2 net0=virtio,bridge=vmbr0 scsihw=virtio-scsi-pci scsi0=S:32` (`S:32` as a new 32 GiB disk is UNVERIFIED; `import-from` on create is UNVERIFIED, the documented form is `qm set`/`POST .../config`, see `references/cloud-init.md`) |
 | Create CT | `POST /nodes/N/lxc vmid=V ostemplate=local:vztmpl/FILE hostname=X rootfs=S:8 cores=2 memory=2048 net0=name=eth0,bridge=vmbr0,ip=dhcp unprivileged=1 ssh-public-keys=... start=1` |
 | Backup run | `POST /nodes/N/vzdump vmid=V storage=S mode=snapshot compress=zstd remove=0` (`remove` defaults to 1 and prunes by storage retention; explicit `remove=1`/`prune-backups=` gated) |
-| Backup list | `GET /nodes/N/storage/S/content content=backup vmid=V` |
+| Backup list | `GET /nodes/N/storage/S/content content=backup vmid=V` (an empty list from a storage with non-zero `used` is suspect, see Pitfalls) |
 | Backup jobs | `GET /cluster/backup`; `GET /cluster/backup/ID`; `GET /cluster/backup/ID/included_volumes` |
 | Restore VM | `POST /nodes/N/qemu vmid=V archive=S:backup/FILE storage=S2 force=1` (gated when V exists) |
 | Restore CT | `POST /nodes/N/lxc vmid=V ostemplate=S:backup/FILE restore=1 storage=S2 force=1` |
-| Tasks | `GET /nodes/N/tasks typefilter=vzdump errors=1 limit=20`; `GET /cluster/tasks`; `GET /nodes/N/tasks/UPID/status`; `.../log start=0 limit=500` |
+| Tasks | `GET /nodes/N/tasks typefilter=vzdump errors=1 limit=20` (items `upid, type, id, node, user, starttime, endtime, status`; `status` is `OK` or the error text itself, confirmed on a PVE 9.2 cluster); `GET /cluster/tasks`; `GET /nodes/N/tasks/UPID/status`; `.../log start=0 limit=500` |
 | Storage | `GET /storage`; `GET /nodes/N/storage`; `GET /nodes/N/storage/S/status`; `GET .../content content=vztmpl` |
 | Templates/ISOs | `POST /nodes/N/storage/S/download-url url=... content=vztmpl filename=...` |
 | HA | `GET /cluster/ha/resources`; `POST /cluster/ha/resources sid=ct:105 state=started`; `GET /cluster/ha/rules`; `GET /cluster/ha/status/current` |
 | Node ops (gated) | `POST /nodes/N/status command=reboot`; `POST /nodes/N/stopall`; `POST /nodes/N/migrateall target=N2 (param name UNVERIFIED)` |
 | Updates | `POST /nodes/N/apt/update` (refresh, free); `GET /nodes/N/apt/update` (pending); `GET /nodes/N/apt/versions`; upgrade only via SSH (gated) |
-| Access | `GET /access/permissions`; `GET /access/users`; `POST /access/users/USER/token/NAME privsep=1`; `PUT /access/acl path=/vms roles=PVEVMAdmin tokens=USER!NAME propagate=1` |
+| Access | `GET /access/permissions` (object keyed by ACL path, each value `{privilege: 1}`; confirmed on a PVE 9.2 cluster); `GET /access/users`; `POST /access/users/USER/token/NAME privsep=1`; `PUT /access/acl path=/vms roles=PVEVMAdmin tokens=USER!NAME propagate=1` |
 
 ## 6. Domain guides
 
@@ -210,3 +213,14 @@ Read the guide before working in its area; each is self-contained.
 - `GET .../config` shows pending values by default; add `current=1` for the live config.
 - A 500 with "VM already running" or "VM N already exists" is a state conflict, not a bug;
   re-discover and re-plan.
+- A 403 names the ACL path and privilege exactly, e.g. `Permission check failed (/vms/109,
+  VM.PowerMgmt)` (confirmed on a PVE 9.2 cluster); map it with `references/permissions.md`.
+  `Sys.PowerMgmt`/`Sys.Modify` live only in the Administrator role, which any user, group or
+  token may hold on `/` or `/nodes/N`; "root-only" is a tier name, not root@pam.
+- An empty `GET /nodes/N/storage/S/content` list (with or without `content=backup`) from a
+  storage whose `used` or `disk` is non-zero is suspect: on a PVE 9.2 cluster a PVEAuditor
+  token got HTTP 200 and `[]` from a storage holding 431 backup volumes (`pvesm list` on the
+  node); the cause (missing privilege or API filter) is UNVERIFIED. Report "could not
+  enumerate contents with this token", never "no backups" or "no content"; suggest
+  `pvesm list S` over the SSH tier or a token with more privileges. Never conclude that no
+  backups exist from an empty list alone.

@@ -67,6 +67,14 @@ Volids look like `S:backup/vzdump-qemu-100-<timestamp>.vma.zst` (VM) or
 `S:backup/vzdump-lxc-105-<timestamp>.tar.zst` (CT); file name pattern UNVERIFIED beyond
 the `vzdump-qemu-`/`vzdump-lxc-` prefix and the CLI examples (`.vma`, `.tar`).
 
+An empty list from a storage whose `GET /nodes/N/storage` entry shows non-zero `used` is
+suspect: on a PVE 9.2 cluster a PVEAuditor token got HTTP 200 and `[]` (with and without
+`content=backup`) from a storage with 870 GiB used that holds 431 backup volumes per
+`pvesm list`; the cause (missing privilege or API filter) is UNVERIFIED. Report "could not
+enumerate contents with this token" rather than "no backups", and suggest `pvesm list S`
+over the SSH tier or a token with more privileges. Never conclude that no backups exist
+from an empty list alone.
+
 ## Restore
 
 Restore to a new vmid (free) or over an existing guest (`force=1`; gated, it replaces the
@@ -101,6 +109,10 @@ pve-api.sh GET /nodes/N/storage/S/status                  # space left on the ta
 pve-api.sh GET /cluster/backup                            # which job, which guests, which storage
 ```
 
+Task list items carry `endtime, id, node, pid, pstart, starttime, status, type, upid, user`;
+`status` is the task's final status text, `OK` on success, otherwise the error message itself
+(e.g. `cannot remove protected volume ...`), not an enum (confirmed on a PVE 9.2 cluster), so
+the list alone names the failure.
 Read the task log from the end. A multi-guest job can be partly successful; the per-guest
 layout of the log and the exact `exitstatus` wording for a partial failure are UNVERIFIED
 (only `OK` and `WARNINGS: n` are success). Common causes to check, in order: target storage

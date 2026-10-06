@@ -22,10 +22,13 @@ claude plugin marketplace add jonasthim/claude-proxmox-skill
 claude plugin install proxmox@jonasthim
 ```
 
-For development, load the checkout for one session without installing:
+A newly installed plugin's commands, skills, agent and hook are not active in the session that installed it:
+restart Claude Code (or run `/reload-plugins` if your version has it) before using `/proxmox:...`.
+
+For immediate use from a checkout, without installing, load it for that session only:
 
 ```
-claude --plugin-dir ./
+claude --plugin-dir <checkout>
 ```
 
 After editing skills, agents or hooks run `/reload-plugins` inside Claude Code.
@@ -84,9 +87,12 @@ pveum acl modify /storage/<storage> -user claude@pve -role PVEDatastoreUser -pro
 pveum acl modify /sdn -user claude@pve -role PVESDNUser -propagate 1
 ```
 
-Node reboot, network apply and apt need `Sys.PowerMgmt` and `Sys.Modify`, which are root-only tier privileges
-(whether a non-root user or token can hold Sys.PowerMgmt/Sys.Modify is UNVERIFIED; see references/permissions.md
-in the `pve` skill); use the SSH tier or a root@pam token for those. Then export the variables, for example:
+Node reboot, network apply and apt need `Sys.PowerMgmt` and `Sys.Modify`. These privileges are in the
+Administrator role (not in PVEVMAdmin or PVEAuditor), so node-level operations need a user, group or token holding
+Administrator on `/` or on `/nodes/<node>`; the "root-only" label in AccessControl.pm is a tier name, not a
+restriction to root@pam (confirmed on a PVE 9.2 cluster, where an LDAP-backed group holds Administrator on `/`).
+The SSH tier is the alternative; see references/permissions.md in the `pve` skill. Then export the variables, for
+example:
 
 ```
 export PVE_HOST=pve1.example.net:8006
@@ -95,7 +101,8 @@ export PVE_TOKEN_SECRET='<value printed by pveum>'
 export PVE_CA_CERT=/path/to/pve-root-ca.pem
 ```
 
-Run `/proxmox:doctor` first in every new setup.
+Run `/proxmox:doctor` first in every new setup, in a session started after the plugin was installed (see
+Install).
 
 ## Safety model
 
@@ -193,7 +200,9 @@ If the alternative to a script is prose that works as well, prefer the prose.
 | `pve-ssh.sh` | `pve-ssh.sh [-n HOST] [--check] <command> [args...]`; `--check` runs `pveversion` | remote exit code; 1 usage or no host; 255 ssh failure |
 | `guard.sh` | PreToolUse hook; reads the tool input JSON on stdin and prints an `ask` decision for gated commands | always 0 |
 
-Error lines on stderr look like `pve-api: HTTP 403 DELETE /nodes/pve1/qemu/100: Permission check failed ...`.
+Error lines on stderr look like `pve-api: HTTP 403 POST /nodes/<node>/lxc/109/status/stop: Permission check
+failed (/vms/109, VM.PowerMgmt)` (exit 3; confirmed on a PVE 9.2 cluster): a 403 names the ACL path and the
+missing privilege exactly.
 
 ## SSH tier
 
@@ -217,7 +226,8 @@ table (`tests/guard_cases.txt`), the plugin lint (`tests/lint_plugin.py`) and, w
 ## Provenance and accuracy
 
 Endpoints, parameters, CLI flags and privilege names were condensed from the Proxmox VE 9.x sources and
-documentation. Items that could not be confirmed are marked `UNVERIFIED` in the skill and references. Proxmox
+documentation. Items that could not be confirmed are marked `UNVERIFIED` in the skill and references; items
+checked later against a live 3-node cluster are marked "confirmed on a PVE 9.2 cluster". Proxmox
 changes between minor releases; when something differs, trust your cluster: the full API viewer and
 documentation for your exact version are served by every node at `https://<node>:8006/pve-docs/`, and `pvesh
 usage <path> -v` shows the live schema.

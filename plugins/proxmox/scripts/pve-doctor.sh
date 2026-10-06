@@ -136,8 +136,8 @@ if [ "$envfail" -eq 1 ]; then
 fi
 
 # 3. GET /version.
-# UNVERIFIED: the response field names of GET /version (version, release,
-# repoid) are not confirmed by the research notes; the check is best effort.
+# Response fields version, release and repoid confirmed on a PVE 9.2 cluster
+# (e.g. version "9.2.20", release "9.2").
 if call_api /version; then
   printf '%s\n' "$api_out" | sed -e 's/^/[info]   /'
   version="$(printf '%s' "$api_out" | jq -r '.version // empty' 2>/dev/null || true)"
@@ -162,9 +162,13 @@ else
   exit "$api_code"
 fi
 
-# 4. GET /access/permissions - best-effort capability summary.
-# UNVERIFIED: the research notes do not document the response shape; this
-# collects privilege-looking keys found anywhere in the object.
+# 4. GET /access/permissions - capability summary.
+# Shape confirmed on a PVE 9.2 cluster: an object keyed by ACL path ("/",
+# "/storage", "/sdn", "/vms", "/access", ...), each value an object
+# {privilege-name: 1}, not an array. The recursive scan below collects the
+# privilege keys from every path. A PVEAuditor token on / yields exactly
+# seven: Datastore.Audit Mapping.Audit Pool.Audit SDN.Audit Sys.Audit
+# VM.Audit VM.GuestAgent.Audit (read-only, 7 distinct privileges seen).
 if call_api /access/permissions; then
   privs="$(printf '%s' "$api_out" \
     | jq -r '[.. | objects | keys[] | select(test("^[A-Z][A-Za-z]+\\.[A-Za-z.]+$"))] | unique | .[]' 2>/dev/null || true)"
@@ -207,7 +211,10 @@ else
 fi
 
 # 6. GET /cluster/status (best effort).
-# UNVERIFIED: item shape of GET /cluster/status is not confirmed.
+# Shape confirmed on a PVE 9.2 cluster: a mixed array; exactly one
+# type=cluster item (id, name, nodes, quorate, type, version) and one
+# type=node item per node (id, ip, level, local, name, nodeid, online, type).
+# The jq below branches on type, as any consumer of this list must.
 if call_api /cluster/status; then
   cname="$(printf '%s' "$api_out" | jq -r '[.[]? | select(.type=="cluster")][0] | .name // empty' 2>/dev/null || true)"
   quorate="$(printf '%s' "$api_out" | jq -r '[.[]? | select(.type=="cluster")][0] | .quorate // empty' 2>/dev/null || true)"

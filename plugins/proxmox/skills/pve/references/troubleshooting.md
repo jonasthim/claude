@@ -9,7 +9,7 @@ plugin's script contracts; items marked UNVERIFIED were not confirmed.
 |---|---|---|---|
 | 400 | `errors: {<param>: <msg>}` | parameter validation; `nextid` taken | fix the named parameter; re-run `GET /cluster/nextid` |
 | 401 | `authentication failure` (UNVERIFIED wording); `token '<id>' access expired` | wrong `PVE_TOKEN_ID`/`PVE_TOKEN_SECRET`, expired token | run `pve-doctor.sh`; ask the user for a new token; never guess credentials |
-| 403 | permission check failed, naming path and privilege (wording UNVERIFIED) | token lacks the role, or `privsep=1` token without its own ACL | map the privilege with `permissions.md`; do not escalate on your own |
+| 403 | `Permission check failed (/vms/109, VM.PowerMgmt)`: names the ACL path and the privilege exactly (confirmed on a PVE 9.2 cluster) | token lacks the role, or `privsep=1` token without its own ACL | map the privilege with `permissions.md`; do not escalate on your own |
 | 500 | `VM already running`, `VM <N> already exists`, `no such task` | state conflict or uncaught server error | re-discover state, re-plan; read the task log if a UPID exists |
 | 501 | `no such uri`; body on GET/DELETE | wrong path or method; a body sent with GET/DELETE | check the path in `api-cheatsheet.md`; use `pve-api.sh`, which never sends a body on GET/DELETE |
 | 506 | upload content type | wrong `content=` on upload | use `iso`, `vztmpl` or `import` |
@@ -26,6 +26,10 @@ happened, check the base path is `/api2/json`.
 - Find recent failures: `GET /nodes/N/tasks errors=1 limit=20` (filters `typefilter`,
   `vmid`, `userfilter`, `source active|archive|all`, `since`, `until`); cluster-wide
   `GET /cluster/tasks`. CLI: `pvenode task list --errors --vmid 100`, `pvenode task log <upid>`.
+- Task list items carry `endtime, id, node, pid, pstart, starttime, status, type, upid, user`;
+  `status` is the task's final status text, `OK` on success, otherwise the error message
+  itself (e.g. `cannot remove protected volume ...`), not an enum (confirmed on a PVE 9.2
+  cluster). Quote it as the failure reason before reading the log.
 - Stop a stuck task: `DELETE /nodes/N/tasks/UPID` (gated). Task logs on disk:
   `/var/log/pve/tasks/`.
 - `pve-task.sh` exit 4 (timeout) does not mean the task failed; it is still running.
@@ -69,6 +73,17 @@ gated. UNVERIFIED (standard behaviour): cluster-wide config under `/etc/pve` tur
 read-only when the node loses quorum (`pvecm status`), so every write fails until quorum
 returns.
 
+## Storage content list empty
+
+An empty `GET /nodes/N/storage/S/content` list (with or without `content=backup`) from a
+storage whose `GET /nodes/N/storage` entry shows non-zero `used` (or whose
+`/cluster/resources` item shows non-zero `disk`) is suspect. On a PVE 9.2 cluster a
+PVEAuditor token got HTTP 200 and `[]` from a storage with 870 GiB used that holds 431
+backup volumes per `pvesm list` on the node; the cause (a missing privilege or an API
+filter) is UNVERIFIED. Report "could not enumerate contents with this token" rather than
+"no backups" or "no content", and suggest `pvesm list S` over the SSH tier or a token with
+more privileges. Never conclude that no backups exist from an empty list alone.
+
 ## Network lockout prevention
 
 Before `PUT /nodes/N/network`: confirm the management IP and gateway stay on a bridge
@@ -87,5 +102,7 @@ first one looks wrong.
 
 Error lines: `pve-api: HTTP <code> <METHOD> <path>: <message>` then `  <param>: <msg>`
 per entry in `errors`; `pve-api: curl failed (<exit>): <stderr>` for transport problems.
+Example (exit 3; confirmed on a PVE 9.2 cluster):
+`pve-api: HTTP 403 POST /nodes/<node>/lxc/109/status/stop: Permission check failed (/vms/109, VM.PowerMgmt)`.
 `PVE_API_DEBUG=1` prints method and URL (never the header). TLS errors: set `PVE_CA_CERT`
 to the cluster CA; do not set `PVE_INSECURE=1` yourself.

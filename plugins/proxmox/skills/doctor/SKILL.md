@@ -30,10 +30,10 @@ Show the user the `[ok]`, `[warn]`, `[fail]` and `[info]` lines as they are. Nev
 
 ## Interpret the capability summary
 
-The script lists privilege names found in `GET /access/permissions` (response shape UNVERIFIED, so this is best effort) and classifies the token:
+The script lists privilege names found in `GET /access/permissions` (an object keyed by ACL path, each value `{privilege-name: 1}`; confirmed on a PVE 9.2 cluster) and classifies the token:
 
-- read-only (audit privileges only): `/proxmox:status`, `/proxmox:snapshot <vmid> list`, `/proxmox:backup list` and `failures` work; power, snapshot create, backup run and destroy will return 403.
-- operator (VM.PowerMgmt, VM.Snapshot, VM.Allocate, VM.Migrate, Datastore.AllocateSpace): VM/CT lifecycle, snapshots, clones and backups work; node reboot, network apply and apt need root-tier privileges (`Sys.PowerMgmt`, `Sys.Modify`), which an ordinary user token may not be able to obtain (UNVERIFIED on a non-root user).
+- read-only (audit privileges only): `/proxmox:status`, `/proxmox:snapshot <vmid> list`, `/proxmox:backup list` and `failures` work; power, snapshot create, backup run and destroy will return 403. A PVEAuditor token on `/` shows exactly these seven: `Datastore.Audit Mapping.Audit Pool.Audit SDN.Audit Sys.Audit VM.Audit VM.GuestAgent.Audit`, reported as `[ok] token capability: read-only (7 distinct privileges seen)` (confirmed on a PVE 9.2 cluster). Such a token may also get an empty storage content list from a storage that is not empty; see the `pve` skill pitfalls.
+- operator (VM.PowerMgmt, VM.Snapshot, VM.Allocate, VM.Migrate, Datastore.AllocateSpace): VM/CT lifecycle, snapshots, clones and backups work; node reboot, network apply and apt need `Sys.PowerMgmt` and `Sys.Modify`, which only the Administrator role carries (not PVEVMAdmin or PVEAuditor): the user, group or token must hold Administrator on `/` or on `/nodes/<node>` (a non-root principal can; confirmed on a PVE 9.2 cluster), or the SSH tier is the alternative.
 - admin-capable: everything, so the guard hook and the confirmation rule in the safety contract are the only protection. Say so.
 
 ## Warnings worth repeating

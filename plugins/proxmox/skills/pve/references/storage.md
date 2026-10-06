@@ -18,6 +18,15 @@ Content types seen in `content=` filters: `images` (guest disks), `iso`, `vztmpl
 (CT templates), `backup`, `snippets`, `import`. A volume id looks like
 `local:vztmpl/debian-10.0-standard_10.0-1_amd64.tar.gz` (`<storage>:<content>/<name>`).
 
+An empty `content` list from a storage whose `GET /nodes/N/storage` entry shows non-zero
+`used` (or non-zero `disk` in `/cluster/resources`) is suspect: on a PVE 9.2 cluster a
+PVEAuditor token got HTTP 200 and `[]` (with and without `content=backup`) from a storage
+with 870 GiB used that holds 431 backup volumes per `pvesm list`; the cause (missing
+privilege or API filter) is UNVERIFIED. Report "could not enumerate contents with this
+token" rather than "no content" or "no backups", and suggest `pvesm list S` over the SSH
+tier or a token with more privileges. Never conclude that no backups exist from an empty
+list alone.
+
 ## Define and edit storage (free)
 
 `POST /storage`, `PUT /storage/{storage}`, `DELETE /storage/{storage}` (gated). The

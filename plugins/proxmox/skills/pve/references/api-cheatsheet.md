@@ -54,7 +54,7 @@ calls whose `data` is a UPID string to poll with `pve-task.sh`.
 | 200 | ok |
 | 400 | parameter validation failed (`errors` names the parameter) |
 | 401 | missing or invalid auth |
-| 403 | permission check failed |
+| 403 | permission check failed; the message names ACL path and privilege exactly, e.g. `Permission check failed (/vms/109, VM.PowerMgmt)` (confirmed on a PVE 9.2 cluster) |
 | 500 | uncaught server error, e.g. `VM already running` |
 | 501 | not implemented, `no such uri`, or a body sent with GET/DELETE |
 | 506 | bad upload content type |
@@ -73,6 +73,9 @@ Bodies: POST/PUT accept `application/x-www-form-urlencoded` or `application/json
   returns `[{n, t}]`.
 - `DELETE /nodes/{node}/tasks/{upid} - params not in notes - n/a` stops a running task.
 - `GET /nodes/{node}/tasks - start, limit, userfilter, typefilter, vmid, errors, source - n/a`
+  Items have `endtime, id, node, pid, pstart, starttime, status, type, upid, user`. `status`
+  holds the task's final status text: `OK` for success, otherwise the error message itself
+  (e.g. `cannot remove protected volume ...`), not an enum (confirmed on a PVE 9.2 cluster).
 - `GET /cluster/tasks - none - n/a`
 
 Calls that return a UPID: qemu/lxc create, destroy, start, stop, shutdown, reboot, reset
@@ -82,7 +85,12 @@ Calls that return a UPID: qemu/lxc create, destroy, start, stop, shutdown, reboo
 
 ## 4. Cluster and nodes
 
-- `GET /cluster/status - none - Sys.Audit on /` (item shape UNVERIFIED)
+- `GET /version - none - n/a (works with a PVEAuditor token)` returns `{version, release, repoid}`,
+  e.g. version `9.2.20`, release `9.2` (confirmed on a PVE 9.2 cluster)
+- `GET /cluster/status - none - Sys.Audit on /`: a mixed array with two object shapes selected
+  by `type` (confirmed on a PVE 9.2 cluster): exactly one `type=cluster` item with
+  `id, name, nodes, quorate, type, version`; one `type=node` item per node with
+  `id, ip, level, local, name, nodeid, online, type`. Iterate it by branching on `type`.
 - `GET /cluster/resources - type=vm|storage|node|sdn - any authenticated user, filtered`
   (item `type` values: node, storage, pool, qemu, lxc, sdn, network; fields include id,
   type, status, name, node, storage, pool, cpu, maxcpu, mem, maxmem, disk, maxdisk, uptime,
@@ -188,7 +196,8 @@ Prefix `/nodes/{node}/lxc`. No `reset` endpoint for containers.
 - `PUT /cluster/backup/{id} - vzdump params - Sys.Modify on /`
 - `DELETE /cluster/backup/{id} - params not in notes - Sys.Modify on /` (gated)
 - `GET /cluster/backup/{id}/included_volumes - none - Sys.Modify on /`
-- `GET /nodes/{node}/storage/{storage}/content - content=backup, vmid - n/a` (list backups)
+- `GET /nodes/{node}/storage/{storage}/content - content=backup, vmid - n/a` (list backups; an
+  empty list from a storage with non-zero `used` is suspect, see section 8)
 - Restore VM: `POST /nodes/{node}/qemu - vmid, archive=<volid>, storage, force=1, unique, live-restore (UPID) - VM.Backup when overwriting`
 - Restore CT: `POST /nodes/{node}/lxc - vmid, ostemplate=<backup volid>, restore=1, storage, force, unique (UPID) - VM.Backup when overwriting`
 - `POST /nodes/{node}/storage/{storage}/prunebackups - params not in notes - n/a` (gated)
@@ -202,7 +211,12 @@ Prefix `/nodes/{node}/lxc`. No `reset` endpoint for containers.
 - `DELETE /storage/{storage} - params not in notes - n/a` (gated)
 - `GET /nodes/{node}/storage - storage, content, enabled, target, format - n/a`
 - `GET /nodes/{node}/storage/{storage}/status - none - n/a`
-- `GET /nodes/{node}/storage/{storage}/content - content, vmid - n/a`
+- `GET /nodes/{node}/storage/{storage}/content - content, vmid - n/a`. An empty list from a
+  storage whose `GET /nodes/{node}/storage` entry shows non-zero `used` is suspect: on a PVE 9.2
+  cluster a PVEAuditor token got HTTP 200 and `[]` (with and without `content=backup`) from a
+  storage holding 431 backup volumes per `pvesm list`; the cause (missing privilege or API
+  filter) is UNVERIFIED. Report "could not enumerate contents with this token", not "no
+  content"; suggest `pvesm list <storage>` over SSH or a token with more privileges.
 - `POST /nodes/{node}/storage/{storage}/content - (alloc) - n/a`
 - `GET /nodes/{node}/storage/{storage}/content/{volume} - none - n/a`
 - `PUT /nodes/{node}/storage/{storage}/content/{volume} - params not in notes - n/a`
@@ -290,7 +304,9 @@ Prefixes: `/cluster/firewall` (options, rules, groups, ipset, aliases, macros, r
 - `GET /access/groups - none - n/a`; `GET /access/roles - none - n/a`
 - `GET /access/acl - none - n/a`
 - `PUT /access/acl - path, roles, users, groups, tokens, propagate, delete - n/a`
-- `GET /access/permissions - none - any authenticated user` (response shape UNVERIFIED)
+- `GET /access/permissions - none - any authenticated user`: an object keyed by ACL path (`/`,
+  `/storage`, `/sdn`, `/vms`, `/access`, ...), each value an object `{privilege-name: 1}`; not
+  an array (confirmed on a PVE 9.2 cluster)
 - `PUT /access/password - params not in notes - n/a`
 
 ## 14. Cloud-init keys

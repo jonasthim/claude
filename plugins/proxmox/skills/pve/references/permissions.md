@@ -16,7 +16,9 @@ pushes it down the tree; `NoAccess` wins over everything else.
 Administrator, NoAccess, PVEAdmin, PVEAuditor (read-only), PVEDatastoreAdmin,
 PVEDatastoreUser, PVEMappingAdmin, PVEMappingUser, PVEPoolAdmin, PVEPoolUser, PVESDNAdmin,
 PVESDNUser, PVESysAdmin, PVETemplateUser (VM.Clone + VM.Audit), PVEUserAdmin, PVEVMAdmin,
-PVEVMUser. List the exact privilege sets with `pve-api.sh GET /access/roles`.
+PVEVMUser. List the exact privilege sets with `pve-api.sh GET /access/roles`. A PVEAuditor
+token on `/` reports exactly seven privileges: Datastore.Audit, Mapping.Audit, Pool.Audit,
+SDN.Audit, Sys.Audit, VM.Audit, VM.GuestAgent.Audit (confirmed on a PVE 9.2 cluster).
 
 ## Privilege tiers
 
@@ -33,10 +35,13 @@ PVEVMUser. List the exact privilege sets with `pve-api.sh GET /access/roles`.
 `VM.Replicate` was added.
 
 Root-only tier: Sys.PowerMgmt, Sys.Modify, Sys.Incoming and Sys.AccessNetwork are classed
-root-only in the source. Whether a non-root user or token can hold them through a custom
-role or PVEAdmin/Administrator on a real cluster is UNVERIFIED; expect node reboot, network
-apply, apt refresh and backup-job edits to need `root@pam` or at least an admin-tier role,
-and test with `pve-doctor.sh` before planning such actions.
+root-only in the source (AccessControl.pm). That label is a tier name, not a restriction to
+`root@pam`: a non-root principal can hold them (confirmed on a PVE 9.2 cluster, where an
+LDAP/Authentik-backed group holds the Administrator role on `/` with propagate=1). These
+privileges are in the Administrator role, not in PVEVMAdmin or PVEAuditor, so node reboot,
+network apply, apt refresh and backup-job edits need a user, group or token holding
+Administrator on `/` or on `/nodes/{node}`; the SSH tier is the alternative. Test with
+`pve-doctor.sh` before planning such actions.
 
 ## Privilege per operation
 
@@ -111,16 +116,24 @@ pve-api.sh POST /access/users/claude@pve/token/ops privsep=1 comment="Claude ope
 pve-api.sh PUT /access/acl path=/vms roles=PVEVMAdmin tokens='claude@pve!ops' propagate=1
 ```
 
-Check what a token can do: `pve-api.sh GET /access/permissions` (response shape
-UNVERIFIED; `pve-doctor.sh` summarises it best-effort). Set `expire` (epoch) on tokens that
-should not live forever; an expired token answers 401 with `access expired`.
+Check what a token can do: `pve-api.sh GET /access/permissions`. The response is an object
+keyed by ACL path (`/`, `/storage`, `/sdn`, `/vms`, `/access`, ...), each value an object
+`{privilege-name: 1}`, not an array (confirmed on a PVE 9.2 cluster); `pve-doctor.sh`
+summarises it. Set `expire` (epoch) on tokens that should not live forever; an expired token
+answers 401 with `access expired`.
 
 ## Reading a 403
 
-`pve-api.sh` exits 3 and prints `HTTP 403`. The message names the failed check; the
-exact wording is UNVERIFIED but it points at a path and privilege. Map it with the table
-above and the tiers: a `VM.*` privilege means the token needs PVEVMAdmin (or a custom role)
-on `/vms/{vmid}` or above; `Datastore.*` means a storage role on `/storage/{id}`;
-`Sys.*` means a node-level or root-only privilege that a scoped token usually lacks.
+`pve-api.sh` exits 3 and prints the message, which names the ACL path and the privilege
+exactly (confirmed on a PVE 9.2 cluster):
+
+```
+pve-api: HTTP 403 POST /nodes/<node>/lxc/109/status/stop: Permission check failed (/vms/109, VM.PowerMgmt)
+```
+
+Map it with the table above and the tiers: a `VM.*` privilege means the token needs
+PVEVMAdmin (or a custom role) on `/vms/{vmid}` or above; `Datastore.*` means a storage role
+on `/storage/{id}`; `Sys.*` means a node-level privilege that only the Administrator role
+(on `/` or `/nodes/{node}`) carries, which a scoped token usually lacks.
 Re-run `pve-doctor.sh` after changing ACLs. Do not retry with `root@pam` credentials on
 your own initiative; ask the user.

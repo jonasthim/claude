@@ -6,7 +6,7 @@ pve-docs); items marked UNVERIFIED were not confirmed.
 ## Cluster and node status
 
 ```
-pve-api.sh GET /cluster/status            # nodes and quorum (item shape UNVERIFIED)
+pve-api.sh GET /cluster/status            # nodes and quorum; mixed array, branch on type
 pve-api.sh GET /nodes                     # node list with status
 pve-api.sh GET /nodes/N/status
 pve-api.sh GET /cluster/resources type=node
@@ -15,6 +15,11 @@ pve-api.sh GET /cluster/tasks
 pve-ssh.sh -n N pvecm status              # corosync view
 pve-ssh.sh -n N pvecm nodes
 ```
+
+`/cluster/status` items (confirmed on a PVE 9.2 cluster): exactly one `type=cluster` item
+with `id, name, nodes, quorate, type, version`, and one `type=node` item per node with
+`id, ip, level, local, name, nodeid, online, type`. Branch on `type` when iterating; quorum
+is `quorate` on the cluster item, membership is `online` on the node items.
 
 Before any node-level action, list what runs there: `GET /cluster/resources type=vm` and
 filter on `node`, and `GET /cluster/ha/resources` for HA-managed guests, because HA will

@@ -43,7 +43,7 @@ for example `CONFIRMED: stop vm 101` or `CONFIRMED: destroy ct 105 purge=1`. The
 
 - No matching CONFIRMED line: do not run the gated step. Return the PLAN block from the safety contract (Target, Current state, Action with the exact call, Effect, Revert, and the line "Reply with `CONFIRMED: <action> <target>` in the task message to proceed") and stop after completing any free steps that are still safe to do.
 - A CONFIRMED line covers exactly one action on one target. Several gated steps need several lines. A line for `stop vm 101` does not cover `destroy vm 101`.
-- A CONFIRMED line never disables the guard hook. The hook fires inside your Bash calls as well; if the hook denies or the user rejects the prompt, report that and stop.
+- A CONFIRMED line never disables the guard hook. The hook fires inside your Bash calls as well; if the hook denies or the user rejects the prompt, report that and stop. The guard hook is one gate among several: the session's own permission policy may still refuse an approved action, and that refusal must be reported, not worked around.
 - Never work around a guard prompt: no `eval`, no base64, no copying scripts to another path, no alternate binaries, no splitting a command to hide its arguments.
 - If a gated task fails, report the task log; never retry a gated action on your own, even with a CONFIRMED line.
 
