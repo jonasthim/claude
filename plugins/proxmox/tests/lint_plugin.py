@@ -24,6 +24,22 @@ except ImportError:  # pragma: no cover - PyYAML is optional
 PLUGIN_NAME_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 SKILL_NAME_RE = re.compile(r"^[a-z0-9-]{1,64}$")
 ACTION_SKILLS = ("status", "doctor", "vm", "ct", "snapshot", "backup")
+# Action skills that take no arguments: they must not carry an argument-hint.
+ARGLESS_ACTION_SKILLS = ("doctor",)
+# Line budget for the prose doctor skill (four API calls plus tables).
+DOCTOR_MAX_LINES = 70
+# Only read-only pve-api.sh GET calls may be pre-approved via allowed-tools.
+ALLOWED_TOOLS_RE = re.compile(r"^Bash\((\$\{CLAUDE_PLUGIN_ROOT\}|\*)/scripts/pve-api\.sh GET \*\)$")
+# References longer than this need a "## Contents" section.
+CONTENTS_MIN_LINES = 100
+EXPECTED_SCRIPTS = ("pve-api.sh", "pve-task.sh", "pve-ssh.sh", "guard.sh")
+REMOVED_SCRIPTS = ("pve-doctor.sh",)
+TRIGGER_EVALS = "skills/pve/evals/trigger-evals.json"
+TRIGGER_EVALS_COUNT = 20
+TRIGGER_EVALS_MIN_EACH = 8
+# The dropped doctor script must not be mentioned anywhere the agent or a user reads.
+NO_DOCTOR_GLOBS = ("skills/**/*", "agents/*", "README.md", "scripts/*.sh",
+                   "tests/run.sh", "tests/guard_cases.txt")
 MAIN_SKILL = "pve"
 PLUGIN = "proxmox"
 
@@ -242,7 +258,25 @@ class Lint:
         if dirname in ACTION_SKILLS:
             self.check(label + ": disable-model-invocation: true",
                        fm.get("disable-model-invocation") is True, repr(fm.get("disable-model-invocation")))
-            self.check(label + ": argument-hint present", "argument-hint" in fm)
+            if dirname in ARGLESS_ACTION_SKILLS:
+                self.check(label + ": no argument-hint (takes no arguments)",
+                           "argument-hint" not in fm, repr(fm.get("argument-hint")))
+            else:
+                hint = fm.get("argument-hint")
+                self.check(label + ": argument-hint is a non-empty string",
+                           isinstance(hint, str) and hint.strip() != "", repr(hint))
+        if dirname == "doctor":
+            self.check(label + ": <= %d lines" % DOCTOR_MAX_LINES, nlines <= DOCTOR_MAX_LINES, str(nlines))
+        if "allowed-tools" in fm:
+            tools = fm.get("allowed-tools")
+            if isinstance(tools, str):
+                tools = [tools]
+            if self.check(label + ": allowed-tools is a string or list of strings",
+                          isinstance(tools, list) and tools and all(isinstance(t, str) for t in tools),
+                          repr(fm.get("allowed-tools"))):
+                for t in tools:
+                    self.check(label + ": allowed-tools entry is a pve-api.sh GET rule",
+                               bool(ALLOWED_TOOLS_RE.match(t.strip())), repr(t))
         for ref in sorted(set(re.findall(r"references/([A-Za-z0-9_.-]+\.md)", body))):
             target = os.path.join(os.path.dirname(path), "references", ref)
             if os.path.isfile(target):
@@ -292,10 +326,12 @@ class Lint:
 
     def check_scripts(self):
         scripts = sorted(glob.glob(self.path("scripts", "*.sh")))
-        expected = ["pve-api.sh", "pve-task.sh", "pve-doctor.sh", "pve-ssh.sh", "guard.sh"]
-        for name in expected:
+        for name in EXPECTED_SCRIPTS:
             if not os.path.isfile(self.path("scripts", name)):
                 self.missing("script %s" % name, "scripts/" + name)
+        for name in REMOVED_SCRIPTS:
+            self.check("script %s does not exist" % name,
+                       not os.path.exists(self.path("scripts", name)), "scripts/" + name)
         for path in scripts:
             label = "script %s" % os.path.basename(path)
             mode = os.stat(path).st_mode
@@ -330,6 +366,59 @@ class Lint:
                        isinstance(e.get("expectations"), list) and len(e["expectations"]) > 0)
             self.check(label + " has files list", isinstance(e.get("files"), list))
 
+    def check_trigger_evals(self):
+        data = self.load_json("trigger-evals.json", TRIGGER_EVALS)
+        if data is None:
+            return
+        if not self.check("trigger-evals.json: list of exactly %d entries" % TRIGGER_EVALS_COUNT,
+                          isinstance(data, list) and len(data) == TRIGGER_EVALS_COUNT,
+                          str(len(data)) if isinstance(data, list) else type(data).__name__):
+            return
+        shape_ok = True
+        for i, e in enumerate(data):
+            if not (isinstance(e, dict)
+                    and isinstance(e.get("query"), str) and e["query"].strip() != ""
+                    and isinstance(e.get("should_trigger"), bool)):
+                shape_ok = False
+                self.fail("trigger-evals.json: entry %d has query (non-empty str) and should_trigger (bool)" % i,
+                          repr(e)[:120])
+        if shape_ok:
+            self.ok("trigger-evals.json: every entry has query and should_trigger")
+            positives = sum(1 for e in data if e["should_trigger"] is True)
+            negatives = len(data) - positives
+            self.check("trigger-evals.json: >= %d should_trigger true" % TRIGGER_EVALS_MIN_EACH,
+                       positives >= TRIGGER_EVALS_MIN_EACH, str(positives))
+            self.check("trigger-evals.json: >= %d should_trigger false" % TRIGGER_EVALS_MIN_EACH,
+                       negatives >= TRIGGER_EVALS_MIN_EACH, str(negatives))
+
+    def check_references(self):
+        refs = sorted(glob.glob(self.path("skills", "*", "references", "*.md")))
+        if not refs:
+            self.missing("references", "skills/*/references/*.md")
+            return
+        for path in refs:
+            rel = os.path.relpath(path, self.root)
+            text = open(path, "r", encoding="utf-8").read()
+            nlines = text.count("\n") + (0 if text.endswith("\n") else 1)
+            if nlines > CONTENTS_MIN_LINES:
+                self.check("reference %s: has '## Contents' (%d lines)" % (rel, nlines),
+                           re.search(r"(?m)^## Contents\s*$", text) is not None)
+
+    def check_no_doctor_script_mentions(self):
+        hits = []
+        for pattern in NO_DOCTOR_GLOBS:
+            for path in sorted(glob.glob(self.path(pattern), recursive=True)):
+                if not os.path.isfile(path):
+                    continue
+                try:
+                    text = open(path, "r", encoding="utf-8").read()
+                except (UnicodeDecodeError, OSError):
+                    continue
+                if "pve-doctor" in text:
+                    hits.append(os.path.relpath(path, self.root))
+        self.check("no 'pve-doctor' mention in skills, agents, README, scripts or tests",
+                   not hits, " ".join(hits))
+
     def check_docs(self):
         self.check("no root CLAUDE.md", not os.path.exists(self.path("CLAUDE.md")))
         if os.path.isfile(self.path("README.md")):
@@ -341,10 +430,13 @@ class Lint:
         self.check_manifests()
         self.check_hooks()
         self.check_skills()
+        self.check_references()
         self.check_agents()
         self.check_scripts()
         self.check_evals()
+        self.check_trigger_evals()
         self.check_docs()
+        self.check_no_doctor_script_mentions()
         print("lint summary: %d passed, %d failed, %d skipped" % (self.passed, self.failed, self.skipped))
         return 1 if self.failed else 0
 

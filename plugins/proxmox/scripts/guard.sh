@@ -123,8 +123,8 @@ rule '\bpvecm +(delnode|expected|add|create|qdevice)\b' 'changes cluster members
 # Rule 11: ha-manager (rules) remove/set/migrate/relocate/crm-command changes HA state or placement.
 rule '\bha-manager +(rules +)?(remove|set|migrate|relocate|crm-command)\b' 'changes HA state or placement'
 
-# Rule 12: pvenode stopall/migrateall stops or migrates all guests on a node.
-rule '\bpvenode +(stopall|migrateall)\b' 'stops or migrates all guests on a node'
+# Rule 12: pvenode stopall/migrateall/suspendall stops, suspends or migrates all guests on a node.
+rule '\bpvenode +(stopall|migrateall|suspendall)\b' 'stops, suspends or migrates all guests on a node'
 
 # Rule 13: pvesm free/remove/prune-backups and pveam remove delete storage volumes or templates.
 rule '\bpvesm +(free|remove|prune-backups)\b|\bpveam +remove\b' 'deletes storage volumes or templates'

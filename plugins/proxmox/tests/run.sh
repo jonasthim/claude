@@ -73,7 +73,6 @@ capture() {
 
 api="scripts/pve-api.sh"
 task="scripts/pve-task.sh"
-doctor="scripts/pve-doctor.sh"
 sshtool="scripts/pve-ssh.sh"
 guard="scripts/guard.sh"
 
@@ -382,34 +381,48 @@ capture task_noarg "$task"
 assert_exit "pve-task without UPID exits 3" 3 "$rc"
 capture task_help "$task" --help
 assert_exit "pve-task --help exits 0" 0 "$rc"
+assert_contains "pve-task --help documents exit 3 as jq missing" "$out" "jq missing"
 capture task_bogus "$task" "UPID:pve1:bogus:x" --interval 0.1
 assert_exit "pve-task bogus UPID (API 500) exits 2" 2 "$rc"
 capture task_forever "$task" "UPID:pve1:000E1F2A:0005F3A4:66F00040:qmforever:100:test@pve!ci:" --timeout 1 --interval 0.2
 assert_exit "pve-task running task times out with 4" 4 "$rc"
 assert_contains "pve-task timeout names the UPID" "$out" "qmforever:100"
 
-# ---------------------------------------------------------------- (17) doctor
-capture doctor_ok "$doctor"
-assert_exit "pve-doctor exits 0" 0 "$rc"
-assert_contains "pve-doctor prints [ok]" "$out" "[ok]"
-assert_contains "pve-doctor prints version" "$out" "9.2.1"
-assert_contains "pve-doctor lists pve1" "$out" "pve1"
-assert_contains "pve-doctor prints the token id" "$out" "test@pve!ci"
-assert_contains "pve-doctor hides the secret" "$out" "set (hidden)"
-assert_not_contains "pve-doctor never prints the secret" "$out" "0123-secret"
-assert_contains "pve-doctor summarises capability" "$out" "token capability: operator"
-capture doctor_wrong_secret env PVE_TOKEN_SECRET=wrong-secret "$doctor"
-assert_exit "pve-doctor wrong secret exits 3" 3 "$rc"
-capture doctor_bad_host env PVE_HOST=http://127.0.0.1:1 PVE_TIMEOUT=5 "$doctor"
-assert_exit "pve-doctor unreachable host exits 2" 2 "$rc"
-capture doctor_no_host env -u PVE_HOST "$doctor"
-assert_exit "pve-doctor without PVE_HOST exits 1" 1 "$rc"
-assert_contains "pve-doctor without PVE_HOST names it" "$out" "PVE_HOST"
-capture doctor_help "$doctor" --help
-assert_exit "pve-doctor --help exits 0" 0 "$rc"
-capture doctor_userinfo env "PVE_HOST=http://user:hunter2@127.0.0.1:$port" PVE_TIMEOUT=5 "$doctor"
-assert_contains "pve-doctor strips userinfo from PVE_HOST" "$out" "[ok] PVE_HOST=http://127.0.0.1:$port"
-assert_not_contains "pve-doctor never prints the URL password" "$out" "hunter2"
+# ---------------------------------------------------------------- (17) dry run and doctor calls
+mock_reset
+capture api_dry_post env PVE_DRY_RUN=1 "$api" POST /nodes/pve1/qemu/100/config 'net0=virtio,bridge=vmbr0' memory=2048
+assert_exit "pve-api dry run POST exits 0" 0 "$rc"
+if printf '%s' "$out" | jq -e . >/dev/null 2>&1; then pass "pve-api dry run prints JSON"; else fail "pve-api dry run prints JSON" "$out"; fi
+assert_eq "pve-api dry run reports the method" "POST" "$(printf '%s' "$out" | jq -r '.method' 2>/dev/null || true)"
+assert_eq "pve-api dry run reports the full URL" "http://127.0.0.1:$port/api2/json/nodes/pve1/qemu/100/config" "$(printf '%s' "$out" | jq -r '.url' 2>/dev/null || true)"
+assert_eq "pve-api dry run keeps = inside a value" "virtio,bridge=vmbr0" "$(printf '%s' "$out" | jq -r '.params.net0' 2>/dev/null || true)"
+assert_eq "pve-api dry run params are strings" "2048" "$(printf '%s' "$out" | jq -r '.params.memory' 2>/dev/null || true)"
+assert_eq "pve-api dry run makes no request" "0" "$(mock_get calls | jq 'length')"
+capture api_dry_get env PVE_DRY_RUN=1 "$api" GET /version
+assert_exit "pve-api dry run GET exits 0" 0 "$rc"
+assert_eq "pve-api dry run without params prints {}" "{}" "$(printf '%s' "$out" | jq -c '.params' 2>/dev/null || true)"
+assert_eq "pve-api dry run GET makes no request" "0" "$(mock_get calls | jq 'length')"
+capture api_dry_no_secret env -u PVE_TOKEN_SECRET PVE_DRY_RUN=1 "$api" GET /version
+assert_exit "pve-api dry run without PVE_TOKEN_SECRET exits 1" 1 "$rc"
+capture api_dry_bad_param env PVE_DRY_RUN=1 "$api" GET /version bogus
+assert_exit "pve-api dry run with a bad parameter exits 1" 1 "$rc"
+assert_not_contains "pve-api dry run never prints the secret" "$out" "0123-secret"
+capture api_help_dry "$api" --help
+assert_contains "pve-api --help documents PVE_DRY_RUN" "$out" "PVE_DRY_RUN"
+# The four read-only calls the doctor skill runs.
+capture doctor_version "$api" GET /version
+assert_exit "doctor call GET /version exits 0" 0 "$rc"
+assert_contains "doctor call GET /version prints version" "$out" "9.2.1"
+capture doctor_perms "$api" GET /access/permissions
+assert_exit "doctor call GET /access/permissions exits 0" 0 "$rc"
+assert_contains "doctor call permissions show an operator privilege" "$out" "VM.PowerMgmt"
+assert_not_contains "doctor call permissions have no Sys.Modify" "$out" "Sys.Modify"
+capture doctor_nodes "$api" GET /nodes
+assert_exit "doctor call GET /nodes exits 0" 0 "$rc"
+assert_contains "doctor call GET /nodes lists pve1" "$out" "pve1"
+capture doctor_cluster "$api" GET /cluster/status
+assert_exit "doctor call GET /cluster/status exits 0" 0 "$rc"
+assert_eq "doctor call cluster item is quorate" "1" "$(printf '%s' "$out" | jq -r '.[] | select(.type == "cluster") | .quorate')"
 
 # ---------------------------------------------------------------- (18) pve-ssh
 capture ssh_no_host env -u PVE_HOST -u PVE_SSH_HOST "$sshtool" pveversion

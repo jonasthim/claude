@@ -44,6 +44,7 @@ ask	ha-manager rules set r1 --nodes pve2
 # rule 12
 ask	pvenode stopall
 ask	pvenode migrateall pve2 --with-local-disks
+ask	pvenode suspendall
 # rule 13
 ask	pvesm free local:backup/vzdump-qemu-100-2026_10_05-02_00_01.vma.zst
 ask	pvesm prune-backups local --keep-last 3
@@ -67,6 +68,8 @@ ask	pvesh delete /nodes/pve1/qemu/100
 # rule 19
 ask	pve-api.sh DELETE /nodes/pve1/qemu/100 purge=1
 ask	${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh DELETE /nodes/pve1/qemu/100/snapshot/pre-upgrade
+# PVE_DRY_RUN=1 makes no request, but the guard still prompts for a gated call (intended)
+ask	PVE_DRY_RUN=1 pve-api.sh DELETE /nodes/pve1/qemu/100
 # rule 20
 ask	curl -k -X DELETE "$PVE_HOST/api2/json/nodes/pve1/qemu/100"
 ask	curl --request DELETE https://pve1:8006/api2/json/cluster/ha/resources/vm:100
@@ -129,7 +132,8 @@ none	pve-api.sh PUT /nodes/pve1/qemu/100/config description="do not delete this"
 none	pvecm status
 none	git stop-something
 none	pve-task.sh UPID:pve1:000A1B2C:0001F3A4:66F00000:qmstart:100:test@pve!ci:
-none	pve-doctor.sh
+none	pve-api.sh GET /access/permissions
+none	PVE_DRY_RUN=1 pve-api.sh GET /version
 none	pvesm status
 none	pveam available --section system
 none	pvesh create /nodes/pve1/apt/update

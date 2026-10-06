@@ -16,6 +16,8 @@
 #   PVE_API_DEBUG=1   print method and URL on stderr (never the auth header)
 #   PVE_API_QUIET_TLS=1  suppress the PVE_INSECURE warning (set by pve-task.sh
 #                     for its polling calls; direct calls keep the warning)
+#   PVE_DRY_RUN=1     print {method,url,params} as JSON on stdout and exit 0
+#                     without calling the API
 #
 # Exit codes: 0 success (2xx); 1 usage, missing env or missing curl/jq;
 #             2 transport or TLS failure; 3 HTTP 4xx;
@@ -32,11 +34,14 @@ Usage: pve-api.sh <GET|POST|PUT|DELETE> <path> [key=value ...]
 
 Env: PVE_HOST PVE_TOKEN_ID PVE_TOKEN_SECRET [PVE_INSECURE=1] [PVE_CA_CERT]
      [PVE_TIMEOUT=30] [PVE_API_RAW=1] [PVE_API_DEBUG=1] [PVE_API_QUIET_TLS=1]
+     [PVE_DRY_RUN=1]
      PVE_HOST is host[:port] or a URL; a trailing /api2/json is stripped and
      IPv6 literals must be bracketed ([::1]:8006).
 
 Output: .data of the JSON response (bare string for UPIDs, pretty JSON
         otherwise); PVE_API_RAW=1 prints the whole body.
+        PVE_DRY_RUN=1 prints {"method","url","params"} and exits 0; no
+        request is made.
 Exit:   0 2xx | 1 usage/env/deps | 2 transport/TLS | 3 HTTP 4xx
         4 HTTP 5xx or any other non-2xx/non-4xx status
 EOF
@@ -138,6 +143,15 @@ curl_args+=("$url")
 
 if [ "${PVE_API_DEBUG:-0}" = "1" ]; then
   printf 'pve-api: %s %s\n' "$method" "$url" >&2
+fi
+
+if [ "${PVE_DRY_RUN:-0}" = "1" ]; then
+  # Dry run: show exactly what would be sent, then stop before any network access.
+  # "$@" still holds the raw key=value parameters (validated above).
+  jq -n --arg method "$method" --arg url "$url" \
+    '{method: $method, url: $url, params: ($ARGS.positional | map(index("=") as $i | {key: .[:$i], value: .[$i+1:]}) | from_entries)}' \
+    --args "$@"
+  exit 0
 fi
 
 errfile="$(mktemp)"

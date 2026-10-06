@@ -8,7 +8,7 @@
 # Only "OK" and "WARNINGS: n" count as success.
 #
 # Exit codes: 0 task OK or WARNINGS; 1 task failed; 2 API/transport error;
-#             3 usage or bad UPID; 4 timeout waiting for the task.
+#             3 usage, bad UPID or jq missing; 4 timeout waiting for the task.
 set -euo pipefail
 
 usage() {
@@ -22,7 +22,8 @@ Usage: pve-task.sh <UPID|-> [--timeout SECS] [--interval SECS] [--no-log]
 
 Uses pve-api.sh next to this script (same PVE_* environment). With
 PVE_INSECURE=1 the TLS warning is printed once, not on every poll.
-Exit: 0 OK/WARNINGS | 1 task failed | 2 API error | 3 usage/bad UPID | 4 timeout
+Exit: 0 OK/WARNINGS | 1 task failed | 2 API error | 3 usage, bad UPID or jq missing
+      4 timeout
 EOF
 }
 
