@@ -25,7 +25,7 @@ info                         sites list
 devices  list|get|stats|restart|action --action X|port-cycle|port-enable|port-disable --port N|unadopt|pending|adopt --macs
 clients  list|get|find <name|ip|mac>|block|unblock|authorize --minutes N|action --action X
 networks list|get|references|create|update|delete        wifi     list|get|create|update|delete
-firewall zones|policies  list|get|create|update|patch|delete|ordering|reorder  (--source-zone ID [--dest-zone ID] for ordering)
+firewall zones|policies  list|get|create|update|patch|delete|ordering|reorder  (ordering/reorder need --source-zone ID --dest-zone ID)
 acl      list|get|create|update|delete|ordering|reorder  dns / traffic / vouchers  list|get|create|update|delete
 wans list   vpn tunnels|servers   radius list   dpi categories|applications
 report health [--no-stats]   raw <METHOD> <path> [--body ...]   cloud hosts|sites|devices|isp-metrics|sdwan

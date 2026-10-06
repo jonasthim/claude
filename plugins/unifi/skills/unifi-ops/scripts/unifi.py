@@ -669,7 +669,14 @@ def crud(api, args, base, cols, extra=None):
     elif v == "ordering":
         emit(api.request("GET", api.sp(base + "/ordering"), zone_query(args)))
     elif v == "reorder":
-        guarded(api, args, "PUT", api.sp(base + "/ordering"), read_body(args.body), zone_query(args))
+        body = read_body(args.body)
+        if base.startswith("/firewall"):
+            lists = (body or {}).get("orderedFirewallPolicyIds")
+            if not isinstance(lists, dict) or "beforeSystemDefined" not in lists or "afterSystemDefined" not in lists:
+                die("reorder body must be the full object returned by 'ordering': "
+                    '{"orderedFirewallPolicyIds": {"beforeSystemDefined": [...], "afterSystemDefined": [...]}}. '
+                    "Both lists are required; sending one would silently move the policies in the other.", EXIT_USAGE)
+        guarded(api, args, "PUT", api.sp(base + "/ordering"), body, zone_query(args))
     elif extra:
         extra(v)
 
@@ -705,6 +712,11 @@ def cmd_traffic(api, args):
 
 
 def cmd_vouchers(api, args):
+    """Voucher codes are credentials: hide them unless --show-secrets (keyed to this command only,
+    since 'code' is an ordinary field name elsewhere, e.g. error and country codes)."""
+    if not SHOW_SECRETS:
+        global SECRET_KEY_RE
+        SECRET_KEY_RE = re.compile(SECRET_KEY_RE.pattern + r"|^code$", re.I)
     if args.verb == "delete" and not args.id:
         if not args.filter:
             die("refusing to bulk-delete vouchers without --filter", EXIT_USAGE)
@@ -898,8 +910,8 @@ def build_parser():
     p.add_argument("kind", choices=["zones", "policies"])
     p.add_argument("verb", choices=crud_verbs + ["ordering", "reorder"])
     p.add_argument("id", nargs="?")
-    p.add_argument("--source-zone", help="zone id; required by the API for policies ordering/reorder")
-    p.add_argument("--dest-zone", help="zone id; destination side of the ordering pair")
+    p.add_argument("--source-zone", help="zone id; policies ordering/reorder are per source/destination zone pair")
+    p.add_argument("--dest-zone", help="zone id; destination side of the ordering pair (required with --source-zone)")
     add_common(p, write=True, listing=True)
     p.set_defaults(fn=cmd_firewall)
 
@@ -976,9 +988,9 @@ def main(argv=None):
     if args.group == "devices" and args.verb.startswith("port-") and args.port is None:
         die("port-* verbs need --port <index>", EXIT_USAGE)
     if args.group == "firewall" and args.kind == "policies" and args.verb in ("ordering", "reorder") \
-            and not getattr(args, "source_zone", None):
-        die("firewall policies %s needs --source-zone <zone id> (ordering is kept per zone pair; add --dest-zone if the API asks for it)"
-            % args.verb, EXIT_USAGE)
+            and not (getattr(args, "source_zone", None) and getattr(args, "dest_zone", None)):
+        die("firewall policies %s needs --source-zone <zone id> and --dest-zone <zone id>: ordering is kept per "
+            "zone pair, and the API reports only one missing parameter at a time" % args.verb, EXIT_USAGE)
     try:
         if args.group == "cloud":
             cmd_cloud(args)

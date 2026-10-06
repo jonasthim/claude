@@ -78,9 +78,10 @@ and to `raw` with any method other than GET.
 3. **Check blast radius.**
    - Deleting or re-addressing a network: `U networks references <id>` lists SSIDs, zones
      and policies that depend on it. Mention every dependent object in the plan.
-   - Firewall: `U firewall policies ordering --source-zone <zone id>` (ordering is kept per
-     zone pair; add `--dest-zone` if the API asks for it). A new BLOCK that lands above an
-     existing ALLOW changes behaviour for everything the ALLOW covered.
+   - Firewall: `U firewall policies ordering --source-zone <id> --dest-zone <id>` for the pair
+     the policy belongs to. The result has `beforeSystemDefined` and `afterSystemDefined`
+     lists; a reorder must send both back. A new BLOCK that lands above an existing ALLOW
+     changes behaviour for everything the ALLOW covered.
    - Anything touching the network marked `management: true`, the SSID or VLAN the user is
      on right now, or the zone/policy carrying Claude's own API path can cut the session off
      mid-change. Call that out explicitly and prefer doing those last, one at a time.

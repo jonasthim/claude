@@ -1,8 +1,12 @@
 {
-  "policyIds": [
-    "fp-iot-ha-allow",
-    "fp-iot-to-lan-block",
-    "fp-lan-to-iot-allow",
-    "fp-hotspot-internal-block"
-  ]
+  "orderedFirewallPolicyIds": {
+    "beforeSystemDefined": [
+      "fp-iot-ha-allow",
+      "fp-iot-to-lan-block",
+      "fp-lan-to-iot-allow"
+    ],
+    "afterSystemDefined": [
+      "fp-hotspot-internal-block"
+    ]
+  }
 }

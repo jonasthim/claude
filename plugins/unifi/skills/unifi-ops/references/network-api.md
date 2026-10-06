@@ -153,11 +153,17 @@ Narrow a policy with `"matchingTarget": "IP"` plus `"ipAddresses": [...]` and a 
 string, or `"matchingTarget": "NETWORK"` plus `"networkIds": [...]`. `PATCH` changes one
 field (for example `{"enabled": false}`) without having to resend the whole object.
 
-**Reorder policies:** ordering is kept per zone pair. `GET firewall/policies/ordering?sourceFirewallZoneId=<zone>`
-(the API answers 400 "Required request parameter 'sourceFirewallZoneId'" without it; it may also
-want `destinationFirewallZoneId`), then `PUT` the same path with `{"policyIds": ["<id>", ...]}`.
-`unifi.py firewall policies ordering|reorder --source-zone <id> [--dest-zone <id>]`. Always `GET`
-first and move only the id you mean to move.
+**Reorder policies:** ordering is kept per source/destination zone pair, and both
+`sourceFirewallZoneId` and `destinationFirewallZoneId` query parameters are required (the API
+reports one missing parameter at a time, so `unifi.py` checks both client-side). The object is
+two lists around the fixed block of system-defined policies:
+```json
+{"orderedFirewallPolicyIds": {"beforeSystemDefined": ["<id>", "..."], "afterSystemDefined": ["<id>"]}}
+```
+`unifi.py firewall policies ordering --source-zone <id> --dest-zone <id>` returns it; `reorder`
+takes the same flags and the full object as `--body`, and refuses a body missing either list, since
+a policy left out of `afterSystemDefined` would be moved. Always `GET` first, move only the id you
+mean to move, and say which zone pair you are showing: one pair on a 193-policy console held 56.
 
 **Device / port / client actions:** `{"action": "RESTART"}`, `{"action": "POWER_CYCLE"}`,
 `{"action": "AUTHORIZE_GUEST_ACCESS", "timeLimitMinutes": 120}`. If an action name is not
@@ -188,7 +194,11 @@ accepted, the 400 message lists the allowed values for that build; use
 - List endpoints are summaries: `wifi/broadcasts` lists carry `id`, `name`, `enabled` only;
   `wans` lists carry `id`, `name`; device list items have no `uplink`. Use `get <id>` for full objects.
 - `firewall/policies[].action` is an object (`{"type": "ALLOW", "allowReturnTraffic": true}`), not a string.
-- `firewall/policies/ordering` requires `sourceFirewallZoneId` as a query parameter.
+- `firewall/policies/ordering` requires both `sourceFirewallZoneId` and `destinationFirewallZoneId`
+  and returns `orderedFirewallPolicyIds.{beforeSystemDefined,afterSystemDefined}`.
+- `radius/profiles` list items carry `id`, `name`, `metadata.origin` (SYSTEM_DEFINED / DERIVED); no
+  secrets at list level. Hotspot vouchers were not observed (none existed); `unifi.py vouchers`
+  redacts `code` regardless.
 - `wifi/broadcasts/{id}` returns the WPA passphrase in cleartext under
   `securityConfiguration.passphrase`. `unifi.py` redacts it unless `--show-secrets` is given.
   The SSID object uses `network.networkId` and `securityConfiguration.type` (not `networkId` /
