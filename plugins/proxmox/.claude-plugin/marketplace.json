@@ -1,0 +1,16 @@
+{
+  "name": "jonasthim",
+  "owner": {
+    "name": "Jonas Thim"
+  },
+  "description": "Plugins by Jonas Thim",
+  "plugins": [
+    {
+      "name": "proxmox",
+      "source": "./",
+      "description": "Proxmox VE 9 operations skill, slash commands, operator agent and destructive-action guard.",
+      "category": "devops",
+      "tags": ["proxmox", "virtualization", "homelab"]
+    }
+  ]
+}
