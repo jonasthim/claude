@@ -15,7 +15,7 @@ over SSH, or the node-served docs at `https://NODE:8006/pve-docs/`.
 
 Two classes of action. Gated actions are planned and confirmed; free actions run directly.
 
-Gated set: destroy; stop/reset/shutdown/reboot/suspend of a guest; snapshot rollback/delete; migrate (guest or HA); template conversion; disk/volume move/unlink or `delete=` on config; backup/volume deletion (`pvesm free|remove|prune-backups`, `pveam remove`, `prunebackups`, `vzdump --remove 1`/`--prune-backups`, `rm` of `vzdump-*`); any `DELETE`/`pvesh delete`; node reboot/shutdown/stopall/migrateall/suspendall; network apply (`PUT /nodes/{node}/network`, `ifreload`/`ifdown`/`ifup` over SSH); SDN apply/rollback (`PUT /cluster/sdn`, `/cluster/sdn/rollback`); HA `remove|set|migrate|relocate|crm-command`, `rules set|remove`, `disarm-ha`, HA resource `state=stopped|disabled`; `pvecm delnode|expected|add|create|qdevice`; bulk shutdown/suspend/migrate; `apt upgrade/dist-upgrade/full-upgrade/remove/purge/autoremove` over SSH; `systemctl stop|restart|reboot|poweroff|halt|isolate`, `reboot|shutdown|poweroff|halt|init 0|init 6` over SSH.
+Gated set: destroy; stop/reset/shutdown/reboot/suspend of a guest; snapshot rollback/delete; migrate (guest or HA); template conversion; disk/volume move/unlink or `delete=` on config; backup/volume deletion (`pvesm free|remove|prune-backups`, `pveam remove`, `prunebackups`, `vzdump --remove 1`/`--prune-backups`, `rm` of `vzdump-*`); any `DELETE`/`pvesh delete`; node reboot/shutdown/stopall/migrateall/suspendall; network apply (`PUT /nodes/{node}/network`, `ifreload`/`ifdown`/`ifup` over SSH); SDN apply/rollback (`PUT /cluster/sdn`, `/cluster/sdn/rollback`); HA `remove|set|migrate|relocate|crm-command`, `rules set|remove`, `disarm-ha`, HA resource `state=stopped|disabled`; a replication job's delete or disable (`pvesr delete|disable`, `pvesr update --disable`, `PUT /cluster/replication/{id} disable=`); `pvecm delnode|expected|add|create|qdevice`; bulk shutdown/suspend/migrate; `apt upgrade/dist-upgrade/full-upgrade/remove/purge/autoremove` over SSH; `systemctl stop|restart|reboot|poweroff|halt|isolate`, `reboot|shutdown|poweroff|halt|init 0|init 6` over SSH.
 
 Free set: all GETs; start/resume; create VM/CT; clone; set config without `delete`; snapshot create; vzdump run without explicit prune; create backup job; HA resource add; SDN/network object create/edit (staged, not applied); storage add/edit; user/role create and ACL grants (token creation is the user's own step: it returns the secret once); apt update (refresh); task log reads.
 
@@ -188,6 +188,7 @@ Paths are relative to `/api2/json`; `N` is a node, `V` a vmid, `S` a storage id.
 | Storage | `GET /storage`; `GET /nodes/N/storage`; `GET /nodes/N/storage/S/status`; `GET .../content content=vztmpl` |
 | Templates/ISOs | `POST /nodes/N/storage/S/download-url url=... content=vztmpl filename=...` |
 | HA | `GET /cluster/ha/resources`; `POST /cluster/ha/resources sid=ct:105 state=started`; `GET /cluster/ha/rules`; `GET /cluster/ha/status/current` |
+| Replication | Coverage: `GET /cluster/replication` (every job in the cluster, with `guest`, `source`, `target`, `schedule`). Health: `GET /nodes/N/replication` (adds `fail_count`, `last_sync`, `next_sync`), **which lists only the jobs whose source is N**; call it for every node. Both confirmed on a PVE 9 cluster; see `references/cluster-ha.md` |
 | Node ops (gated) | `POST /nodes/N/status command=reboot`; `POST /nodes/N/stopall`; `POST /nodes/N/migrateall target=N2 (param name UNVERIFIED)` |
 | Updates | `POST /nodes/N/apt/update` (refresh, free); `GET /nodes/N/apt/update` (pending); `GET /nodes/N/apt/versions`; upgrade only via SSH (gated) |
 | Access | `GET /access/permissions` (object keyed by ACL path, each value `{privilege: 1}`; confirmed on a PVE 9.2 cluster); `GET /access/users`; token creation is the user's own step (its secret is returned once; see `references/permissions.md`); `PUT /access/acl path=/vms roles=PVEVMAdmin tokens=USER!NAME propagate=1` |
@@ -204,7 +205,7 @@ Read the guide before working in its area; each is self-contained.
 | `references/cloud-init.md` | building cloud-init templates, cloning them, sshkeys/ipconfig encoding |
 | `references/storage.md` | storage types, content listing, uploads, download-url, pruning, resize/move |
 | `references/networking-sdn.md` | bridges, bonds, VLANs, staged network apply, SDN zones/vnets/subnets, firewall |
-| `references/cluster-ha.md` | cluster membership, node reboot/maintenance, bulk actions, HA resources and rules |
+| `references/cluster-ha.md` | cluster membership, node reboot/maintenance, bulk actions, HA resources and rules, storage replication |
 | `references/backups.md` | vzdump modes and options, backup jobs, restores, failed backups |
 | `references/troubleshooting.md` | HTTP error codes, task logs, locks, digest conflicts, daemons, script exit codes |
 | `references/pve9-changes.md` | anything that worked on PVE 8 and fails on 9 |
@@ -232,6 +233,13 @@ Read the guide before working in its area; each is self-contained.
   VM.PowerMgmt)` (confirmed on a PVE 9.2 cluster); map it with `references/permissions.md`.
   `Sys.PowerMgmt`/`Sys.Modify` live only in the Administrator role, which any user, group or
   token may hold on `/` or `/nodes/N`; "root-only" is a tier name, not root@pam.
+- A view can be narrower than the question, and nothing in the answer says so.
+  `GET /nodes/N/replication` and `pvesr status` list only the replication jobs whose source is
+  that node (confirmed on a 3-node PVE 9 cluster: the nodes answered 18, 18 and 24 jobs, the
+  cluster route `GET /cluster/replication` 60). Every `/nodes/N/...` path and every node CLI
+  answers for one node. Before reporting that something is missing cluster-wide, check that
+  the read was cluster-wide: the per-node counts must add up to the cluster-level count
+  (`GET /cluster/...`, `/etc/pve/...`). Never create what "is missing" from a per-node view.
 - An empty `GET /nodes/N/storage/S/content` list (with or without `content=backup`) from a
   storage whose `used` or `disk` is non-zero is suspect: on a PVE 9.2 cluster a PVEAuditor
   token got HTTP 200 and `[]` from a storage holding 431 backup volumes (`pvesm list` on the
