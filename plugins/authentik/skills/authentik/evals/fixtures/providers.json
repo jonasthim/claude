@@ -1,0 +1,140 @@
+[
+  {
+    "pk": 1,
+    "name": "Wiki",
+    "authentication_flow": null,
+    "authorization_flow": "00000000-0000-4000-8000-000000000301",
+    "invalidation_flow": "00000000-0000-4000-8000-000000000302",
+    "property_mappings": [
+      "00000000-0000-4000-8000-000000000401",
+      "00000000-0000-4000-8000-000000000402",
+      "00000000-0000-4000-8000-000000000403"
+    ],
+    "component": "ak-provider-oauth2-form",
+    "assigned_application_slug": "wiki",
+    "assigned_application_name": "Wiki",
+    "assigned_backchannel_application_slug": "",
+    "assigned_backchannel_application_name": "",
+    "verbose_name": "OAuth2/OpenID Provider",
+    "verbose_name_plural": "OAuth2/OpenID Providers",
+    "meta_model_name": "authentik_providers_oauth2.oauth2provider",
+    "client_type": "confidential",
+    "client_id": "mock-client-id-1",
+    "client_secret": "mock-client-secret-1-do-not-print",
+    "redirect_uris": [
+      {
+        "matching_mode": "strict",
+        "url": "https://wiki.example.com/oauth2/callback",
+        "redirect_uri_type": "authorization"
+      }
+    ],
+    "sub_mode": "hashed_user_id",
+    "issuer_mode": "per_provider",
+    "access_token_validity": "hours=1",
+    "signing_key": "00000000-0000-4000-8000-000000000501"
+  },
+  {
+    "pk": 2,
+    "name": "Dashboards",
+    "authentication_flow": null,
+    "authorization_flow": "00000000-0000-4000-8000-000000000301",
+    "invalidation_flow": "00000000-0000-4000-8000-000000000302",
+    "property_mappings": [
+      "00000000-0000-4000-8000-000000000401",
+      "00000000-0000-4000-8000-000000000402",
+      "00000000-0000-4000-8000-000000000403"
+    ],
+    "component": "ak-provider-oauth2-form",
+    "assigned_application_slug": "dashboards",
+    "assigned_application_name": "Dashboards",
+    "assigned_backchannel_application_slug": "",
+    "assigned_backchannel_application_name": "",
+    "verbose_name": "OAuth2/OpenID Provider",
+    "verbose_name_plural": "OAuth2/OpenID Providers",
+    "meta_model_name": "authentik_providers_oauth2.oauth2provider",
+    "client_type": "confidential",
+    "client_id": "mock-client-id-2",
+    "client_secret": "mock-client-secret-2-do-not-print",
+    "redirect_uris": [
+      {
+        "matching_mode": "strict",
+        "url": "https://dashboards.example.com/login/generic_oauth",
+        "redirect_uri_type": "authorization"
+      }
+    ],
+    "sub_mode": "hashed_user_id",
+    "issuer_mode": "per_provider",
+    "access_token_validity": "hours=1",
+    "signing_key": "00000000-0000-4000-8000-000000000501"
+  },
+  {
+    "pk": 3,
+    "name": "Files",
+    "authentication_flow": null,
+    "authorization_flow": "00000000-0000-4000-8000-000000000301",
+    "invalidation_flow": "00000000-0000-4000-8000-000000000302",
+    "property_mappings": [],
+    "component": "ak-provider-proxy-form",
+    "assigned_application_slug": "files",
+    "assigned_application_name": "Files",
+    "assigned_backchannel_application_slug": "",
+    "assigned_backchannel_application_name": "",
+    "verbose_name": "Proxy Provider",
+    "verbose_name_plural": "Proxy Providers",
+    "meta_model_name": "authentik_providers_proxy.proxyprovider",
+    "external_host": "https://files.example.com",
+    "mode": "forward_single",
+    "cookie_secret": "mock-cookie-secret-do-not-print"
+  },
+  {
+    "pk": 4,
+    "name": "Old cloud",
+    "authentication_flow": null,
+    "authorization_flow": "00000000-0000-4000-8000-000000000301",
+    "invalidation_flow": "00000000-0000-4000-8000-000000000302",
+    "property_mappings": [
+      "00000000-0000-4000-8000-000000000401",
+      "00000000-0000-4000-8000-000000000402",
+      "00000000-0000-4000-8000-000000000403"
+    ],
+    "component": "ak-provider-oauth2-form",
+    "assigned_application_slug": "",
+    "assigned_application_name": "",
+    "assigned_backchannel_application_slug": "",
+    "assigned_backchannel_application_name": "",
+    "verbose_name": "OAuth2/OpenID Provider",
+    "verbose_name_plural": "OAuth2/OpenID Providers",
+    "meta_model_name": "authentik_providers_oauth2.oauth2provider",
+    "client_type": "confidential",
+    "client_id": "mock-client-id-4",
+    "client_secret": "mock-client-secret-4-do-not-print",
+    "redirect_uris": [
+      {
+        "matching_mode": "strict",
+        "url": "https://cloud.example.com/callback",
+        "redirect_uri_type": "authorization"
+      }
+    ],
+    "sub_mode": "hashed_user_id",
+    "issuer_mode": "per_provider",
+    "access_token_validity": "hours=1",
+    "signing_key": "00000000-0000-4000-8000-000000000501"
+  },
+  {
+    "pk": 5,
+    "name": "Directory",
+    "authentication_flow": null,
+    "authorization_flow": "00000000-0000-4000-8000-000000000301",
+    "invalidation_flow": "00000000-0000-4000-8000-000000000302",
+    "property_mappings": [],
+    "component": "ak-provider-ldap-form",
+    "assigned_application_slug": "directory",
+    "assigned_application_name": "Directory",
+    "assigned_backchannel_application_slug": "",
+    "assigned_backchannel_application_name": "",
+    "verbose_name": "LDAP Provider",
+    "verbose_name_plural": "LDAP Providers",
+    "meta_model_name": "authentik_providers_ldap.ldapprovider",
+    "base_dn": "DC=example,DC=com"
+  }
+]

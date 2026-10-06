@@ -1,0 +1,22 @@
+[
+  {"query": "bob gets 'access denied' when opening grafana through authentik but alice is fine, why?", "should_trigger": true},
+  {"query": "add an OIDC application for my wiki in authentik, redirect URI https://wiki.example.com/oauth2/callback, only the staff group may use it", "should_trigger": true},
+  {"query": "is my authentik ldap outpost connected? binds started failing an hour ago", "should_trigger": true},
+  {"query": "which applications on my SSO server can every user open? we run goauthentik", "should_trigger": true},
+  {"query": "who is a superuser in authentik and which API tokens never expire?", "should_trigger": true},
+  {"query": "show me the failed logins on the identity provider since this morning. AUTHENTIK_HOST and AUTHENTIK_TOKEN are set", "should_trigger": true},
+  {"query": "my authentik api token worked yesterday and now everything returns 403 Token invalid/expired", "should_trigger": true},
+  {"query": "the forward auth proxy provider I just created in authentik returns 404, what did I miss?", "should_trigger": true},
+  {"query": "give the new hire access to the dashboards app, logins go through our IdP (authentik)", "should_trigger": true},
+  {"query": "what does policy engine mode ANY vs ALL do on an application, and which one is my nextcloud app using?", "should_trigger": true},
+  {"query": "set up a Keycloak realm with a confidential client for my spring boot app", "should_trigger": false},
+  {"query": "write the passport.js OIDC strategy config for my express app", "should_trigger": false},
+  {"query": "how do I upgrade authentik from 2025.10 to 2026.8 with docker compose? any breaking changes?", "should_trigger": false},
+  {"query": "authelia keeps redirecting in a loop behind traefik, here is my configuration.yml", "should_trigger": false},
+  {"query": "explain the difference between OAuth2 authorization code flow and implicit flow", "should_trigger": false},
+  {"query": "add a conditional access policy in Entra ID that requires MFA outside the office network", "should_trigger": false},
+  {"query": "generate a self-signed certificate with openssl for testing SAML", "should_trigger": false},
+  {"query": "create a guest wifi network on VLAN 30 with its own SSID", "should_trigger": false},
+  {"query": "my linux box can't authenticate users against sssd, journal shows pam_sss errors", "should_trigger": false},
+  {"query": "write a JWT validation middleware in Go that checks the audience claim", "should_trigger": false}
+]

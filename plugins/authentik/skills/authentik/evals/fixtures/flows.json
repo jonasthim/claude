@@ -1,0 +1,32 @@
+[
+  {
+    "pk": "00000000-0000-4000-8000-000000000301",
+    "flow_uuid": "00000000-0000-4000-8000-000000000301",
+    "name": "Authorize Application",
+    "slug": "default-provider-authorization-implicit-consent",
+    "title": "Redirecting to %(app)s",
+    "designation": "authorization",
+    "policy_engine_mode": "any",
+    "denied_action": "message_continue"
+  },
+  {
+    "pk": "00000000-0000-4000-8000-000000000302",
+    "flow_uuid": "00000000-0000-4000-8000-000000000302",
+    "name": "Logged out of application",
+    "slug": "default-provider-invalidation-flow",
+    "title": "You've logged out of %(app)s.",
+    "designation": "invalidation",
+    "policy_engine_mode": "any",
+    "denied_action": "message_continue"
+  },
+  {
+    "pk": "00000000-0000-4000-8000-000000000303",
+    "flow_uuid": "00000000-0000-4000-8000-000000000303",
+    "name": "Welcome to authentik!",
+    "slug": "default-authentication-flow",
+    "title": "Welcome to authentik!",
+    "designation": "authentication",
+    "policy_engine_mode": "any",
+    "denied_action": "message_continue"
+  }
+]

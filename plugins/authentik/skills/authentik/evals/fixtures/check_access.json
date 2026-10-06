@@ -1,0 +1,35 @@
+{
+  "_default": {
+    "passing": true,
+    "messages": [],
+    "log_messages": []
+  },
+  "dashboards:6": {
+    "passing": false,
+    "messages": [],
+    "log_messages": [
+      {
+        "timestamp": "2026-10-06T08:00:00Z",
+        "log_level": "debug",
+        "logger": "authentik.policies.engine",
+        "event": "P_ENG: Binding failed",
+        "attributes": {
+          "binding": "dashboards-admins",
+          "mode": "all"
+        }
+      }
+    ]
+  },
+  "wiki:7": {
+    "passing": false,
+    "messages": [
+      "User is not active"
+    ],
+    "log_messages": []
+  },
+  "dashboards:7": {
+    "passing": false,
+    "messages": [],
+    "log_messages": []
+  }
+}

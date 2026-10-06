@@ -1,0 +1,133 @@
+[
+  {
+    "pk": "00000000-0000-4000-8000-000000000101",
+    "num_pk": 101,
+    "name": "authentik Admins",
+    "is_superuser": true,
+    "parents": [],
+    "users": [
+      1,
+      9
+    ],
+    "users_obj": [
+      {
+        "pk": 1,
+        "username": "akadmin",
+        "name": "authentik Default Admin",
+        "is_active": true,
+        "email": "akadmin@example.com",
+        "uid": "mockuid1"
+      },
+      {
+        "pk": 9,
+        "username": "svc-automation",
+        "name": "Automation",
+        "is_active": true,
+        "email": "",
+        "uid": "mockuid9"
+      }
+    ],
+    "attributes": {},
+    "roles": [],
+    "children": []
+  },
+  {
+    "pk": "00000000-0000-4000-8000-000000000102",
+    "num_pk": 102,
+    "name": "wiki-users",
+    "is_superuser": false,
+    "parents": [],
+    "users": [
+      5,
+      6
+    ],
+    "users_obj": [
+      {
+        "pk": 5,
+        "username": "alice",
+        "name": "Alice Example",
+        "is_active": true,
+        "email": "alice@example.com",
+        "uid": "mockuid5"
+      },
+      {
+        "pk": 6,
+        "username": "bob",
+        "name": "Bob Example",
+        "is_active": true,
+        "email": "bob@example.com",
+        "uid": "mockuid6"
+      }
+    ],
+    "attributes": {},
+    "roles": [],
+    "children": []
+  },
+  {
+    "pk": "00000000-0000-4000-8000-000000000103",
+    "num_pk": 103,
+    "name": "dashboards-users",
+    "is_superuser": false,
+    "parents": [],
+    "users": [
+      5,
+      6
+    ],
+    "users_obj": [
+      {
+        "pk": 5,
+        "username": "alice",
+        "name": "Alice Example",
+        "is_active": true,
+        "email": "alice@example.com",
+        "uid": "mockuid5"
+      },
+      {
+        "pk": 6,
+        "username": "bob",
+        "name": "Bob Example",
+        "is_active": true,
+        "email": "bob@example.com",
+        "uid": "mockuid6"
+      }
+    ],
+    "attributes": {},
+    "roles": [],
+    "children": []
+  },
+  {
+    "pk": "00000000-0000-4000-8000-000000000104",
+    "num_pk": 104,
+    "name": "dashboards-admins",
+    "is_superuser": false,
+    "parents": [],
+    "users": [
+      5
+    ],
+    "users_obj": [
+      {
+        "pk": 5,
+        "username": "alice",
+        "name": "Alice Example",
+        "is_active": true,
+        "email": "alice@example.com",
+        "uid": "mockuid5"
+      }
+    ],
+    "attributes": {},
+    "roles": [],
+    "children": []
+  },
+  {
+    "pk": "00000000-0000-4000-8000-000000000105",
+    "num_pk": 105,
+    "name": "authentik Read-only",
+    "is_superuser": false,
+    "parents": [],
+    "users": [],
+    "users_obj": [],
+    "attributes": {},
+    "roles": [],
+    "children": []
+  }
+]

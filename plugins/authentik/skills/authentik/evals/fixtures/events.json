@@ -1,0 +1,230 @@
+[
+  {
+    "pk": "00000000-0000-4000-8000-000000001001",
+    "user": {},
+    "action": "configuration_error",
+    "app": "authentik.providers.proxy.views",
+    "context": {
+      "message": "Provider Files is not assigned to any outpost"
+    },
+    "client_ip": "203.0.113.24",
+    "created": "2026-10-06T07:41:10Z",
+    "expires": "2027-10-06T00:00:00Z",
+    "brand": {
+      "name": "Default brand",
+      "pk": "00000000-0000-4000-8000-000000000901"
+    }
+  },
+  {
+    "pk": "00000000-0000-4000-8000-000000001002",
+    "user": {
+      "pk": 6,
+      "username": "bob",
+      "email": "bob@example.com"
+    },
+    "action": "login",
+    "app": "authentik.events.signals",
+    "context": {
+      "auth_method": "password"
+    },
+    "client_ip": "203.0.113.24",
+    "created": "2026-10-06T07:40:02Z",
+    "expires": "2027-10-06T00:00:00Z",
+    "brand": {
+      "name": "Default brand",
+      "pk": "00000000-0000-4000-8000-000000000901"
+    }
+  },
+  {
+    "pk": "00000000-0000-4000-8000-000000001003",
+    "user": {
+      "pk": 6,
+      "username": "bob",
+      "email": "bob@example.com"
+    },
+    "action": "login_failed",
+    "app": "authentik.events.signals",
+    "context": {
+      "stage": {
+        "name": "default-authentication-password"
+      },
+      "username": "bob"
+    },
+    "client_ip": "203.0.113.24",
+    "created": "2026-10-06T07:39:40Z",
+    "expires": "2027-10-06T00:00:00Z",
+    "brand": {
+      "name": "Default brand",
+      "pk": "00000000-0000-4000-8000-000000000901"
+    }
+  },
+  {
+    "pk": "00000000-0000-4000-8000-000000001004",
+    "user": {
+      "pk": 6,
+      "username": "bob",
+      "email": "bob@example.com"
+    },
+    "action": "login_failed",
+    "app": "authentik.events.signals",
+    "context": {
+      "stage": {
+        "name": "default-authentication-password"
+      },
+      "username": "bob"
+    },
+    "client_ip": "203.0.113.24",
+    "created": "2026-10-06T07:39:21Z",
+    "expires": "2027-10-06T00:00:00Z",
+    "brand": {
+      "name": "Default brand",
+      "pk": "00000000-0000-4000-8000-000000000901"
+    }
+  },
+  {
+    "pk": "00000000-0000-4000-8000-000000001005",
+    "user": {
+      "pk": 5,
+      "username": "alice",
+      "email": "alice@example.com"
+    },
+    "action": "authorize_application",
+    "app": "authentik.providers.oauth2.views.authorize",
+    "context": {
+      "authorized_application": {
+        "app": "authentik_core",
+        "model_name": "application",
+        "name": "Dashboards",
+        "pk": "dashboards"
+      }
+    },
+    "client_ip": "198.51.100.77",
+    "created": "2026-10-06T07:12:55Z",
+    "expires": "2027-10-06T00:00:00Z",
+    "brand": {
+      "name": "Default brand",
+      "pk": "00000000-0000-4000-8000-000000000901"
+    }
+  },
+  {
+    "pk": "00000000-0000-4000-8000-000000001006",
+    "user": {
+      "pk": 5,
+      "username": "alice",
+      "email": "alice@example.com"
+    },
+    "action": "authorize_application",
+    "app": "authentik.providers.oauth2.views.authorize",
+    "context": {
+      "authorized_application": {
+        "app": "authentik_core",
+        "model_name": "application",
+        "name": "Wiki",
+        "pk": "wiki"
+      }
+    },
+    "client_ip": "198.51.100.77",
+    "created": "2026-10-06T07:12:31Z",
+    "expires": "2027-10-06T00:00:00Z",
+    "brand": {
+      "name": "Default brand",
+      "pk": "00000000-0000-4000-8000-000000000901"
+    }
+  },
+  {
+    "pk": "00000000-0000-4000-8000-000000001007",
+    "user": {
+      "pk": 5,
+      "username": "alice",
+      "email": "alice@example.com"
+    },
+    "action": "login",
+    "app": "authentik.events.signals",
+    "context": {
+      "auth_method": "password"
+    },
+    "client_ip": "198.51.100.77",
+    "created": "2026-10-06T07:12:02Z",
+    "expires": "2027-10-06T00:00:00Z",
+    "brand": {
+      "name": "Default brand",
+      "pk": "00000000-0000-4000-8000-000000000901"
+    }
+  },
+  {
+    "pk": "00000000-0000-4000-8000-000000001008",
+    "user": {
+      "pk": 1,
+      "username": "akadmin",
+      "email": "akadmin@example.com"
+    },
+    "action": "model_updated",
+    "app": "authentik.events.middleware",
+    "context": {
+      "model": {
+        "app": "authentik_core",
+        "model_name": "application",
+        "name": "Dashboards",
+        "pk": "dashboards"
+      }
+    },
+    "client_ip": "198.51.100.10",
+    "created": "2026-10-05T16:20:44Z",
+    "expires": "2027-10-06T00:00:00Z",
+    "brand": {
+      "name": "Default brand",
+      "pk": "00000000-0000-4000-8000-000000000901"
+    }
+  },
+  {
+    "pk": "00000000-0000-4000-8000-000000001009",
+    "user": {
+      "pk": 6,
+      "username": "bob",
+      "email": "bob@example.com"
+    },
+    "action": "authorize_application",
+    "app": "authentik.providers.oauth2.views.authorize",
+    "context": {
+      "authorized_application": {
+        "app": "authentik_core",
+        "model_name": "application",
+        "name": "Dashboards",
+        "pk": "dashboards"
+      }
+    },
+    "client_ip": "203.0.113.24",
+    "created": "2026-10-05T16:03:00Z",
+    "expires": "2027-10-06T00:00:00Z",
+    "brand": {
+      "name": "Default brand",
+      "pk": "00000000-0000-4000-8000-000000000901"
+    }
+  },
+  {
+    "pk": "00000000-0000-4000-8000-000000001010",
+    "user": {
+      "pk": 1,
+      "username": "akadmin",
+      "email": "akadmin@example.com"
+    },
+    "action": "secret_view",
+    "app": "authentik.core.api.tokens",
+    "context": {
+      "secret": {
+        "app": "authentik_core",
+        "model_name": "token",
+        "name": "automation-api",
+        "pk": "automation-api"
+      },
+      "token": "mock-leaked-context-token"
+    },
+    "client_ip": "198.51.100.10",
+    "created": "2026-10-05T09:00:00Z",
+    "expires": "2027-10-06T00:00:00Z",
+    "brand": {
+      "name": "Default brand",
+      "pk": "00000000-0000-4000-8000-000000000901"
+    }
+  }
+]

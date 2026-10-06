@@ -1,0 +1,99 @@
+[
+  {
+    "pk": "00000000-0000-4000-8000-000000000201",
+    "pbm_uuid": "00000000-0000-4000-8000-000000000201",
+    "name": "Wiki",
+    "slug": "wiki",
+    "provider": 1,
+    "provider_obj": {
+      "pk": 1,
+      "name": "Wiki"
+    },
+    "backchannel_providers": [],
+    "launch_url": "https://wiki.example.com/",
+    "open_in_new_tab": false,
+    "meta_launch_url": "",
+    "meta_description": "",
+    "meta_publisher": "",
+    "policy_engine_mode": "any",
+    "group": "",
+    "meta_hide": false
+  },
+  {
+    "pk": "00000000-0000-4000-8000-000000000202",
+    "pbm_uuid": "00000000-0000-4000-8000-000000000202",
+    "name": "Dashboards",
+    "slug": "dashboards",
+    "provider": 2,
+    "provider_obj": {
+      "pk": 2,
+      "name": "Dashboards"
+    },
+    "backchannel_providers": [],
+    "launch_url": "https://dashboards.example.com/",
+    "open_in_new_tab": false,
+    "meta_launch_url": "",
+    "meta_description": "",
+    "meta_publisher": "",
+    "policy_engine_mode": "all",
+    "group": "",
+    "meta_hide": false
+  },
+  {
+    "pk": "00000000-0000-4000-8000-000000000203",
+    "pbm_uuid": "00000000-0000-4000-8000-000000000203",
+    "name": "Files",
+    "slug": "files",
+    "provider": 3,
+    "provider_obj": {
+      "pk": 3,
+      "name": "Files"
+    },
+    "backchannel_providers": [],
+    "launch_url": "https://files.example.com/",
+    "open_in_new_tab": false,
+    "meta_launch_url": "",
+    "meta_description": "",
+    "meta_publisher": "",
+    "policy_engine_mode": "any",
+    "group": "",
+    "meta_hide": false
+  },
+  {
+    "pk": "00000000-0000-4000-8000-000000000204",
+    "pbm_uuid": "00000000-0000-4000-8000-000000000204",
+    "name": "Directory",
+    "slug": "directory",
+    "provider": 5,
+    "provider_obj": {
+      "pk": 5,
+      "name": "Directory"
+    },
+    "backchannel_providers": [],
+    "launch_url": "https://directory.example.com/",
+    "open_in_new_tab": false,
+    "meta_launch_url": "",
+    "meta_description": "",
+    "meta_publisher": "",
+    "policy_engine_mode": "any",
+    "group": "",
+    "meta_hide": false
+  },
+  {
+    "pk": "00000000-0000-4000-8000-000000000205",
+    "pbm_uuid": "00000000-0000-4000-8000-000000000205",
+    "name": "Legacy portal",
+    "slug": "legacy-portal",
+    "provider": null,
+    "provider_obj": null,
+    "backchannel_providers": [],
+    "launch_url": "https://legacy-portal.example.com/",
+    "open_in_new_tab": false,
+    "meta_launch_url": "https://portal.example.com/",
+    "meta_description": "",
+    "meta_publisher": "",
+    "policy_engine_mode": "any",
+    "group": "",
+    "meta_hide": false
+  }
+]
