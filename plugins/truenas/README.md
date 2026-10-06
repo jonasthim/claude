@@ -1,4 +1,4 @@
-# claude-truenas-skill
+# truenas: a Claude Code plugin for TrueNAS SCALE 25.x
 
 A [Claude Code](https://claude.com/claude-code) plugin that lets Claude operate a
 **TrueNAS SCALE 25.x** system: pools, datasets, snapshots, SMB/NFS/iSCSI shares, apps,
@@ -12,19 +12,17 @@ operations are blocked by a code-level gate until you confirm them in the conver
 
 ## Install
 
-From the marketplace in this repo (the repo is private, so the machine needs GitHub access
-that can read it: a `gh auth login`, a credential helper, or an SSH key):
+Install from the [`jonasthim` marketplace](../../README.md#install):
 
 ```
-claude plugin marketplace add jonasthim/claude-truenas-skill
-claude plugin install truenas@claude-truenas-skill
+claude plugin marketplace add jonasthim/claude
+claude plugin install truenas@jonasthim
 ```
 
-Or for local development:
+For local development, load it from a checkout for one session:
 
 ```
-gh repo clone jonasthim/claude-truenas-skill            # or: git clone git@github.com:jonasthim/claude-truenas-skill
-claude --plugin-dir ./claude-truenas-skill
+claude --plugin-dir <checkout>/plugins/truenas
 ```
 
 Requires Python 3.10+ and, for the SSH transport, an `ssh` client. No packages.
@@ -106,7 +104,6 @@ that off; the skill tells Claude to use it only when you explicitly ask for a cr
 
 ```
 .claude-plugin/plugin.json      plugin manifest
-.claude-plugin/marketplace.json single-plugin marketplace
 skills/truenas/SKILL.md         instructions Claude loads when the skill triggers
 skills/truenas/scripts/tn.py    API helper (ws or ssh transport): info | host | call | methods | jobs | query
 skills/truenas/references/      cheat sheets: api-basics, storage, sharing, apps, system

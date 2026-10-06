@@ -1,4 +1,4 @@
-# claude-unifi-skill
+# unifi: a Claude Code plugin for UniFi networks
 
 A [Claude Code](https://claude.com/claude-code) plugin for operating Ubiquiti UniFi networks.
 It ships one skill, **unifi-ops**, that teaches Claude to:
@@ -24,25 +24,21 @@ send a mutating request unless `--yes` is passed, so Claude cannot change your n
 
 ## Install
 
-If the repository is public:
+Install from the [`jonasthim` marketplace](../../README.md#install):
 
 ```
-/plugin marketplace add jonasthim/claude-unifi-skill
-/plugin install unifi@claude-unifi-skill
+claude plugin marketplace add jonasthim/claude
+claude plugin install unifi@jonasthim
 ```
 
-While the repository is private, the marketplace add over HTTPS has no credential, so clone it
-with an authenticated client first and add the local path:
+For local development, load it from a checkout for one session:
 
-```bash
-gh repo clone jonasthim/claude-unifi-skill ~/src/claude-unifi-skill     # or: git clone git@github.com:jonasthim/claude-unifi-skill.git
-claude plugin marketplace add ~/src/claude-unifi-skill
-claude plugin install unifi@claude-unifi-skill
+```
+claude --plugin-dir <checkout>/plugins/unifi
 ```
 
-Updating later is `git pull` in that clone followed by `claude plugin update unifi@claude-unifi-skill`.
-The scripts also run directly from the clone without installing the plugin:
-`python3 ~/src/claude-unifi-skill/plugins/unifi/skills/unifi-ops/scripts/unifi.py info`.
+The scripts also run directly from a checkout without installing the plugin:
+`python3 <checkout>/plugins/unifi/skills/unifi-ops/scripts/unifi.py info`.
 
 ## Configure
 

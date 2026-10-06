@@ -7,8 +7,16 @@
     "name": "Jonas Thim",
     "url": "https://github.com/jonasthim"
   },
-  "homepage": "https://github.com/jonasthim/claude-proxmox-skill",
-  "repository": "https://github.com/jonasthim/claude-proxmox-skill",
+  "homepage": "https://github.com/jonasthim/claude/tree/main/plugins/proxmox",
+  "repository": "https://github.com/jonasthim/claude",
   "license": "MIT",
-  "keywords": ["proxmox", "pve", "virtualization", "lxc", "qemu", "homelab", "devops"]
+  "keywords": [
+    "proxmox",
+    "pve",
+    "virtualization",
+    "lxc",
+    "qemu",
+    "homelab",
+    "devops"
+  ]
 }

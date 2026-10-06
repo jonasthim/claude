@@ -3,7 +3,21 @@
   "displayName": "TrueNAS",
   "version": "0.1.0",
   "description": "Operate a TrueNAS SCALE 25.x system: pools, datasets, snapshots, SMB/NFS/iSCSI shares, apps, alerts, services, updates and replication through the JSON-RPC API and SSH.",
-  "author": { "name": "Jonas Thim" },
-  "repository": "https://github.com/jonasthim/claude-truenas-skill",
-  "keywords": ["truenas", "nas", "zfs", "storage", "homelab", "smb", "nfs", "iscsi", "docker"]
+  "author": {
+    "name": "Jonas Thim"
+  },
+  "homepage": "https://github.com/jonasthim/claude/tree/main/plugins/truenas",
+  "repository": "https://github.com/jonasthim/claude",
+  "keywords": [
+    "truenas",
+    "nas",
+    "zfs",
+    "storage",
+    "homelab",
+    "smb",
+    "nfs",
+    "iscsi",
+    "docker"
+  ],
+  "license": "MIT"
 }

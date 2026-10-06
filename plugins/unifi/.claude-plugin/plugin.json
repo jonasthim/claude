@@ -6,9 +6,17 @@
   "author": {
     "name": "Jonas Thim"
   },
-  "homepage": "https://github.com/jonasthim/claude-unifi-skill",
-  "repository": "https://github.com/jonasthim/claude-unifi-skill",
+  "homepage": "https://github.com/jonasthim/claude/tree/main/plugins/unifi",
+  "repository": "https://github.com/jonasthim/claude",
   "license": "MIT",
-  "keywords": ["unifi", "ubiquiti", "network", "wifi", "firewall", "vlan", "site-manager"],
+  "keywords": [
+    "unifi",
+    "ubiquiti",
+    "network",
+    "wifi",
+    "firewall",
+    "vlan",
+    "site-manager"
+  ],
   "skills": "./skills/"
 }

@@ -15,22 +15,21 @@ planned, confirmed by you, and additionally caught by a PreToolUse guard hook.
 
 ## Install
 
-From the marketplace in this repository:
+Install from the [`jonasthim` marketplace](../../README.md#install):
 
 ```
-claude plugin marketplace add jonasthim/claude-proxmox-skill
+claude plugin marketplace add jonasthim/claude
 claude plugin install proxmox@jonasthim
+```
+
+For local development, load it from a checkout for one session:
+
+```
+claude --plugin-dir <checkout>/plugins/proxmox
 ```
 
 A newly installed plugin's commands, skills, agent and hook are not active in the session that installed it:
 restart Claude Code (or run `/reload-plugins` if your version has it) before using `/proxmox:...`.
-
-For immediate use from a checkout, without installing, load it for that session only:
-
-```
-claude --plugin-dir <checkout>
-```
-
 After editing skills, agents or hooks run `/reload-plugins` inside Claude Code.
 
 ## Configuration

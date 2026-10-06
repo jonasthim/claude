@@ -180,20 +180,20 @@ class Lint:
                        bool(plugin.get("description")))
             for key in ("skills", "agents", "hooks", "commands"):
                 self.check("plugin.json: no explicit '%s' key" % key, key not in plugin)
-        market = self.load_json("marketplace.json", ".claude-plugin/marketplace.json")
+        # The marketplace lives at the repository root, two levels above this plugin.
+        market = self.load_json("marketplace.json", "../../.claude-plugin/marketplace.json")
         if market is not None:
             self.check("marketplace.json: owner.name present",
                        isinstance(market.get("owner"), dict) and bool(market["owner"].get("name")))
             self.check("marketplace.json: name present", bool(market.get("name")))
             plugins = market.get("plugins")
-            if self.check("marketplace.json: exactly one plugin entry",
-                          isinstance(plugins, list) and len(plugins) == 1):
-                entry = plugins[0]
-                self.check("marketplace.json: entry name == plugin name",
-                           entry.get("name") == (plugin_name or PLUGIN),
-                           "%r != %r" % (entry.get("name"), plugin_name))
-                self.check("marketplace.json: source is './'", entry.get("source") == "./",
-                           repr(entry.get("source")))
+            entries = [p for p in plugins if p.get("name") == (plugin_name or PLUGIN)] \
+                if isinstance(plugins, list) else []
+            if self.check("marketplace.json: exactly one entry named %r" % (plugin_name or PLUGIN),
+                          len(entries) == 1):
+                entry = entries[0]
+                self.check("marketplace.json: source is './plugins/%s'" % PLUGIN,
+                           entry.get("source") == "./plugins/" + PLUGIN, repr(entry.get("source")))
                 self.check("marketplace.json: entry has no version", "version" not in entry)
 
     def check_hooks(self):

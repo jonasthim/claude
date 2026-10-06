@@ -6,6 +6,14 @@ The format follows Keep a Changelog. Versions follow the `version` field in
 `.claude-plugin/plugin.json`; the version must be bumped for installed users to
 receive an update.
 
+## Unreleased
+
+### Changed
+
+- Moved into the `jonasthim/claude` marketplace repository under `plugins/proxmox`. Install with
+  `claude plugin marketplace add jonasthim/claude` and `claude plugin install proxmox@jonasthim`.
+- `tests/lint_plugin.py` checks the root marketplace entry (`source: ./plugins/proxmox`).
+
 ## 0.2.0 - 2026-10-06
 
 ### Changed

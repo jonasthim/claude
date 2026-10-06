@@ -86,6 +86,7 @@ assert_exit "lint_plugin.py exits 0" 0 "$rc"
 # ---------------------------------------------------------------- (2) mock
 python3 -I tests/mock_pve.py --port 0 >"$tmp/mock.stdout" 2>"$tmp/mock.stderr" &
 mock_pid=$!
+# shellcheck disable=SC2329 # invoked by the trap below
 cleanup() {
   kill "$mock_pid" 2>/dev/null || true
   wait "$mock_pid" 2>/dev/null || true
@@ -446,6 +447,7 @@ assert_contains "pve-ssh --check with a command explains" "$out" "cannot be comb
 # remote command string pve-ssh.sh builds.
 fakebin="$tmp/fakebin"
 mkdir -p "$fakebin"
+# shellcheck disable=SC2016 # the fake ssh expands $@ itself
 printf '#!/usr/bin/env bash\nfor a in "$@"; do printf "%%s\\n" "$a"; done\n' >"$fakebin/ssh"
 chmod +x "$fakebin/ssh"
 capture ssh_quoting env PATH="$fakebin:$PATH" "$sshtool" -n pve1 pveum user add t@pve -comment "two words"
