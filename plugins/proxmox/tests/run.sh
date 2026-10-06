@@ -86,7 +86,7 @@ assert_exit "lint_plugin.py exits 0" 0 "$rc"
 # ---------------------------------------------------------------- (2) mock
 python3 -I tests/mock_pve.py --port 0 >"$tmp/mock.stdout" 2>"$tmp/mock.stderr" &
 mock_pid=$!
-# shellcheck disable=SC2329 # invoked by the trap below
+# shellcheck disable=SC2317,SC2329 # invoked by the trap below
 cleanup() {
   kill "$mock_pid" 2>/dev/null || true
   wait "$mock_pid" 2>/dev/null || true
