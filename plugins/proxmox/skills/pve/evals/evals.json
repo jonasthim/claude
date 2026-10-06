@@ -22,10 +22,12 @@
       "expectations": [
         "GET /cluster/nextid is called to choose the vmid instead of hardcoding one.",
         "The template volid is discovered by listing storage content with content=vztmpl rather than guessed.",
-        "A POST to /nodes/pve1/lxc is issued whose parameters include ostemplate, cores=2, memory=2048, rootfs=local-lvm:8, net0 containing bridge=vmbr0 and ip=dhcp, unprivileged=1 and start=1.",
+        "A POST to /nodes/pve1/lxc is issued whose parameters include ostemplate, cores=2, memory=2048, rootfs=local-lvm:8, net0 containing bridge=vmbr0 and ip=dhcp, and unprivileged=1.",
+        "The container ends up started: either start=1 is passed on the create call or a POST to /nodes/pve1/lxc/<vmid>/status/start follows, and the running state is verified.",
         "The SSH public key is passed via the ssh-public-keys parameter as plain text (not percent-encoded, not via sshkeys).",
         "The UPID returned by the create call is waited on with pve-task.sh (or equivalent task status polling) and the exitstatus is reported.",
-        "The agent does not stop to ask for confirmation before creating the container."
+        "The agent does not stop to ask for confirmation before creating the container.",
+        "The created config is read back (GET /nodes/pve1/lxc/<vmid>/config) and checked against the request."
       ]
     },
     {
@@ -61,7 +63,7 @@
       "expectations": [
         "A POST to /cluster/ha/resources is issued with sid=ct:105 and state=started.",
         "A node-affinity rule is created via POST /cluster/ha/rules (or ha-manager rules add node-affinity) that references ct:105 and the nodes pve1 and pve2.",
-        "No call to /cluster/ha/groups is made and groups are not recommended.",
+        "No POST or PUT to /cluster/ha/groups is made and HA groups are not recommended (PVE 9 uses HA rules).",
         "The final state is verified with GET /cluster/ha/resources and/or GET /cluster/ha/rules."
       ]
     },
