@@ -186,6 +186,117 @@ capture api_bogus_task "$api" GET "/nodes/pve1/tasks/UPID:pve1:bogus/status"
 assert_exit "pve-api 500 exits 4" 4 "$rc"
 assert_contains "pve-api 500 reports HTTP 500" "$out" "HTTP 500"
 
+# ---------------------------------------------------------------- (10b) stateful mock
+mock_reset
+capture res_vm "$api" GET /cluster/resources type=vm
+assert_exit "mock /cluster/resources type=vm exits 0" 0 "$rc"
+assert_eq "mock type=vm lists only qemu/lxc" "4" "$(printf '%s' "$out" | jq '[.[] | select(.type == "qemu" or .type == "lxc")] | length')"
+assert_eq "mock type=vm has no other types" "4" "$(printf '%s' "$out" | jq 'length')"
+capture res_storage "$api" GET /cluster/resources type=storage
+assert_eq "mock type=storage lists storages only" "4" "$(printf '%s' "$out" | jq '[.[] | select(.type == "storage")] | length')"
+capture res_node "$api" GET /cluster/resources type=node
+assert_eq "mock type=node lists nodes only" '["node","node"]' "$(printf '%s' "$out" | jq -c '[.[].type]')"
+capture res_all "$api" GET /cluster/resources
+assert_eq "mock /cluster/resources without type lists everything" "10" "$(printf '%s' "$out" | jq 'length')"
+capture res_bad "$api" GET /cluster/resources type=bogus
+assert_exit "mock /cluster/resources bad type exits 3" 3 "$rc"
+
+capture ct_create "$api" POST /nodes/pve1/lxc vmid=106 'ostemplate=local:vztmpl/debian-12-standard_12.7-1_amd64.tar.zst' hostname=ct-test memory=512
+assert_exit "mock create CT 106 exits 0" 0 "$rc"
+assert_contains "mock create CT 106 returns a vzcreate UPID" "$out" ":vzcreate:106:"
+capture ct_create_dup "$api" POST /nodes/pve1/lxc vmid=106 'ostemplate=local:vztmpl/debian-12-standard_12.7-1_amd64.tar.zst'
+assert_exit "mock create CT 106 twice exits 4" 4 "$rc"
+assert_contains "mock create CT 106 twice says it exists" "$out" "already exists"
+capture qemu_create_novmid "$api" POST /nodes/pve1/qemu name=test
+assert_exit "mock POST /nodes/pve1/qemu without vmid still 400" 3 "$rc"
+capture ct_list "$api" GET /nodes/pve1/lxc
+assert_eq "mock CT 106 appears in /nodes/pve1/lxc" "ct-test stopped" "$(printf '%s' "$out" | jq -r '.[] | select(.vmid == 106) | "\(.name) \(.status)"')"
+capture ct_res "$api" GET /cluster/resources type=vm
+assert_eq "mock CT 106 appears in /cluster/resources" "lxc pve1 stopped ct-test" "$(printf '%s' "$out" | jq -r '.[] | select(.id == "lxc/106") | "\(.type) \(.node) \(.status) \(.name)"')"
+capture ct_nextid "$api" GET /cluster/nextid
+assert_eq "mock nextid moves past CT 106" "107" "$out"
+capture ct_config "$api" GET /nodes/pve1/lxc/106/config
+assert_eq "mock CT 106 config echoes hostname" "ct-test" "$(printf '%s' "$out" | jq -r '.hostname')"
+assert_eq "mock CT 106 config has a digest" "40" "$(printf '%s' "$out" | jq -r '.digest | length')"
+capture ct_status "$api" GET /nodes/pve1/lxc/106/status/current
+assert_eq "mock CT 106 status/current is stopped" "stopped" "$(printf '%s' "$out" | jq -r '.status')"
+capture ct_start "$api" POST /nodes/pve1/lxc/106/status/start
+assert_exit "mock start CT 106 exits 0" 0 "$rc"
+assert_contains "mock start CT 106 returns a vzstart UPID" "$out" ":vzstart:106:"
+capture ct_start_task "$task" "$out" --interval 0.1 --no-log
+assert_exit "mock vzstart:106 task resolves OK" 0 "$rc"
+capture ct_status_running "$api" GET /nodes/pve1/lxc/106/status/current
+assert_eq "mock start flips CT 106 to running" "running" "$(printf '%s' "$out" | jq -r '.status')"
+capture ct_res_running "$api" GET /cluster/resources type=vm
+assert_eq "mock /cluster/resources shows CT 106 running" "running" "$(printf '%s' "$out" | jq -r '.[] | select(.id == "lxc/106") | .status')"
+capture ct_stop "$api" POST /nodes/pve1/lxc/106/status/shutdown
+assert_contains "mock shutdown CT 106 returns a vzshutdown UPID" "$out" ":vzshutdown:106:"
+capture ct_status_stopped "$api" GET /nodes/pve1/lxc/106/status/current
+assert_eq "mock shutdown flips CT 106 to stopped" "stopped" "$(printf '%s' "$out" | jq -r '.status')"
+capture vm_create "$api" POST /nodes/pve1/qemu vmid=300 name=vm-test memory=1024 cores=2
+assert_contains "mock create VM 300 returns a qmcreate UPID" "$out" ":qmcreate:300:"
+capture vm_list "$api" GET /nodes/pve1/qemu
+assert_eq "mock VM 300 appears in /nodes/pve1/qemu" "vm-test 2" "$(printf '%s' "$out" | jq -r '.[] | select(.vmid == 300) | "\(.name) \(.cpus)"')"
+
+capture ha_post "$api" POST /cluster/ha/resources sid=ct:106 state=started
+assert_exit "mock HA resource POST exits 0" 0 "$rc"
+capture ha_list "$api" GET /cluster/ha/resources
+assert_eq "mock HA resource listed after POST" "ct:106 started" "$(printf '%s' "$out" | jq -r '.[] | "\(.sid) \(.state)"')"
+capture ha_get "$api" GET /cluster/ha/resources/ct:106
+assert_eq "mock HA resource GET by sid" "ct" "$(printf '%s' "$out" | jq -r '.type')"
+capture ha_res "$api" GET /cluster/resources type=vm
+assert_eq "mock hastate appears on the guest" "started" "$(printf '%s' "$out" | jq -r '.[] | select(.id == "lxc/106") | .hastate')"
+assert_eq "mock hastate absent on other guests" "null" "$(printf '%s' "$out" | jq -r '.[] | select(.id == "qemu/100") | .hastate')"
+capture ha_status "$api" GET /cluster/ha/status/current
+assert_eq "mock HA status lists the service on its node" "pve1" "$(printf '%s' "$out" | jq -r '.[] | select(.type == "service" and .sid == "ct:106") | .node')"
+capture ha_put "$api" PUT /cluster/ha/resources/ct:106 state=stopped
+assert_exit "mock HA resource PUT exits 0" 0 "$rc"
+capture ha_get2 "$api" GET /cluster/ha/resources/ct:106
+assert_eq "mock HA resource PUT updates state" "stopped" "$(printf '%s' "$out" | jq -r '.state')"
+capture ha_rule_post "$api" POST /cluster/ha/rules rule=keep-on-pve1 type=node-affinity resources=ct:106 nodes=pve1
+assert_exit "mock HA rule POST exits 0" 0 "$rc"
+capture ha_rule_get "$api" GET /cluster/ha/rules/keep-on-pve1
+assert_eq "mock HA rule GET by name" "node-affinity" "$(printf '%s' "$out" | jq -r '.type')"
+capture ha_rules "$api" GET /cluster/ha/rules
+assert_eq "mock HA rules listed after POST" "keep-on-pve1" "$(printf '%s' "$out" | jq -r '.[].rule')"
+capture ha_delete "$api" DELETE /cluster/ha/resources/ct:106
+assert_exit "mock HA resource DELETE exits 0" 0 "$rc"
+capture ha_list2 "$api" GET /cluster/ha/resources
+assert_eq "mock HA resource gone after DELETE" "[]" "$out"
+
+capture snap_create "$api" POST /nodes/pve1/qemu/200/snapshot snapname=pre-upgrade description=before
+assert_exit "mock snapshot create exits 0" 0 "$rc"
+assert_contains "mock snapshot create returns a qmsnapshot UPID" "$out" ":qmsnapshot:200:"
+capture snap_list "$api" GET /nodes/pve1/qemu/200/snapshot
+assert_eq "mock snapshot list shows the new snapshot" "clean-install pre-upgrade current" "$(printf '%s' "$out" | jq -r '[.[].name] | join(" ")')"
+assert_eq "mock snapshot list parent chain" "clean-install" "$(printf '%s' "$out" | jq -r '.[] | select(.name == "pre-upgrade") | .parent')"
+capture snap_rollback "$api" POST /nodes/pve1/qemu/200/snapshot/pre-upgrade/rollback
+assert_contains "mock snapshot rollback returns a qmrollback UPID" "$out" ":qmrollback:200:"
+capture snap_101 "$api" GET /nodes/pve1/qemu/101/snapshot
+assert_eq "mock VM 101 snapshot list is current only" '["current"]' "$(printf '%s' "$out" | jq -c '[.[].name]')"
+capture snap_delete "$api" DELETE /nodes/pve1/qemu/200/snapshot/pre-upgrade
+assert_contains "mock snapshot delete returns a qmdelsnapshot UPID" "$out" ":qmdelsnapshot:200:"
+capture snap_list2 "$api" GET /nodes/pve1/qemu/200/snapshot
+assert_eq "mock snapshot gone after DELETE" "clean-install current" "$(printf '%s' "$out" | jq -r '[.[].name] | join(" ")')"
+capture net_list "$api" GET /nodes/pve1/network
+assert_eq "mock /nodes/pve1/network lists the bridge" "bridge" "$(printf '%s' "$out" | jq -r '.[] | select(.iface == "vmbr0") | .type')"
+capture pve2_storage "$api" GET /nodes/pve2/storage
+assert_eq "mock /nodes/pve2/storage lists local-lvm" "local-lvm" "$(printf '%s' "$out" | jq -r '.[1].storage')"
+
+capture ct_snap "$api" POST /nodes/pve1/lxc/106/snapshot snapname=first
+assert_contains "mock CT snapshot create returns a vzsnapshot UPID" "$out" ":vzsnapshot:106:"
+mock_reset
+capture reset_lxc "$api" GET /nodes/pve1/lxc
+assert_eq "mock reset clears created guests" "[]" "$out"
+capture reset_nextid "$api" GET /cluster/nextid
+assert_eq "mock reset restores nextid" "106" "$out"
+capture reset_rules "$api" GET /cluster/ha/rules
+assert_eq "mock reset clears HA rules" "[]" "$out"
+capture reset_snaps "$api" GET /nodes/pve1/qemu/200/snapshot
+assert_eq "mock reset restores fixture snapshots" "2" "$(printf '%s' "$out" | jq 'length')"
+capture reset_status "$api" GET /nodes/pve1/qemu/101/status/current
+assert_eq "mock reset restores guest status" "stopped" "$(printf '%s' "$out" | jq -r '.status')"
+
 # ---------------------------------------------------------------- (11) auth/env/transport
 capture api_wrong_secret env PVE_TOKEN_SECRET=wrong-secret "$api" GET /version
 assert_exit "pve-api wrong secret exits 3" 3 "$rc"

@@ -171,7 +171,7 @@
     "status": 200,
     "body": [
       {"name": "clean-install", "description": "fresh image", "snaptime": 1725000000, "vmstate": 0, "parent": null},
-      {"name": "current", "description": "You are here!", "running": 0, "parent": "clean-install"}
+      {"name": "current", "description": "You are here!", "running": 1, "parent": "clean-install"}
     ]
   },
 
@@ -180,6 +180,23 @@
     "body": [
       {"storage": "local", "type": "dir", "content": "backup,iso,vztmpl", "active": 1, "enabled": 1, "shared": 0, "total": 107374182400, "used": 91268055040, "avail": 16106127360, "used_fraction": 0.85},
       {"storage": "local-lvm", "type": "lvmthin", "content": "images,rootdir", "active": 1, "enabled": 1, "shared": 0, "total": 429496729600, "used": 107374182400, "avail": 322122547200, "used_fraction": 0.25}
+    ]
+  },
+
+  "GET /nodes/pve2/storage": {
+    "status": 200,
+    "body": [
+      {"storage": "local", "type": "dir", "content": "backup,iso,vztmpl", "active": 1, "enabled": 1, "shared": 0, "total": 107374182400, "used": 32212254720, "avail": 75161927680, "used_fraction": 0.3},
+      {"storage": "local-lvm", "type": "lvmthin", "content": "images,rootdir", "active": 1, "enabled": 1, "shared": 0, "total": 429496729600, "used": 53687091200, "avail": 375809638400, "used_fraction": 0.125}
+    ]
+  },
+
+  "GET /nodes/pve1/network": {
+    "_comment": "Mock-only shape: a subset of the fields the real endpoint returns per interface.",
+    "status": 200,
+    "body": [
+      {"iface": "eno1", "type": "eth", "method": "manual", "exists": 1, "active": 1, "autostart": 1, "families": ["inet"], "priority": 3},
+      {"iface": "vmbr0", "type": "bridge", "method": "static", "cidr": "10.0.0.11/24", "address": "10.0.0.11", "netmask": "255.255.255.0", "gateway": "10.0.0.1", "bridge_ports": "eno1", "bridge_stp": "off", "bridge_fd": "0", "autostart": 1, "active": 1, "families": ["inet"], "priority": 4}
     ]
   },
 
@@ -192,7 +209,6 @@
   },
 
   "GET /nodes/pve1/storage/local/content": {
-
     "status": 200,
     "body": [
       {"volid": "local:vztmpl/debian-12-standard_12.7-1_amd64.tar.zst", "content": "vztmpl", "format": "tzst", "size": 134217728, "ctime": 1724000000},
