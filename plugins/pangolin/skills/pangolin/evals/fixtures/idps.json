@@ -1,0 +1,10 @@
+[
+  {
+    "idpId": 1,
+    "name": "Company SSO",
+    "type": "oidc",
+    "variant": "oidc",
+    "orgCount": 1,
+    "autoProvision": true
+  }
+]

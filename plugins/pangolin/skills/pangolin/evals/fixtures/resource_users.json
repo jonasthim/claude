@@ -1,0 +1,14 @@
+{
+  "_default": {
+    "users": []
+  },
+  "102": {
+    "users": [
+      {
+        "userId": "usr-mock-bob",
+        "username": "bob@example.com",
+        "email": "bob@example.com"
+      }
+    ]
+  }
+}

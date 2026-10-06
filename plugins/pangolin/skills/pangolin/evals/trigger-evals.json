@@ -1,0 +1,22 @@
+[
+  {"query": "app.example.com behind pangolin just shows bad gateway since this morning, can you check the resource and its targets?", "should_trigger": true},
+  {"query": "which of the things I publish through Pangolin have no authentication in front of them?", "should_trigger": true},
+  {"query": "my newt site shows offline in the dashboard, what depends on it?", "should_trigger": true},
+  {"query": "expose the new service on 198.51.100.7:3000 as notes.example.com through the tunnel and require SSO. PANGOLIN_HOST and PANGOLIN_API_KEY are set.", "should_trigger": true},
+  {"query": "add a health check to the second target of my wiki resource in pangolin", "should_trigger": true},
+  {"query": "make pangolin skip its own login page and go straight to my identity provider for the dashboards resource", "should_trigger": true},
+  {"query": "give me a health report of my reverse proxy, I run fosrl pangolin with three sites", "should_trigger": true},
+  {"query": "block /admin on the public blog resource for everyone outside 203.0.113.0/24 using resource rules", "should_trigger": true},
+  {"query": "the pangolin integration api says 'Key does not have permission perform this action', what am I missing?", "should_trigger": true},
+  {"query": "take status.example.com offline for now without deleting it, it's a pangolin resource", "should_trigger": true},
+  {"query": "write me an nginx server block that proxies /api to localhost:8080 with websockets", "should_trigger": false},
+  {"query": "my cloudflare tunnel keeps disconnecting, cloudflared logs say context deadline exceeded", "should_trigger": false},
+  {"query": "help me write a traefik dynamic config file with a middleware for basic auth", "should_trigger": false},
+  {"query": "how do I upgrade the pangolin docker compose stack from 1.21 to 1.24 on my VPS?", "should_trigger": false},
+  {"query": "create an OIDC application in my identity provider with these redirect URIs", "should_trigger": false},
+  {"query": "set up a wireguard tunnel between two debian hosts by hand", "should_trigger": false},
+  {"query": "why is my caddy reverse proxy returning 502 for the upstream on port 3000", "should_trigger": false},
+  {"query": "are pangolins endangered? I need three facts for a school presentation", "should_trigger": false},
+  {"query": "restart the hallway access point and tell me which clients were on it", "should_trigger": false},
+  {"query": "add a firewall rule on my router that lets the VPS reach port 51820", "should_trigger": false}
+]

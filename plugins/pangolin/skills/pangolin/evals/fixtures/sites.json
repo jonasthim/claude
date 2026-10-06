@@ -1,0 +1,44 @@
+[
+  {
+    "siteId": 1,
+    "orgId": "acme",
+    "niceId": "hq",
+    "name": "HQ",
+    "type": "newt",
+    "online": true,
+    "status": "approved",
+    "address": "100.90.128.1/24",
+    "megabytesIn": 18234.5,
+    "megabytesOut": 92211.1,
+    "lastPing": 1791273600,
+    "dockerSocketEnabled": false
+  },
+  {
+    "siteId": 2,
+    "orgId": "acme",
+    "niceId": "lab",
+    "name": "Lab",
+    "type": "newt",
+    "online": false,
+    "status": "approved",
+    "address": "100.90.128.2/24",
+    "megabytesIn": 310.2,
+    "megabytesOut": 1205.9,
+    "lastPing": 1791187200,
+    "dockerSocketEnabled": false
+  },
+  {
+    "siteId": 3,
+    "orgId": "acme",
+    "niceId": "colo",
+    "name": "Colo",
+    "type": "wireguard",
+    "online": true,
+    "status": "approved",
+    "address": "100.90.128.3/24",
+    "megabytesIn": 4410.0,
+    "megabytesOut": 20931.4,
+    "pubKey": "q7Jt0mock0WireGuard0Public0Key0000000000000=",
+    "lastPing": 1791273590
+  }
+]

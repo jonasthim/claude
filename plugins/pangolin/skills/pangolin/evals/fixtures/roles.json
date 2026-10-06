@@ -1,0 +1,16 @@
+[
+  {
+    "roleId": 1,
+    "orgId": "acme",
+    "name": "Admin",
+    "description": "Admin role with the most permissions",
+    "isAdmin": true
+  },
+  {
+    "roleId": 2,
+    "orgId": "acme",
+    "name": "Member",
+    "description": "Members can only view resources",
+    "isAdmin": false
+  }
+]
