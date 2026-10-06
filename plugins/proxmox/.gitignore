@@ -1,0 +1,7 @@
+*-workspace/
+.claude/
+__pycache__/
+*.pyc
+.env
+tests/.tmp/
+*.skill
