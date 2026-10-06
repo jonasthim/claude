@@ -517,8 +517,8 @@ def guarded(api, args, method, path, body=None, query=None):
 
 COLUMNS = {
     "sites": ["id", "internalReference", "name"],
-    "devices": ["name", "model", "ipAddress", "macAddress", "state", "firmwareVersion", "firmwareUpdatable"],
-    "clients": ["name", "ipAddress", "macAddress", "type", "uplinkDeviceName", "connectedAt"],
+    "devices": ["name", "model", "ipAddress", "state", "firmwareVersion", "firmwareUpdatable", "uplinkDeviceName", "id"],
+    "clients": ["name", "ipAddress", "macAddress", "type", "uplinkDeviceName", "connectedAt", "id"],
     "networks": ["name", "vlanId", "management", "enabled", "id"],
     "wifi": ["name", "enabled", "security.type", "networkId", "id"],
     "zones": ["name", "metadata.origin", "networkIds", "id"],
@@ -553,7 +553,11 @@ def _device_name_map(api):
 def cmd_devices(api, args):
     v = args.verb
     if v == "list":
-        emit(api.list_all(api.sp("/devices"), {"filter": args.filter}, args.limit), args.table, COLUMNS["devices"])
+        devices = api.list_all(api.sp("/devices"), {"filter": args.filter}, args.limit)
+        names = {d["id"]: d.get("name") or d.get("model") for d in devices}
+        for d in devices:
+            d["uplinkDeviceName"] = names.get(get_path(d, "uplink.deviceId", None), "")
+        emit(devices, args.table, COLUMNS["devices"])
     elif v == "get":
         emit(api.request("GET", api.sp("/devices/%s" % args.id)))
     elif v == "stats":
@@ -579,6 +583,8 @@ def _enrich_clients(api, clients):
     names = _device_name_map(api)
     for c in clients:
         c["uplinkDeviceName"] = names.get(c.get("uplinkDeviceId"), "")
+        if c.get("type") == "WIRED" and "portIdx" not in c and "uplinkPortIdx" not in c:
+            c["switchPort"] = "not exposed by API (ask user or SSH: see ssh-commands.md)"
     return clients
 
 
@@ -709,11 +715,13 @@ def cmd_report(api, args):
     for d in devices:
         row = {k: d.get(k) for k in ("id", "name", "model", "ipAddress", "state",
                                       "firmwareVersion", "firmwareUpdatable")}
+        row["uplinkDeviceName"] = ""  # filled below once all names are known
         if d.get("state") == "ONLINE" and not args.no_stats:
             try:
                 st = api.request("GET", api.sp("/devices/%s/statistics/latest" % d["id"]))
             except ApiError:
                 st = {}
+            radios = get_path(st, "interfaces.radios", []) or []
             row.update({
                 "uptimeSec": st.get("uptimeSec"),
                 "cpuPct": st.get("cpuUtilizationPct"),
@@ -721,8 +729,13 @@ def cmd_report(api, args):
                 "lastHeartbeatAt": st.get("lastHeartbeatAt"),
                 "uplinkTxBps": get_path(st, "uplink.txRateBps", None),
                 "uplinkRxBps": get_path(st, "uplink.rxRateBps", None),
+                "txRetriesPct": " / ".join("%sGHz %s%%" % (r.get("frequencyGHz"), r.get("txRetriesPct"))
+                                           for r in radios if r.get("txRetriesPct") is not None) or None,
             })
         rows.append(row)
+    names = {d["id"]: d.get("name") or d.get("model") for d in devices}
+    for d, row in zip(devices, rows):
+        row["uplinkDeviceName"] = names.get(get_path(d, "uplink.deviceId", None), "")
     clients = api.list_all(api.sp("/clients"))
     by_type = {}
     for c in clients:
@@ -747,7 +760,7 @@ def cmd_report(api, args):
         print_table([summary], ["devicesTotal", "devicesByState", "firmwareUpdatable", "clientsTotal", "clientsByType"])
         print("\n## Devices\n")
         print_table(rows, ["name", "model", "ipAddress", "state", "firmwareVersion",
-                           "firmwareUpdatable", "uptimeSec", "cpuPct", "memPct"])
+                           "firmwareUpdatable", "uplinkDeviceName", "uptimeSec", "cpuPct", "memPct", "txRetriesPct", "id"])
         print("\n## WANs\n")
         print_table(wans if isinstance(wans, list) else [wans], COLUMNS["wans"] if isinstance(wans, list) else None)
     else:

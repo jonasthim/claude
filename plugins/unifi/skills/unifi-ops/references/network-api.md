@@ -175,6 +175,10 @@ accepted, the 400 message lists the allowed values for that build; use
 
 ## 6. Known gaps (as of 10.x)
 
+- No client → switch-port mapping: wired clients expose `uplinkDeviceId` only, and switch
+  `interfaces.ports[]` has no MAC table. Ask the user or read it over SSH (`mca-dump` on the switch).
+- No firmware upgrade action in the documented device actions; firmware updates go through the UI
+  (or `devices action --action UPGRADE --dry-run` to see whether this build accepts it).
 - No per-client RSSI/signal, no historical stats, no event log. For "why does X drop",
   combine AP `txRetriesPct` from `devices stats`, `connectedAt` churn from repeated
   `clients find`, and (if SSH is available) `mca-dump` on the AP (see `ssh-commands.md`).

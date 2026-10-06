@@ -22,6 +22,7 @@ Prefer the API for anything it covers; SSH is for the moments the API is blind
 | `mca-dump` | AP | full JSON state; `.vap_table[].sta_table[]` has per-client `rssi`, `signal`, `tx_rate`, `rx_rate`, `idletime` |
 | `mca-dump \| grep -A3 '"mac": "<client mac>"'` | AP | quick signal lookup for one client |
 | `iwconfig` / `iw dev` | AP | radios, channels, tx power |
+| `mca-dump` | switch | `port_table[]` with per-port `mac_table[]`: which client MAC is on which port |
 | `swctrl port show` | switch | per-port link, speed, PoE state |
 | `swctrl poe show` | switch | PoE draw per port |
 | `mca-cli-op info` | AP / switch | same as `info` on newer firmware |

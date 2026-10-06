@@ -24,7 +24,8 @@ Goal: a diagnosis the user can act on in under a minute of reading, not a data d
    `U devices get <uplinkDeviceId>` (state, uplink, ports/radios) and
    `U devices stats <uplinkDeviceId>` (uptime, CPU/mem, `txRetriesPct` per radio).
 3. **Branch.**
-   - *Wireless:* an AP with `uptimeSec` of minutes has just rebooted (power? firmware?);
+   - *Wireless:* `U report health --table` gives every AP's uptime, CPU/mem and per-radio
+     `txRetriesPct` in one call, which is the comparison you want. An AP with `uptimeSec` of minutes has just rebooted (power? firmware?);
      `txRetriesPct` above ~15–20% on the client's band means interference or a weak link
      (far from the AP, 2.4 GHz congestion); CPU/mem above ~80% suggests an overloaded AP.
      Compare with the other APs: if one AP looks bad and the others fine, the AP is the story.
@@ -106,8 +107,13 @@ Same protocol as §3, shorter plan. Spell out the impact before asking:
 | `devices adopt --macs` | adopts pending devices; they reprovision |
 | `devices unadopt <id>` | factory-resets the device's config; avoid unless asked explicitly |
 
-Before a port cycle, confirm which device is on the port (`devices get <switch>` and match
-the client's `uplinkDeviceId` + port, or ask). Before a restart, confirm the device id
+Before a port cycle you need the port index, and the API does not provide a client → port
+mapping (`clients` carry `uplinkDeviceId` only; `interfaces.ports[]` has no MAC table). Do not
+derive it from which PoE ports are UP: on a switch with several PoE devices that is a guess, and
+the wrong guess cuts power to an AP or another camera. Either ask the user (UniFi app →
+Clients → the device → Connection shows the port) or, with device SSH, read the switch's MAC
+table (`ssh-commands.md`, `mca-dump` `port_table[].mac_table[]`). Then `devices get <switch>`
+to confirm that port is UP with PoE before the dry run. Before a restart, confirm the device id
 belongs to the device the user named (`devices get` and read back the name/model).
 
 ## 5. Health report template

@@ -16,7 +16,27 @@ $U --help            # groups: info sites devices clients networks wifi firewall
 $U devices --help    # verbs per group
 ```
 
-Output is JSON by default; add `--table` to any list for a ready-made markdown table.
+Output is JSON by default; add `--table` to any list for a markdown table that already
+includes the `id` column, so one call serves both reading and the follow-up command.
+`--help` works everywhere, but this is the whole surface:
+
+```
+info                         sites list
+devices  list|get|stats|restart|locate|action --action X|port-cycle|port-enable|port-disable --port N|unadopt|pending|adopt --macs
+clients  list|get|find <name|ip|mac>|block|unblock|authorize --minutes N|action --action X
+networks list|get|references|create|update|delete        wifi     list|get|create|update|delete
+firewall zones|policies  list|get|create|update|patch|delete|ordering|reorder
+acl      list|get|create|update|delete|ordering|reorder  dns / traffic / vouchers  list|get|create|update|delete
+wans list   vpn tunnels|servers   radius list   dpi categories|applications
+report health [--no-stats]   raw <METHOD> <path> [--body ...]   cloud hosts|sites|devices|isp-metrics|sdwan
+flags: --table  --filter "<expr>"  --limit N  --site NAME  --body <file|-|json>  --dry-run  --yes
+```
+
+`report health` already contains per-device uptime, CPU/mem, uplink and per-radio
+`txRetriesPct`, so for "is this AP worse than the others" you do not need a `stats` call per
+device. `devices list` and `clients find` carry the uplink device name; the Integration API
+does not say which switch *port* a wired client is on, so when a task needs a port, ask the
+user or use SSH (`references/ssh-commands.md`) instead of probing endpoints for it.
 
 ## First call of a session
 
