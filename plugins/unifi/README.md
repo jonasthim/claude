@@ -6,7 +6,7 @@ It ships one skill, **unifi-ops**, that teaches Claude to:
 - troubleshoot clients ("why does my laptop keep dropping off wifi?")
 - produce inventory and health reports (devices, firmware, uptime, WAN/ISP quality)
 - make guarded configuration changes: networks/VLANs, SSIDs, firewall zones and policies, ACLs, DNS
-- run device and client actions: restart, locate, PoE port cycle, block/unblock, adopt
+- run device and client actions: restart, PoE port cycle, block/unblock, adopt
 
 It talks to the **official UniFi Network Integration API** (local, API-key based) and the
 **UniFi Site Manager API** (api.ui.com), with optional read-only SSH diagnostics. No legacy
@@ -79,8 +79,7 @@ $U wans list
 $U report health --table
 $U cloud hosts --table                       # if UNIFI_CLOUD_API_KEY is set
 plugins/unifi/skills/unifi-ops/scripts/ssh_diag.sh root@192.168.1.1 system   # if SSH is set up
-$U devices locate <an AP id> --dry-run       # prints the request, sends nothing
-$U devices locate <an AP id> --yes           # the LED should blink
+$U devices restart <an AP id> --dry-run      # prints the request, sends nothing (RESTART is the only device action the API accepts)
 ```
 
 ## Try it without a controller
@@ -102,6 +101,14 @@ plugins/unifi/skills/unifi-ops/
   references/              API cheat sheets, SSH commands, troubleshooting playbooks
   evals/                   test prompts and mock fixtures
 ```
+
+## Verified live
+
+Read commands, `report health`, and the Site Manager commands were run against a UCG Fiber on
+Network 10.6.106 (7 devices, 67 clients). `devices locate` was removed after that run: the
+Integration API's device action enum is `RESTART` only. Port and client actions follow the
+published API but have not been exercised on real hardware yet; the CLI's dry run shows the
+request, and the controller's 400 lists the accepted values if one is rejected.
 
 ## Safety model
 

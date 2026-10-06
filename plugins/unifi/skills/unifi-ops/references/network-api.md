@@ -9,7 +9,8 @@ The official, API-key based API served by the Network application itself. Everyt
 3. Endpoint map (what `unifi.py` verb calls what)
 4. Payload examples for writes
 5. Error codes and how to react
-6. Known gaps
+6. Observed on a live console
+7. Known gaps
 
 ## 1. Connection and auth
 
@@ -61,7 +62,7 @@ All site-scoped paths are `/v1/sites/{siteId}/...`. `unifi.py` resolves `{siteId
 | App info | `GET /v1/info` | `info` |
 | Sites | `GET /v1/sites` | `sites list` |
 | Devices | `GET devices`, `GET devices/{id}`, `GET devices/{id}/statistics/latest` | `devices list/get/stats` |
-| Device actions | `POST devices/{id}/actions` body `{"action":"RESTART"}` | `devices restart/locate/action --action X` |
+| Device actions | `POST devices/{id}/actions` body `{"action":"RESTART"}` (10.6.106: RESTART is the only value) | `devices restart` / `devices action --action X` |
 | Port actions | `POST devices/{id}/interfaces/ports/{portIdx}/actions` body `{"action":"POWER_CYCLE"}` | `devices port-cycle/port-enable/port-disable --port N` |
 | Unadopt | `DELETE devices/{id}` | `devices unadopt` |
 | Pending devices | `GET /v1/pending-devices`, `POST /v1/pending-devices` `{"macAddresses":[...]}` | `devices pending/adopt --macs` |
@@ -173,7 +174,27 @@ accepted, the 400 message lists the allowed values for that build; use
 
 `unifi.py` exit codes: 1 usage, 2 API error, 3 "needs --yes".
 
-## 6. Known gaps (as of 10.x)
+## 6. Observed on a live console (Network 10.6.106, UCG Fiber)
+
+- `/devices/{id}/actions` accepts only `RESTART`. `LOCATE` returns
+  `400 api.request.unknown-type-id "Invalid $.action value 'LOCATE' (valid values: 'RESTART')"`.
+  The dry run cannot detect this; only the controller's 400 can.
+- List endpoints are summaries: `wifi/broadcasts` lists carry `id`, `name`, `enabled` only;
+  `wans` lists carry `id`, `name`; device list items have no `uplink`. Use `get <id>` for full objects.
+- `firewall/policies[].action` is an object (`{"type": "ALLOW", "allowReturnTraffic": true}`), not a string.
+- Per-device `statistics/latest` returned `uptimeSec`, `cpuUtilizationPct`, `memoryUtilizationPct`
+  and per-radio `txRetriesPct` for every online device.
+- **Two id spaces.** The Integration API uses UUIDs for networks, policies and devices. The
+  v2 UI API (`/proxy/network/v2/api/site/<site>/...`) and the legacy REST API
+  (`/proxy/network/api/s/<site>/rest/...`) use 24-hex Mongo-style ids for the same objects. They
+  are not interchangeable; a network is `31017aa0-...` in one and `69c657ca...` in the other.
+  Match objects by name or MAC when crossing APIs, never by id.
+- **Version fields differ.** The gateway's `firmwareVersion` in `devices list` (Network app's
+  view of the console) and `cloud hosts` → `reportedState.version` (UniFi OS as seen by the
+  cloud) can disagree. `info` → `applicationVersion` is the Network application; say which one
+  you are quoting.
+
+## 7. Known gaps (as of 10.x)
 
 - No client → switch-port mapping: wired clients expose `uplinkDeviceId` only, and switch
   `interfaces.ports[]` has no MAC table. Ask the user or read it over SSH (`mca-dump` on the switch).

@@ -15,7 +15,10 @@ Environment:
   UNIFI_TIMEOUT         HTTP timeout seconds, default 20
 
 Write safety: every mutating command prints the exact request and exits with
-code 3 unless --yes is given. --dry-run always prints and never sends.
+code 3 unless --yes is given. --dry-run always prints and never sends. A dry run
+proves the request shape, not that the controller accepts the action: on Network
+10.6 the only device action is RESTART (verified live); port and client actions
+are documented but unverified, and a 400 lists the valid values.
 """
 import argparse
 import json
@@ -84,6 +87,11 @@ def print_table(rows, columns=None):
                 columns.append(k)
             if len(columns) >= 8:
                 break
+    def cell(r, c):
+        v = get_path(r, c, "")
+        return "" if v in (None, "", [], {}) else v
+    columns = [c for c in columns if any(cell(r, c) != "" for r in rows)] or columns[:1]
+    columns = [c for c in columns if not any(o != c and o.startswith(c + ".") for o in columns)]
     header = "| " + " | ".join(columns) + " |"
     sep = "|" + "|".join(["---"] * len(columns)) + "|"
     print(header)
@@ -523,7 +531,7 @@ COLUMNS = {
     "networks": ["name", "vlanId", "management", "enabled", "id"],
     "wifi": ["name", "enabled", "security.type", "networkId", "id"],
     "zones": ["name", "metadata.origin", "networkIds", "id"],
-    "policies": ["name", "enabled", "action", "source.zoneId", "destination.zoneId", "id"],
+    "policies": ["name", "enabled", "action.type", "action", "source.zoneId", "destination.zoneId", "id"],
     "acl": ["name", "enabled", "action", "type", "id"],
     "dns": ["name", "enabled", "type", "id"],
     "vouchers": ["code", "name", "expired", "timeLimitMinutes", "id"],
@@ -563,8 +571,8 @@ def cmd_devices(api, args):
         emit(api.request("GET", api.sp("/devices/%s" % args.id)))
     elif v == "stats":
         emit(api.request("GET", api.sp("/devices/%s/statistics/latest" % args.id)))
-    elif v in ("restart", "locate"):
-        guarded(api, args, "POST", api.sp("/devices/%s/actions" % args.id), {"action": v.upper()})
+    elif v == "restart":
+        guarded(api, args, "POST", api.sp("/devices/%s/actions" % args.id), {"action": "RESTART"})
     elif v == "action":
         guarded(api, args, "POST", api.sp("/devices/%s/actions" % args.id), {"action": args.action})
     elif v in ("port-cycle", "port-enable", "port-disable"):
@@ -730,9 +738,11 @@ def cmd_report(api, args):
                 "lastHeartbeatAt": st.get("lastHeartbeatAt"),
                 "uplinkTxBps": get_path(st, "uplink.txRateBps", None),
                 "uplinkRxBps": get_path(st, "uplink.rxRateBps", None),
-                "txRetriesPct": " / ".join("%sGHz %s%%" % (r.get("frequencyGHz"), r.get("txRetriesPct"))
-                                           for r in radios if r.get("txRetriesPct") is not None) or None,
             })
+            for r in radios:
+                if r.get("txRetriesPct") is not None:
+                    band = {2.4: "2g", 5: "5g", 6: "6g"}.get(r.get("frequencyGHz"), str(r.get("frequencyGHz")))
+                    row["txRetriesPct_%s" % band] = r.get("txRetriesPct")
         rows.append(row)
     names = {d["id"]: d.get("name") or d.get("model") for d in devices}
     for d, row in zip(devices, rows):
@@ -761,7 +771,8 @@ def cmd_report(api, args):
         print_table([summary], ["devicesTotal", "devicesByState", "firmwareUpdatable", "clientsTotal", "clientsByType"])
         print("\n## Devices\n")
         print_table(rows, ["name", "model", "ipAddress", "state", "firmwareVersion",
-                           "firmwareUpdatable", "uplinkDeviceName", "uptimeSec", "cpuPct", "memPct", "txRetriesPct", "id"])
+                           "firmwareUpdatable", "uplinkDeviceName", "uptimeSec", "cpuPct", "memPct",
+                           "txRetriesPct_2g", "txRetriesPct_5g", "txRetriesPct_6g", "id"])
         print("\n## WANs\n")
         print_table(wans if isinstance(wans, list) else [wans], COLUMNS["wans"] if isinstance(wans, list) else None)
     else:
@@ -824,7 +835,7 @@ def build_parser():
     p.set_defaults(fn=cmd_sites)
 
     p = sub.add_parser("devices", help="adopted devices and actions")
-    p.add_argument("verb", choices=["list", "get", "stats", "restart", "locate", "action",
+    p.add_argument("verb", choices=["list", "get", "stats", "restart", "action",
                                     "port-cycle", "port-enable", "port-disable", "unadopt", "pending", "adopt"])
     p.add_argument("id", nargs="?", help="device id")
     p.add_argument("--port", type=int, help="port index for port-* verbs")
@@ -919,7 +930,7 @@ def main(argv=None):
             die("clients find needs search text (name, hostname, IP or MAC)", EXIT_USAGE)
         args.query = args.id
     needs_id = {
-        "devices": {"get", "stats", "restart", "locate", "action", "port-cycle", "port-enable", "port-disable", "unadopt"},
+        "devices": {"get", "stats", "restart", "action", "port-cycle", "port-enable", "port-disable", "unadopt"},
         "clients": {"get", "block", "unblock", "authorize", "action"},
         "networks": {"get", "update", "patch", "delete", "references"},
         "wifi": {"get", "update", "patch", "delete"}, "acl": {"get", "update", "patch", "delete"},

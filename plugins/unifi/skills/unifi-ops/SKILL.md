@@ -22,7 +22,7 @@ includes the `id` column, so one call serves both reading and the follow-up comm
 
 ```
 info                         sites list
-devices  list|get|stats|restart|locate|action --action X|port-cycle|port-enable|port-disable --port N|unadopt|pending|adopt --macs
+devices  list|get|stats|restart|action --action X|port-cycle|port-enable|port-disable --port N|unadopt|pending|adopt --macs
 clients  list|get|find <name|ip|mac>|block|unblock|authorize --minutes N|action --action X
 networks list|get|references|create|update|delete        wifi     list|get|create|update|delete
 firewall zones|policies  list|get|create|update|patch|delete|ordering|reorder
@@ -32,9 +32,11 @@ report health [--no-stats]   raw <METHOD> <path> [--body ...]   cloud hosts|site
 flags: --table  --filter "<expr>"  --limit N  --site NAME  --body <file|-|json>  --dry-run  --yes
 ```
 
-`report health` already contains per-device uptime, CPU/mem, uplink and per-radio
-`txRetriesPct`, so for "is this AP worse than the others" you do not need a `stats` call per
-device. `devices list` and `clients find` carry the uplink device name; the Integration API
+`report health` already contains per-device uptime, CPU/mem and per-band `txRetriesPct_2g/5g/6g`,
+so for "is this AP worse than the others" you do not need a `stats` call per device. List
+endpoints return summaries on current firmware (wifi lists carry only name/enabled/id, WANs only
+id/name, devices no uplink); `--table` hides columns that came back empty, and `get <id>` has the
+full object when you need it. `devices list` and `clients find` carry the uplink device name; the Integration API
 does not say which switch *port* a wired client is on, so when a task needs a port, ask the
 user or use SSH (`references/ssh-commands.md`) instead of probing endpoints for it.
 
@@ -74,7 +76,11 @@ Shell commands are in `references/ssh-commands.md`.
 ## The change protocol
 
 Every mutating verb (`create`, `update`, `patch`, `delete`, `reorder`, `restart`,
-`port-cycle`, `block`, `adopt`, non-GET `raw`, ...) behaves the same way:
+`port-cycle`, `block`, `adopt`, non-GET `raw`, ...) behaves the same way. A dry run proves the
+request shape, not that the controller accepts it: on Network 10.6 the only device action is
+`RESTART` (verified live; there is no LOCATE), and port and client actions are documented but
+unverified. A 400 names the valid values, so when one comes back, report that rather than retrying
+with a guess.
 
 1. Without `--yes` the script prints the exact method, URL and body and exits with code 3.
    That output *is* your plan. Show it to the user in words plus the body, together with what

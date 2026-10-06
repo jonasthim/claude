@@ -101,11 +101,15 @@ Same protocol as §3, shorter plan. Spell out the impact before asking:
 | `devices restart <switch>` | every client and AP behind it drops for ~1–2 min |
 | `devices restart <ap>` | its wireless clients roam or drop for ~1 min |
 | `devices port-cycle <switch> --port N` | that port loses link/PoE ~10 s; if N is an uplink, everything downstream drops |
-| `devices locate <id>` | LED blinks; harmless |
 | `clients block <id>` | device loses all network access until unblocked |
 | `clients authorize <id> --minutes` | grants guest portal access |
 | `devices adopt --macs` | adopts pending devices; they reprovision |
 | `devices unadopt <id>` | factory-resets the device's config; avoid unless asked explicitly |
+
+Verified against Network 10.6.106: `RESTART` is the only accepted device action (no LOCATE). Port
+actions (`POWER_CYCLE`, `ENABLE`, `DISABLE`) and client actions (`BLOCK`, `UNBLOCK`,
+`AUTHORIZE_GUEST_ACCESS`) match the published API but have not been exercised live yet; if the
+controller answers 400 with "valid values: ...", relay those values to the user instead of guessing.
 
 Before a port cycle you need the port index, and the API does not provide a client → port
 mapping (`clients` carry `uplinkDeviceId` only; `interfaces.ports[]` has no MAC table). Do not
