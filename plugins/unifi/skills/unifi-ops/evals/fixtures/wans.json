@@ -1,0 +1,18 @@
+[
+  {
+    "id": "wan1",
+    "name": "Primary WAN",
+    "enabled": true,
+    "type": "DHCP",
+    "ipv4": {
+      "address": "203.0.113.42/24",
+      "gateway": "203.0.113.1"
+    },
+    "dns": [
+      "1.1.1.1",
+      "9.9.9.9"
+    ],
+    "portIdx": 9,
+    "deviceId": "d1a1-gw"
+  }
+]

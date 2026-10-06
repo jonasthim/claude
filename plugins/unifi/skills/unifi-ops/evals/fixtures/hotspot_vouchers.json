@@ -1,0 +1,11 @@
+[
+  {
+    "id": "v-1",
+    "code": "1234567890",
+    "name": "Airbnb week 41",
+    "expired": false,
+    "timeLimitMinutes": 10080,
+    "createdAt": "2026-10-01T10:00:00Z",
+    "authorizedGuestLimit": 2
+  }
+]

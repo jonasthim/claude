@@ -1,0 +1,182 @@
+[
+  {
+    "id": "c001-jonas-mbp",
+    "name": "jonas-mbp",
+    "connectedAt": "2026-10-06T08:11:40Z",
+    "ipAddress": "192.168.1.50",
+    "macAddress": "f4:d4:88:aa:00:01",
+    "type": "WIRELESS",
+    "access": {
+      "type": "DEFAULT"
+    },
+    "uplinkDeviceId": "d5e5-ap-office"
+  },
+  {
+    "id": "c002-jonas-iphone",
+    "name": "jonas-iphone",
+    "connectedAt": "2026-10-05T19:02:11Z",
+    "ipAddress": "192.168.1.51",
+    "macAddress": "f4:d4:88:aa:00:02",
+    "type": "WIRELESS",
+    "access": {
+      "type": "DEFAULT"
+    },
+    "uplinkDeviceId": "d4d4-ap-living"
+  },
+  {
+    "id": "c003-hallway-came",
+    "name": "hallway-camera",
+    "connectedAt": "2026-10-05T19:02:11Z",
+    "ipAddress": "192.168.20.21",
+    "macAddress": "e0:63:da:bb:00:03",
+    "type": "WIRED",
+    "access": {
+      "type": "DEFAULT"
+    },
+    "uplinkDeviceId": "d2b2-sw-core"
+  },
+  {
+    "id": "c004-frontdoor-ca",
+    "name": "frontdoor-camera",
+    "connectedAt": "2026-10-05T19:02:11Z",
+    "ipAddress": "192.168.20.22",
+    "macAddress": "e0:63:da:bb:00:04",
+    "type": "WIRED",
+    "access": {
+      "type": "DEFAULT"
+    },
+    "uplinkDeviceId": "d2b2-sw-core"
+  },
+  {
+    "id": "c005-nas",
+    "name": "nas",
+    "connectedAt": "2026-10-05T19:02:11Z",
+    "ipAddress": "192.168.1.20",
+    "macAddress": "00:11:32:cc:00:05",
+    "type": "WIRED",
+    "access": {
+      "type": "DEFAULT"
+    },
+    "uplinkDeviceId": "d2b2-sw-core"
+  },
+  {
+    "id": "c006-office-print",
+    "name": "office-printer",
+    "connectedAt": "2026-10-05T19:02:11Z",
+    "ipAddress": "192.168.1.60",
+    "macAddress": "30:05:5c:dd:00:06",
+    "type": "WIRED",
+    "access": {
+      "type": "DEFAULT"
+    },
+    "uplinkDeviceId": "d3c3-sw-office"
+  },
+  {
+    "id": "c007-living-room-",
+    "name": "living-room-tv",
+    "connectedAt": "2026-10-05T19:02:11Z",
+    "ipAddress": "192.168.20.30",
+    "macAddress": "a4:77:33:ee:00:07",
+    "type": "WIRELESS",
+    "access": {
+      "type": "DEFAULT"
+    },
+    "uplinkDeviceId": "d4d4-ap-living"
+  },
+  {
+    "id": "c008-sonos-kitche",
+    "name": "sonos-kitchen",
+    "connectedAt": "2026-10-05T19:02:11Z",
+    "ipAddress": "192.168.20.31",
+    "macAddress": "48:a6:b8:ee:00:08",
+    "type": "WIRELESS",
+    "access": {
+      "type": "DEFAULT"
+    },
+    "uplinkDeviceId": "d4d4-ap-living"
+  },
+  {
+    "id": "c009-thermostat",
+    "name": "thermostat",
+    "connectedAt": "2026-10-05T19:02:11Z",
+    "ipAddress": "192.168.20.32",
+    "macAddress": "18:b4:30:ee:00:09",
+    "type": "WIRELESS",
+    "access": {
+      "type": "DEFAULT"
+    },
+    "uplinkDeviceId": "d6f6-ap-hall"
+  },
+  {
+    "id": "c010-robot-vacuum",
+    "name": "robot-vacuum",
+    "connectedAt": "2026-10-05T19:02:11Z",
+    "ipAddress": "192.168.20.33",
+    "macAddress": "50:ec:50:ee:00:0a",
+    "type": "WIRELESS",
+    "access": {
+      "type": "DEFAULT"
+    },
+    "uplinkDeviceId": "d6f6-ap-hall"
+  },
+  {
+    "id": "c011-work-laptop",
+    "name": "work-laptop",
+    "connectedAt": "2026-10-06T07:58:02Z",
+    "ipAddress": "192.168.1.52",
+    "macAddress": "3c:22:fb:aa:00:0b",
+    "type": "WIRELESS",
+    "access": {
+      "type": "DEFAULT"
+    },
+    "uplinkDeviceId": "d5e5-ap-office"
+  },
+  {
+    "id": "c012-guest-pixel",
+    "name": "guest-pixel",
+    "connectedAt": "2026-10-05T19:02:11Z",
+    "ipAddress": "192.168.30.100",
+    "macAddress": "da:a1:19:ff:00:0c",
+    "type": "WIRELESS",
+    "access": {
+      "type": "GUEST"
+    },
+    "uplinkDeviceId": "d4d4-ap-living"
+  },
+  {
+    "id": "c013-homeassistan",
+    "name": "homeassistant",
+    "connectedAt": "2026-10-05T19:02:11Z",
+    "ipAddress": "192.168.1.21",
+    "macAddress": "dc:a6:32:cc:00:0d",
+    "type": "WIRED",
+    "access": {
+      "type": "DEFAULT"
+    },
+    "uplinkDeviceId": "d2b2-sw-core"
+  },
+  {
+    "id": "c014-desktop-pc",
+    "name": "desktop-pc",
+    "connectedAt": "2026-10-05T19:02:11Z",
+    "ipAddress": "192.168.1.53",
+    "macAddress": "b4:2e:99:aa:00:0e",
+    "type": "WIRED",
+    "access": {
+      "type": "DEFAULT"
+    },
+    "uplinkDeviceId": "d3c3-sw-office"
+  },
+  {
+    "id": "c015-wg-remote-jo",
+    "name": "wg-remote-jonas",
+    "connectedAt": "2026-10-05T19:02:11Z",
+    "ipAddress": "10.8.0.2",
+    "macAddress": "",
+    "type": "VPN",
+    "access": {
+      "type": "DEFAULT"
+    },
+    "uplinkDeviceId": "d1a1-gw"
+  }
+]

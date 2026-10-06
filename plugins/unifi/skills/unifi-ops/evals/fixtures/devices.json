@@ -1,0 +1,658 @@
+[
+  {
+    "id": "d1a1-gw",
+    "name": "Gateway",
+    "model": "UDM-Pro",
+    "supported": true,
+    "macAddress": "74:ac:b9:11:22:01",
+    "ipAddress": "192.168.1.1",
+    "state": "ONLINE",
+    "firmwareVersion": "4.3.6",
+    "firmwareUpdatable": false,
+    "adoptedAt": "2024-02-11T18:03:12Z",
+    "provisionedAt": "2026-10-01T06:12:44Z",
+    "features": [
+      "gateway",
+      "switching"
+    ],
+    "interfaces": {
+      "ports": [
+        {
+          "idx": 1,
+          "state": "UP",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 1000,
+          "poe": null
+        },
+        {
+          "idx": 2,
+          "state": "DOWN",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 0,
+          "poe": null
+        },
+        {
+          "idx": 3,
+          "state": "DOWN",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 0,
+          "poe": null
+        },
+        {
+          "idx": 4,
+          "state": "DOWN",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 0,
+          "poe": null
+        },
+        {
+          "idx": 5,
+          "state": "DOWN",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 0,
+          "poe": null
+        },
+        {
+          "idx": 6,
+          "state": "DOWN",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 0,
+          "poe": null
+        },
+        {
+          "idx": 7,
+          "state": "DOWN",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 0,
+          "poe": null
+        },
+        {
+          "idx": 8,
+          "state": "DOWN",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 0,
+          "poe": null
+        },
+        {
+          "idx": 9,
+          "state": "UP",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 1000,
+          "poe": null
+        }
+      ],
+      "radios": []
+    }
+  },
+  {
+    "id": "d2b2-sw-core",
+    "name": "Core Switch",
+    "model": "USW-24-PoE",
+    "supported": true,
+    "macAddress": "74:ac:b9:11:22:02",
+    "ipAddress": "192.168.1.2",
+    "state": "ONLINE",
+    "firmwareVersion": "7.1.26",
+    "firmwareUpdatable": false,
+    "adoptedAt": "2024-02-11T18:20:40Z",
+    "provisionedAt": "2026-10-01T06:13:02Z",
+    "features": [
+      "switching"
+    ],
+    "uplink": {
+      "deviceId": "d1a1-gw"
+    },
+    "interfaces": {
+      "ports": [
+        {
+          "idx": 1,
+          "state": "UP",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 1000,
+          "poe": {
+            "standard": "802.3at",
+            "type": "PSE",
+            "enabled": true,
+            "state": "UP"
+          }
+        },
+        {
+          "idx": 2,
+          "state": "UP",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 1000,
+          "poe": {
+            "standard": "802.3at",
+            "type": "PSE",
+            "enabled": true,
+            "state": "UP"
+          }
+        },
+        {
+          "idx": 3,
+          "state": "UP",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 1000,
+          "poe": {
+            "standard": "802.3at",
+            "type": "PSE",
+            "enabled": true,
+            "state": "UP"
+          }
+        },
+        {
+          "idx": 4,
+          "state": "DOWN",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 0,
+          "poe": {
+            "standard": "802.3at",
+            "type": "PSE",
+            "enabled": true,
+            "state": "DOWN"
+          }
+        },
+        {
+          "idx": 5,
+          "state": "UP",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 1000,
+          "poe": {
+            "standard": "802.3at",
+            "type": "PSE",
+            "enabled": true,
+            "state": "UP"
+          }
+        },
+        {
+          "idx": 6,
+          "state": "DOWN",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 0,
+          "poe": {
+            "standard": "802.3at",
+            "type": "PSE",
+            "enabled": true,
+            "state": "DOWN"
+          }
+        },
+        {
+          "idx": 7,
+          "state": "UP",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 1000,
+          "poe": {
+            "standard": "802.3at",
+            "type": "PSE",
+            "enabled": true,
+            "state": "UP"
+          }
+        },
+        {
+          "idx": 8,
+          "state": "UP",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 1000,
+          "poe": {
+            "standard": "802.3at",
+            "type": "PSE",
+            "enabled": true,
+            "state": "UP"
+          }
+        },
+        {
+          "idx": 9,
+          "state": "DOWN",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 0,
+          "poe": {
+            "standard": "802.3at",
+            "type": "PSE",
+            "enabled": true,
+            "state": "DOWN"
+          }
+        },
+        {
+          "idx": 10,
+          "state": "DOWN",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 0,
+          "poe": {
+            "standard": "802.3at",
+            "type": "PSE",
+            "enabled": true,
+            "state": "DOWN"
+          }
+        },
+        {
+          "idx": 11,
+          "state": "DOWN",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 0,
+          "poe": {
+            "standard": "802.3at",
+            "type": "PSE",
+            "enabled": true,
+            "state": "DOWN"
+          }
+        },
+        {
+          "idx": 12,
+          "state": "UP",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 1000,
+          "poe": {
+            "standard": "802.3at",
+            "type": "PSE",
+            "enabled": true,
+            "state": "UP"
+          }
+        },
+        {
+          "idx": 13,
+          "state": "DOWN",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 0,
+          "poe": {
+            "standard": "802.3at",
+            "type": "PSE",
+            "enabled": true,
+            "state": "DOWN"
+          }
+        },
+        {
+          "idx": 14,
+          "state": "DOWN",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 0,
+          "poe": {
+            "standard": "802.3at",
+            "type": "PSE",
+            "enabled": true,
+            "state": "DOWN"
+          }
+        },
+        {
+          "idx": 15,
+          "state": "DOWN",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 0,
+          "poe": {
+            "standard": "802.3at",
+            "type": "PSE",
+            "enabled": true,
+            "state": "DOWN"
+          }
+        },
+        {
+          "idx": 16,
+          "state": "DOWN",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 0,
+          "poe": {
+            "standard": "802.3at",
+            "type": "PSE",
+            "enabled": true,
+            "state": "DOWN"
+          }
+        },
+        {
+          "idx": 17,
+          "state": "DOWN",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 0,
+          "poe": {
+            "standard": "802.3at",
+            "type": "PSE",
+            "enabled": true,
+            "state": "DOWN"
+          }
+        },
+        {
+          "idx": 18,
+          "state": "DOWN",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 0,
+          "poe": {
+            "standard": "802.3at",
+            "type": "PSE",
+            "enabled": true,
+            "state": "DOWN"
+          }
+        },
+        {
+          "idx": 19,
+          "state": "DOWN",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 0,
+          "poe": {
+            "standard": "802.3at",
+            "type": "PSE",
+            "enabled": true,
+            "state": "DOWN"
+          }
+        },
+        {
+          "idx": 20,
+          "state": "DOWN",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 0,
+          "poe": {
+            "standard": "802.3at",
+            "type": "PSE",
+            "enabled": true,
+            "state": "DOWN"
+          }
+        },
+        {
+          "idx": 21,
+          "state": "DOWN",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 0,
+          "poe": {
+            "standard": "802.3at",
+            "type": "PSE",
+            "enabled": true,
+            "state": "DOWN"
+          }
+        },
+        {
+          "idx": 22,
+          "state": "DOWN",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 0,
+          "poe": {
+            "standard": "802.3at",
+            "type": "PSE",
+            "enabled": true,
+            "state": "DOWN"
+          }
+        },
+        {
+          "idx": 23,
+          "state": "DOWN",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 0,
+          "poe": {
+            "standard": "802.3at",
+            "type": "PSE",
+            "enabled": true,
+            "state": "DOWN"
+          }
+        },
+        {
+          "idx": 24,
+          "state": "DOWN",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 0,
+          "poe": {
+            "standard": "802.3at",
+            "type": "PSE",
+            "enabled": true,
+            "state": "DOWN"
+          }
+        },
+        {
+          "idx": 25,
+          "state": "UP",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 1000,
+          "poe": null
+        },
+        {
+          "idx": 26,
+          "state": "DOWN",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 0,
+          "poe": {
+            "standard": "802.3at",
+            "type": "PSE",
+            "enabled": true,
+            "state": "DOWN"
+          }
+        }
+      ],
+      "radios": []
+    }
+  },
+  {
+    "id": "d3c3-sw-office",
+    "name": "Office Switch",
+    "model": "USW-Flex-Mini",
+    "supported": true,
+    "macAddress": "74:ac:b9:11:22:03",
+    "ipAddress": "192.168.1.3",
+    "state": "OFFLINE",
+    "firmwareVersion": "2.0.9",
+    "firmwareUpdatable": true,
+    "adoptedAt": "2024-05-02T09:11:00Z",
+    "provisionedAt": "2026-09-28T21:40:10Z",
+    "features": [
+      "switching"
+    ],
+    "uplink": {
+      "deviceId": "d2b2-sw-core"
+    },
+    "interfaces": {
+      "ports": [
+        {
+          "idx": 1,
+          "state": "DOWN",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 0,
+          "poe": null
+        },
+        {
+          "idx": 2,
+          "state": "DOWN",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 0,
+          "poe": null
+        },
+        {
+          "idx": 3,
+          "state": "DOWN",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 0,
+          "poe": null
+        },
+        {
+          "idx": 4,
+          "state": "DOWN",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 0,
+          "poe": null
+        },
+        {
+          "idx": 5,
+          "state": "DOWN",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 0,
+          "poe": null
+        }
+      ],
+      "radios": []
+    }
+  },
+  {
+    "id": "d4d4-ap-living",
+    "name": "Living Room AP",
+    "model": "U6-Pro",
+    "supported": true,
+    "macAddress": "74:ac:b9:11:22:04",
+    "ipAddress": "192.168.1.10",
+    "state": "ONLINE",
+    "firmwareVersion": "6.6.77",
+    "firmwareUpdatable": false,
+    "adoptedAt": "2024-02-11T18:30:00Z",
+    "provisionedAt": "2026-10-01T06:13:30Z",
+    "features": [
+      "accessPoint"
+    ],
+    "uplink": {
+      "deviceId": "d2b2-sw-core"
+    },
+    "interfaces": {
+      "ports": [
+        {
+          "idx": 1,
+          "state": "UP",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 1000,
+          "poe": null
+        }
+      ],
+      "radios": [
+        {
+          "wlanStandard": "802.11ax",
+          "frequencyGHz": 2.4,
+          "channelWidthMHz": 20,
+          "channel": 6
+        },
+        {
+          "wlanStandard": "802.11ax",
+          "frequencyGHz": 5,
+          "channelWidthMHz": 80,
+          "channel": 36
+        }
+      ]
+    }
+  },
+  {
+    "id": "d5e5-ap-office",
+    "name": "Office AP",
+    "model": "U6-Lite",
+    "supported": true,
+    "macAddress": "74:ac:b9:11:22:05",
+    "ipAddress": "192.168.1.11",
+    "state": "ONLINE",
+    "firmwareVersion": "6.6.55",
+    "firmwareUpdatable": true,
+    "adoptedAt": "2024-02-11T18:31:00Z",
+    "provisionedAt": "2026-10-01T06:13:31Z",
+    "features": [
+      "accessPoint"
+    ],
+    "uplink": {
+      "deviceId": "d2b2-sw-core"
+    },
+    "interfaces": {
+      "ports": [
+        {
+          "idx": 1,
+          "state": "UP",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 1000,
+          "poe": null
+        }
+      ],
+      "radios": [
+        {
+          "wlanStandard": "802.11ax",
+          "frequencyGHz": 2.4,
+          "channelWidthMHz": 20,
+          "channel": 1
+        },
+        {
+          "wlanStandard": "802.11ax",
+          "frequencyGHz": 5,
+          "channelWidthMHz": 80,
+          "channel": 36
+        }
+      ]
+    }
+  },
+  {
+    "id": "d6f6-ap-hall",
+    "name": "Hallway AP",
+    "model": "U7-Pro",
+    "supported": true,
+    "macAddress": "74:ac:b9:11:22:06",
+    "ipAddress": "192.168.1.12",
+    "state": "ONLINE",
+    "firmwareVersion": "7.1.68",
+    "firmwareUpdatable": false,
+    "adoptedAt": "2025-03-20T12:00:00Z",
+    "provisionedAt": "2026-10-01T06:13:32Z",
+    "features": [
+      "accessPoint"
+    ],
+    "uplink": {
+      "deviceId": "d2b2-sw-core"
+    },
+    "interfaces": {
+      "ports": [
+        {
+          "idx": 1,
+          "state": "UP",
+          "connector": "RJ45",
+          "maxSpeedMbps": 1000,
+          "speedMbps": 1000,
+          "poe": null
+        }
+      ],
+      "radios": [
+        {
+          "wlanStandard": "802.11be",
+          "frequencyGHz": 2.4,
+          "channelWidthMHz": 20,
+          "channel": 11
+        },
+        {
+          "wlanStandard": "802.11be",
+          "frequencyGHz": 5,
+          "channelWidthMHz": 80,
+          "channel": 100
+        },
+        {
+          "wlanStandard": "802.11be",
+          "frequencyGHz": 6,
+          "channelWidthMHz": 160,
+          "channel": 37
+        }
+      ]
+    }
+  }
+]
