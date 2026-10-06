@@ -1,0 +1,262 @@
+{
+  "_comment": "Routes for tests/mock_pve.py. Key: '<METHOD> <api path>'. Success: {status, body} wrapped as {data: body}. Error: {status, message, errors}. Task status/log endpoints are handled in code.",
+
+  "GET /version": {
+    "status": 200,
+    "body": {"version": "9.2.1", "release": "9.2", "repoid": "deadbeef"}
+  },
+
+  "GET /access/permissions": {
+    "status": 200,
+    "body": {
+      "/": {"Sys.Audit": 1, "VM.Audit": 1, "Datastore.Audit": 1},
+      "/vms": {"VM.PowerMgmt": 1, "VM.Allocate": 1, "VM.Snapshot": 1, "VM.Migrate": 1}
+    }
+  },
+
+  "GET /cluster/status": {
+    "status": 200,
+    "body": [
+      {"type": "cluster", "id": "cluster", "name": "testlab", "quorate": 1, "nodes": 2, "version": 4},
+      {"type": "node", "id": "node/pve1", "name": "pve1", "nodeid": 1, "online": 1, "local": 1, "ip": "10.0.0.11", "level": ""},
+      {"type": "node", "id": "node/pve2", "name": "pve2", "nodeid": 2, "online": 1, "local": 0, "ip": "10.0.0.12", "level": ""}
+    ]
+  },
+
+  "GET /cluster/resources": {
+    "status": 200,
+    "body": [
+      {"id": "node/pve1", "type": "node", "node": "pve1", "status": "online", "cpu": 0.05, "maxcpu": 8, "mem": 8589934592, "maxmem": 34359738368, "disk": 21474836480, "maxdisk": 107374182400, "uptime": 864000, "level": ""},
+      {"id": "node/pve2", "type": "node", "node": "pve2", "status": "online", "cpu": 0.02, "maxcpu": 8, "mem": 4294967296, "maxmem": 34359738368, "disk": 10737418240, "maxdisk": 107374182400, "uptime": 432000, "level": ""},
+      {"id": "qemu/100", "type": "qemu", "vmid": 100, "name": "web01", "node": "pve1", "status": "running", "template": 0, "cpu": 0.1, "maxcpu": 2, "mem": 1073741824, "maxmem": 2147483648, "disk": 0, "maxdisk": 34359738368, "uptime": 3600, "tags": "web"},
+      {"id": "qemu/101", "type": "qemu", "vmid": 101, "name": "db01", "node": "pve1", "status": "stopped", "template": 0, "cpu": 0, "maxcpu": 4, "mem": 0, "maxmem": 4294967296, "disk": 0, "maxdisk": 68719476736, "uptime": 0},
+      {"id": "qemu/200", "type": "qemu", "vmid": 200, "name": "debian-cloud-template", "node": "pve1", "status": "stopped", "template": 1, "cpu": 0, "maxcpu": 2, "mem": 0, "maxmem": 2147483648, "disk": 0, "maxdisk": 10737418240, "uptime": 0},
+      {"id": "lxc/105", "type": "lxc", "vmid": 105, "name": "ct-dns", "node": "pve2", "status": "running", "template": 0, "cpu": 0.01, "maxcpu": 1, "mem": 134217728, "maxmem": 536870912, "disk": 1073741824, "maxdisk": 8589934592, "uptime": 7200},
+      {"id": "storage/pve1/local", "type": "storage", "storage": "local", "node": "pve1", "status": "available", "plugintype": "dir", "content": "backup,iso,vztmpl", "shared": 0, "disk": 91268055040, "maxdisk": 107374182400},
+      {"id": "storage/pve1/local-lvm", "type": "storage", "storage": "local-lvm", "node": "pve1", "status": "available", "plugintype": "lvmthin", "content": "images,rootdir", "shared": 0, "disk": 107374182400, "maxdisk": 429496729600},
+      {"id": "storage/pve2/local", "type": "storage", "storage": "local", "node": "pve2", "status": "available", "plugintype": "dir", "content": "backup,iso,vztmpl", "shared": 0, "disk": 32212254720, "maxdisk": 107374182400},
+      {"id": "storage/pve2/local-lvm", "type": "storage", "storage": "local-lvm", "node": "pve2", "status": "available", "plugintype": "lvmthin", "content": "images,rootdir", "shared": 0, "disk": 53687091200, "maxdisk": 429496729600}
+    ]
+  },
+
+  "GET /cluster/nextid": {
+    "status": 200,
+    "body": "106"
+  },
+
+  "GET /nodes": {
+    "status": 200,
+    "body": [
+      {"node": "pve1", "id": "node/pve1", "type": "node", "status": "online", "cpu": 0.05, "maxcpu": 8, "mem": 8589934592, "maxmem": 34359738368, "disk": 21474836480, "maxdisk": 107374182400, "uptime": 864000, "level": "", "ssl_fingerprint": "AA:BB"},
+      {"node": "pve2", "id": "node/pve2", "type": "node", "status": "online", "cpu": 0.02, "maxcpu": 8, "mem": 4294967296, "maxmem": 34359738368, "disk": 10737418240, "maxdisk": 107374182400, "uptime": 432000, "level": "", "ssl_fingerprint": "CC:DD"}
+    ]
+  },
+
+  "GET /nodes/pve1/status": {
+    "status": 200,
+    "body": {
+      "pveversion": "pve-manager/9.2.1/deadbeef",
+      "kversion": "Linux 6.17.0-1-pve",
+      "uptime": 864000,
+      "loadavg": ["0.10", "0.15", "0.12"],
+      "cpu": 0.05,
+      "cpuinfo": {"cpus": 8, "model": "Test CPU", "sockets": 1, "cores": 8},
+      "memory": {"total": 34359738368, "used": 8589934592, "free": 25769803776},
+      "swap": {"total": 8589934592, "used": 0, "free": 8589934592},
+      "rootfs": {"total": 107374182400, "used": 21474836480, "avail": 85899345920}
+    }
+  },
+
+  "GET /nodes/pve1/qemu": {
+    "status": 200,
+    "body": [
+      {"vmid": 100, "name": "web01", "status": "running", "cpus": 2, "maxmem": 2147483648, "mem": 1073741824, "maxdisk": 34359738368, "uptime": 3600, "pid": 4242, "tags": "web"},
+      {"vmid": 101, "name": "db01", "status": "stopped", "cpus": 4, "maxmem": 4294967296, "mem": 0, "maxdisk": 68719476736, "uptime": 0},
+      {"vmid": 200, "name": "debian-cloud-template", "status": "stopped", "template": 1, "cpus": 2, "maxmem": 2147483648, "mem": 0, "maxdisk": 10737418240, "uptime": 0}
+    ]
+  },
+
+  "GET /nodes/pve1/lxc": {
+    "status": 200,
+    "body": []
+  },
+
+  "GET /nodes/pve2/lxc": {
+    "status": 200,
+    "body": [
+      {"vmid": 105, "name": "ct-dns", "type": "lxc", "status": "running", "cpus": 1, "maxmem": 536870912, "mem": 134217728, "maxswap": 536870912, "maxdisk": 8589934592, "disk": 1073741824, "uptime": 7200}
+    ]
+  },
+
+  "GET /nodes/pve1/qemu/100/config": {
+    "status": 200,
+    "body": {
+      "digest": "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b",
+      "name": "web01",
+      "memory": 2048,
+      "cores": 2,
+      "sockets": 1,
+      "cpu": "x86-64-v2-AES",
+      "ostype": "l26",
+      "scsihw": "virtio-scsi-pci",
+      "scsi0": "local-lvm:vm-100-disk-0,size=32G",
+      "net0": "virtio=BC:24:11:00:00:01,bridge=vmbr0",
+      "boot": "order=scsi0",
+      "onboot": 1,
+      "agent": "1",
+      "tags": "web",
+      "smbios1": "uuid=00000000-0000-4000-8000-000000000100",
+      "vmgenid": "00000000-0000-4000-8000-0000000000aa"
+    }
+  },
+
+  "GET /nodes/pve1/qemu/100/status/current": {
+    "status": 200,
+    "body": {
+      "vmid": 100, "name": "web01", "status": "running", "qmpstatus": "running",
+      "cpus": 2, "cpu": 0.1, "maxmem": 2147483648, "mem": 1073741824,
+      "maxdisk": 34359738368, "disk": 0, "uptime": 3600, "pid": 4242,
+      "agent": 1, "ha": {"managed": 0}, "tags": "web"
+    }
+  },
+
+  "GET /nodes/pve1/qemu/101/status/current": {
+    "status": 200,
+    "body": {
+      "vmid": 101, "name": "db01", "status": "stopped", "qmpstatus": "stopped",
+      "cpus": 4, "cpu": 0, "maxmem": 4294967296, "mem": 0,
+      "maxdisk": 68719476736, "disk": 0, "uptime": 0,
+      "ha": {"managed": 0}
+    }
+  },
+
+  "GET /nodes/pve1/qemu/101/config": {
+    "status": 200,
+    "body": {
+      "digest": "9f8e7d6c5b4a39281706f5e4d3c2b1a0f9e8d7c6",
+      "name": "db01",
+      "memory": 4096,
+      "cores": 4,
+      "sockets": 1,
+      "ostype": "l26",
+      "scsihw": "virtio-scsi-pci",
+      "scsi0": "local-lvm:vm-101-disk-0,size=64G",
+      "net0": "virtio=BC:24:11:00:00:02,bridge=vmbr0",
+      "boot": "order=scsi0",
+      "onboot": 0
+    }
+  },
+
+  "GET /nodes/pve1/qemu/200/snapshot": {
+    "status": 200,
+    "body": [
+      {"name": "clean-install", "description": "fresh image", "snaptime": 1725000000, "vmstate": 0, "parent": null},
+      {"name": "current", "description": "You are here!", "running": 0, "parent": "clean-install"}
+    ]
+  },
+
+  "GET /nodes/pve1/storage": {
+    "status": 200,
+    "body": [
+      {"storage": "local", "type": "dir", "content": "backup,iso,vztmpl", "active": 1, "enabled": 1, "shared": 0, "total": 107374182400, "used": 91268055040, "avail": 16106127360, "used_fraction": 0.85},
+      {"storage": "local-lvm", "type": "lvmthin", "content": "images,rootdir", "active": 1, "enabled": 1, "shared": 0, "total": 429496729600, "used": 107374182400, "avail": 322122547200, "used_fraction": 0.25}
+    ]
+  },
+
+  "GET /nodes/pve1/storage/local/content": {
+    "status": 200,
+    "body": [
+      {"volid": "local:vztmpl/debian-12-standard_12.7-1_amd64.tar.zst", "content": "vztmpl", "format": "tzst", "size": 134217728, "ctime": 1724000000},
+      {"volid": "local:backup/vzdump-qemu-100-2026_10_05-02_00_01.vma.zst", "content": "backup", "format": "vma.zst", "size": 2147483648, "ctime": 1759629601, "vmid": 100, "subtype": "qemu", "notes": "web01 on pve1", "protected": 0}
+    ]
+  },
+
+  "GET /cluster/backup": {
+    "status": 200,
+    "body": [
+      {"id": "backup-nightly", "type": "vzdump", "enabled": 1, "schedule": "02:00", "starttime": "02:00", "storage": "local", "mode": "snapshot", "compress": "zstd", "vmid": "100,101", "node": "pve1", "prune-backups": "keep-last=3", "notes-template": "{{guestname}} on {{node}}", "notification-mode": "auto", "next-run": 1759716000}
+    ]
+  },
+
+  "GET /cluster/ha/resources": {
+    "status": 200,
+    "body": []
+  },
+
+  "GET /cluster/ha/rules": {
+    "status": 200,
+    "body": []
+  },
+
+  "GET /nodes/pve1/tasks": {
+    "status": 200,
+    "body": [
+      {"upid": "UPID:pve1:0000BEEF:00012345:66F10000:vzdump:103:root@pam:", "node": "pve1", "type": "vzdump", "id": "103", "user": "root@pam", "status": "job errors", "starttime": 1759629601, "endtime": 1759629700, "pid": 48879, "pstart": 74565},
+      {"upid": "UPID:pve1:000A1B2C:0001F3A4:66F00000:qmstart:100:test@pve!ci:", "node": "pve1", "type": "qmstart", "id": "100", "user": "test@pve!ci", "status": "OK", "starttime": 1759600000, "endtime": 1759600005, "pid": 662316, "pstart": 127908}
+    ]
+  },
+
+  "GET /cluster/tasks": {
+    "status": 200,
+    "body": [
+      {"upid": "UPID:pve1:0000BEEF:00012345:66F10000:vzdump:103:root@pam:", "node": "pve1", "type": "vzdump", "id": "103", "user": "root@pam", "status": "job errors", "starttime": 1759629601, "endtime": 1759629700, "saved": "1"},
+      {"upid": "UPID:pve1:000A1B2C:0001F3A4:66F00000:qmstart:100:test@pve!ci:", "node": "pve1", "type": "qmstart", "id": "100", "user": "test@pve!ci", "status": "OK", "starttime": 1759600000, "endtime": 1759600005, "saved": "1"}
+    ]
+  },
+
+  "POST /nodes/pve1/qemu/100/status/start": {
+    "status": 200,
+    "body": "UPID:pve1:000A1B2C:0001F3A4:66F00000:qmstart:100:test@pve!ci:"
+  },
+
+  "POST /nodes/pve1/qemu/101/status/stop": {
+    "status": 200,
+    "body": "UPID:pve1:000A1B2D:0001F3A5:66F00001:qmstop:101:test@pve!ci:"
+  },
+
+  "DELETE /nodes/pve1/qemu/999": {
+    "status": 403,
+    "message": "Permission check failed (/vms/999, VM.Allocate)"
+  },
+
+  "POST /nodes/pve1/qemu": {
+    "status": 400,
+    "message": "Parameter verification failed.",
+    "errors": {"vmid": "property is missing and it is not optional"}
+  },
+
+  "POST /nodes/pve1/lxc": {
+    "status": 200,
+    "body": "UPID:pve1:000B1C2D:0002F3A4:66F00010:vzcreate:106:test@pve!ci:"
+  },
+
+  "POST /nodes/pve1/qemu/200/snapshot": {
+    "status": 200,
+    "body": "UPID:pve1:000C1D2E:0003F3A4:66F00020:qmsnapshot:200:test@pve!ci:"
+  },
+
+  "POST /nodes/pve1/qemu/200/snapshot/pre-upgrade/rollback": {
+    "status": 200,
+    "body": "UPID:pve1:000C1D2F:0003F3A5:66F00021:qmrollback:200:test@pve!ci:"
+  },
+
+  "POST /cluster/ha/resources": {
+    "status": 200,
+    "body": null
+  },
+
+  "POST /cluster/ha/rules": {
+    "status": 200,
+    "body": null
+  },
+
+  "POST /nodes/pve1/vzdump": {
+    "status": 200,
+    "body": "UPID:pve1:000D1E2F:0004F3A4:66F00030:vzdump:102:test@pve!ci:"
+  },
+
+  "PUT /nodes/pve1/qemu/100/config": {
+    "status": 200,
+    "body": null
+  }
+}
