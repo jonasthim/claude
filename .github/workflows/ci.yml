@@ -49,3 +49,6 @@ jobs:
       - run: npm install -g @anthropic-ai/claude-code
       - run: claude plugin validate .
       - run: for p in plugins/*/; do claude plugin validate "$p" || exit 1; done
+      # The worked example in docs/mods.md.
+      - run: claude plugin validate docs/examples/homelab-guard
+      - run: claude plugin test docs/examples/homelab-guard

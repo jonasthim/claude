@@ -26,6 +26,7 @@ receive an update.
   and leaves password login to the user.
 - `/proxmox:doctor` classifies the token per ACL path instead of treating one node-scoped
   `Sys.Modify` as cluster-wide admin.
+- README free set no longer lists token creation, which is the user's own step.
 
 ## 0.2.0 - 2026-10-06
 
