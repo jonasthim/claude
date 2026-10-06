@@ -3,7 +3,7 @@
 #
 # Usage: bash tests/run.sh [--allow-missing] [--no-validate]
 #   --allow-missing  pass through to lint_plugin.py (interim runs)
-#   --no-validate    skip "claude plugin validate ."
+#   --no-validate    skip "claude plugin validate --strict ."
 #
 # Starts tests/mock_pve.py on a random port, runs the scripts against it,
 # checks the guard rule table and prints PASS/FAIL/SKIP lines plus a summary.
@@ -551,8 +551,8 @@ fi
 if [ "$no_validate" -eq 1 ]; then
   skip "claude plugin validate" "--no-validate"
 elif command -v claude >/dev/null 2>&1; then
-  capture validate claude plugin validate .
-  if [ "$rc" -eq 0 ]; then pass "claude plugin validate ."; else fail "claude plugin validate ." "$(printf '%s' "$out" | head -n 20)"; fi
+  capture validate claude plugin validate --strict .
+  if [ "$rc" -eq 0 ]; then pass "claude plugin validate --strict ."; else fail "claude plugin validate --strict ." "$(printf '%s' "$out" | head -n 20)"; fi
 else
   skip "claude plugin validate" "claude CLI not installed"
 fi

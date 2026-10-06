@@ -157,7 +157,8 @@ The `pve` skill's section 1 is the authoritative copy of both lists.
 
 Only `pve` is model-invocable; the other skills run when you type the command. `/proxmox:status` and
 `/proxmox:doctor` pre-approve `pve-api.sh GET` calls through `allowed-tools`, so read-only checks run without a
-permission prompt; writes still prompt.
+permission prompt; writes still prompt (verified with `claude --plugin-dir` in headless mode: the same GET
+call is blocked without the rule and runs with it).
 
 ## Subagent
 

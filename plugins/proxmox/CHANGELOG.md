@@ -20,7 +20,8 @@ receive an update.
   contract, env table and the empty-storage pitfall live only in the `pve`
   skill; `vm`, `ct`, `snapshot`, `backup` and `status` point to it.
 - `/proxmox:status` and `/proxmox:doctor` declare `allowed-tools` for
-  `pve-api.sh GET` calls, so read-only checks run without a permission prompt.
+  `pve-api.sh GET` calls, so read-only checks run without a permission prompt
+  (verified with `claude --plugin-dir` in headless mode).
 - The `proxmox-operator` agent defers to the preloaded `pve` skill for the
   gated and free lists and runs the three-call connection check inline.
 - `## Contents` sections in every reference over 100 lines.
