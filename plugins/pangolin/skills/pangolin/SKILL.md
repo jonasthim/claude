@@ -131,8 +131,9 @@ UNVERIFIED, so check `online` first and say so when it is not.
 The API returns some credentials in cleartext: a new site's `secret`, a generated
 `accessToken`, a new API key, a target's `authToken`, an identity provider's `clientSecret`,
 and whatever the operator put in `hcHeaders` or request headers. `pangolin.py` redacts
-credential-shaped keys and credential-looking header values in everything it prints, dry-run
-bodies included, unless `--show-secrets` is passed. Use that flag only when the user asked for
+credential-shaped keys and every value in health-check and request headers (the names stay
+readable) in everything it prints, dry-run bodies included, unless `--show-secrets` is passed.
+Its own API key is never printed, with or without that flag. Use that flag only when the user asked for
 the value itself and it goes straight to them, never into a report, a file or a commit.
 
 Resource passwords and pincodes are the user's to choose. Do not invent one or put one on a

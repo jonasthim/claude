@@ -236,7 +236,8 @@ The CLI redacts these unless `--show-secrets` is given.
 | `GET /crypto/certificatekeypairs/{uuid}/view_private_key/` | `data` |
 | Kubernetes service connection | `kubeconfig` |
 | Google Workspace provider and similar | `credentials` |
-| `/admin/system/` | `http_headers` echoes the request's own `Authorization` header |
+| `/admin/system/` | `http_headers` echoes the request environment (`HTTP_AUTHORIZATION`, `HTTP_COOKIE`, ...); masked whole |
+| Duo and SMS authenticator stages | `admin_integration_key`, `auth` |
 | Notification transport | `webhook_url` |
 
 `client_id`, `token_identifier`, `signing_key` and the flow fields are names or references, not

@@ -107,6 +107,28 @@ class FixtureBackend(unittest.TestCase):
         out = self.cli("providers", "create", "--type", "oauth2", "--body", body, "--dry-run")[1]
         self.assertNotIn("s3cret-value", out)
 
+    def test_echoed_request_headers_are_masked(self):
+        out = self.cli("raw", "GET", "/admin/system/")[1]
+        self.assertNotIn("mock-echoed-bearer", out)
+        self.assertNotIn("mock-echoed-cookie", out)
+        self.assertIn("server_time", out)
+
+    def test_credential_shaped_keys(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("authentik_cli", CLI)
+        cli = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cli)
+        secret = {"client_secret": "x", "admin_integration_key": "x", "api_key": "x", "HTTP_AUTHORIZATION": "x",
+                  "Cookie": "x", "auth": "x", "key": "x", "plex_token": "x", "bind_password": "x",
+                  "kubeconfig": {"users": [1]}, "credentials": {"private_key": "x"}, "webhook_url": "x"}
+        plain = {"signing_key": "uuid", "encryption_key": "uuid", "token_identifier": "name",
+                 "authorization_flow": "uuid", "client_id": "id", "private_key_available": True}
+        out = cli.redact(dict(secret, **plain))
+        for k in secret:
+            self.assertEqual(out[k], cli.REDACTED, k)
+        for k, v in plain.items():
+            self.assertEqual(out[k], v, k)
+
     def test_names_that_only_look_secret_stay_visible(self):
         out = self.cli("providers", "get", "1")[1]
         self.assertEqual(json.loads(out)["authorization_flow"], "00000000-0000-4000-8000-000000000301")
@@ -174,6 +196,14 @@ class HttpPath(unittest.TestCase):
         code, out, err = self.cli("info")
         self.assertEqual(code, 0, err)
         self.assertEqual(json.loads(out)["version"]["version_current"], "2026.8.3")
+
+    def test_the_tools_own_token_is_never_printed(self):
+        # /admin/system/ echoes the request's headers; the mock also repeats the token under a plain key
+        for extra in ([], ["--show-secrets"]):
+            code, out, err = self.cli("raw", "GET", "/admin/system/", *extra)
+            self.assertEqual(code, 0, err)
+            self.assertIn("seen", out)
+            self.assertNotIn("mock-token", out + err)
 
     def test_pagination_is_followed(self):
         # the server caps pages at 2 items; there are 5 users and 10 events

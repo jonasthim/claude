@@ -133,6 +133,7 @@ live run will replace those marks with what the server actually does.
   under `any` and narrows it under `all`.
 - OAuth2 client secrets, which authentik returns in every provider read, and the other
   credentials the API can return are redacted in all output unless `--show-secrets` is passed.
+  The CLI's own token is never printed, even with that flag, although `/admin/system/` echoes it.
 - TLS certificates are verified. Redirects are not followed, so the token is never sent to
   another address.
 - Claude does not create tokens or read their keys, set passwords, create recovery links or

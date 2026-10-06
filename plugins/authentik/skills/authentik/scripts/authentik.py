@@ -34,10 +34,13 @@ PREFIX = "AUTHENTIK"
 PRODUCT = "authentik"
 KEY_VAR = "TOKEN"
 # Keys whose values are credentials. authentik returns OAuth2 client secrets in every provider
-# list, and /admin/system/ echoes the request's own Authorization header. token_identifier is
-# a name, not a secret, so "token" only matches as the whole key or as a suffix.
-SECRET_KEY_RE = re.compile(r"(secret|password|passphrase|private_?key|kubeconfig|credentials|^authorization$"
-                           r"|sentry_dsn|webhook_url|^cookie$|_token$|^token$|^key$|^link$)", re.I)
+# list. /admin/system/ echoes the request environment under http_headers (HTTP_AUTHORIZATION,
+# HTTP_COOKIE and more), so that object is masked whole. token_identifier, signing_key and
+# authorization_flow are names or references, not secrets: "token", "key" and "authorization"
+# only match as a whole key, as a suffix, or in the forms known to hold a credential.
+SECRET_KEY_RE = re.compile(r"(secret|password|passphrase|private_?key|kubeconfig|credentials|^http_headers$"
+                           r"|authorization$|cookie$|sentry_dsn|webhook_url|_token$|^token$|^key$|^link$"
+                           r"|api_?key$|access_key|integration_key|^auth$|^dsn$)", re.I)
 
 # --------------------------------------------------------------------------
 # core: output, redaction, HTTP and the write gate. The same block is copied
@@ -68,22 +71,59 @@ def truthy(v):
     return str(v).strip().lower() in ("1", "true", "yes", "on")
 
 
-HEADER_SECRET_RE = re.compile(r"(authorization|cookie|token|secret|api-?key|password)", re.I)
+HEADER_SECRET_RE = re.compile(r"(auth|cookie|token|secret|key|password|credential|session|signature)", re.I)
+# Lists of headers that are sent to a backend. Operators put credentials there under any name,
+# so every value is masked and the names stay readable. Response headers are not matched.
+REQUEST_HEADERS_RE = re.compile(r"^(hc_?|request_?)?headers$", re.I)
+
+
+def mask_header(h):
+    return dict(h, value=REDACTED) if isinstance(h, dict) and h.get("value") not in (None, "") else h
 
 
 def redact(obj):
     """Replace the values of credential-shaped keys so they do not land in a transcript by default.
-    A {"name": ..., "value": ...} pair (an HTTP header) is masked when its name looks like a credential."""
+    A {"name": ..., "value": ...} pair (an HTTP header) is masked when its name looks like a credential,
+    and always inside a list of request headers."""
     if isinstance(obj, dict):
-        if isinstance(obj.get("name"), str) and obj.get("value") not in (None, "") \
-                and HEADER_SECRET_RE.search(obj["name"]):
-            return dict(obj, value=REDACTED)
-        return {k: (REDACTED if SECRET_KEY_RE.search(str(k)) and not isinstance(v, bool)
-                    and v not in (None, "", [], {}) else redact(v))
-                for k, v in obj.items()}
+        if isinstance(obj.get("name"), str) and HEADER_SECRET_RE.search(obj["name"]):
+            return mask_header(obj)
+        out = {}
+        for k, v in obj.items():
+            if SECRET_KEY_RE.search(str(k)) and not isinstance(v, bool) and v not in (None, "", [], {}):
+                out[k] = REDACTED
+            elif REQUEST_HEADERS_RE.match(str(k)) and isinstance(v, list):
+                out[k] = [mask_header(h) for h in v]
+            else:
+                out[k] = redact(v)
+        return out
     if isinstance(obj, list):
         return [redact(x) for x in obj]
     return obj
+
+
+class Scrubbed:
+    """Wraps stdout and stderr: the credential this tool authenticates with is never printed,
+    whatever key it turns up under and even with --show-secrets (servers echo request headers,
+    and error pages quote them)."""
+
+    def __init__(self, stream, secrets):
+        self.stream = stream
+        self.secrets = [s for s in secrets if s and len(s) >= 6]
+
+    def write(self, text):
+        for s in self.secrets:
+            text = text.replace(s, "<this tool's own credential>")
+        return self.stream.write(text)
+
+    def __getattr__(self, name):
+        return getattr(self.stream, name)
+
+
+def scrub_own_credential():
+    key = env(KEY_VAR) or ""
+    parts = [key] + [p for p in key.split(".") if len(p) >= 12]  # "<id>.<secret>" keys: each half too
+    sys.stdout, sys.stderr = Scrubbed(sys.stdout, parts), Scrubbed(sys.stderr, parts)
 
 
 def emit(obj, table=False, columns=None):
@@ -93,6 +133,11 @@ def emit(obj, table=False, columns=None):
         print_table(obj, columns)
     else:
         print(json.dumps(obj, indent=2, sort_keys=False))
+
+
+def emit_table(rows, columns=None):
+    """A table printed outside emit() goes through the same redaction."""
+    print_table(rows if SHOW_SECRETS else redact(rows), columns)
 
 
 def get_path(d, dotted, default=""):
@@ -231,7 +276,8 @@ def http_json(method, url, headers, body=None, timeout=20):
         try:
             payload = json.loads(raw)
         except ValueError:
-            payload = {"message": raw.decode(errors="replace")[:500]}
+            # Not the API's own error format (a proxy's page, say): keep it short, it is not redacted by key.
+            payload = {"message": " ".join(raw.decode(errors="replace").split())[:200]}
         if not isinstance(payload, dict):
             payload = {"message": payload}
         if e.code == 429:
@@ -246,8 +292,8 @@ def http_json(method, url, headers, body=None, timeout=20):
     try:
         return json.loads(raw)
     except ValueError:
-        die("%s did not answer with JSON; is %s_HOST the API address? First bytes: %r"
-            % (url, PREFIX, raw[:80].decode(errors="replace")), kind="not-json")
+        die("%s answered %d bytes that are not JSON; is %s_HOST the API address?"
+            % (url, len(raw), PREFIX), kind="not-json")
 
 
 def normalize_host(host):
@@ -380,6 +426,8 @@ class MockBackend:
             return self._load("me")
         if segs == ["admin", "version"]:
             return self._load("version")
+        if segs == ["admin", "system"]:
+            return self._load("system")
         if segs == ["core", "transactional", "applications"] and method == "PUT":
             return {"applied": True, "logs": []}
         route = self._route(segs)
@@ -621,7 +669,7 @@ def cmd_apps(api, args):
         out = app_bindings(api, args.id)
         if args.table:
             print("policy_engine_mode: %s (%s)\n" % (out["policy_engine_mode"], out["meaning"]))
-            print_table(out["bindings"], COLUMNS["bindings"])
+            emit_table(out["bindings"], COLUMNS["bindings"])
         else:
             emit(out)
     elif v == "access":
@@ -637,7 +685,8 @@ def cmd_apps(api, args):
     elif v == "create-with-provider":
         result = guarded(api, args, "PUT", "/core/transactional/applications/", read_body(args.body))
         if result is not None and not result.get("applied"):
-            die("authentik answered 200 but applied nothing: %s" % json.dumps(result.get("logs")), kind="not-applied")
+            logs = result.get("logs") if SHOW_SECRETS else redact(result.get("logs"))
+            die("authentik answered 200 but applied nothing: %s" % json.dumps(logs), kind="not-applied")
     else:
         crud(api, args, "/core/applications/", COLUMNS["apps"])
 
@@ -931,6 +980,7 @@ def build_parser():
 def main(argv=None):
     global SHOW_SECRETS
     args = build_parser().parse_args(argv)
+    scrub_own_credential()
     SHOW_SECRETS = bool(getattr(args, "show_secrets", False))
     for attr, default in (("yes", False), ("dry_run", False), ("body", None), ("filter", None), ("limit", None),
                           ("table", False), ("id", None), ("verb", None), ("user", None), ("type", None)):

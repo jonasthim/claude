@@ -129,8 +129,9 @@ marks with what the server actually does.
   turning off SSO, clearing a password or emptying the allowed roles can open an application to
   the internet.
 - Credentials the API returns (a new site's secret, access tokens, a target's auth token,
-  identity-provider client secrets, credential-looking header values) are redacted in all output
-  unless `--show-secrets` is passed.
+  identity-provider client secrets, and every value in health-check and request headers) are
+  redacted in all output unless `--show-secrets` is passed. The CLI's own API key is never
+  printed, even with that flag.
 - TLS certificates are verified. Redirects are not followed, so the key is never sent to another
   address.
 - Resource passwords and pincodes are yours to choose and set; Claude does not invent them.

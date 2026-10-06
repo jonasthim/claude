@@ -68,6 +68,9 @@ def make_handler(backend, token, log_path=None, max_page=None):
                 return self._send(e.status, e.payload)
             if data is None:
                 return self._send(204)
+            if u.path == BASE + "/admin/system/":  # the real endpoint echoes the request's own headers
+                data = dict(data, http_headers=dict(data["http_headers"], HTTP_AUTHORIZATION=auth),
+                            note="seen " + auth)
             return self._send(201 if method == "POST" else 200, data)
 
         def do_GET(self): self._handle("GET")

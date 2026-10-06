@@ -20,4 +20,6 @@ Story baked in:
 - **Wiki** is healthy and behind SSO; its two rules are inactive for the same reason.
 - **Old blog** is disabled. **Git SSH** is a raw TCP resource on port 2222.
 - Domain `example.org` failed verification.
-- The Status page target carries an `Authorization` health-check header, to exercise redaction.
+- The Status page target carries two health-check headers and the resource a request header, with
+  marker values, to exercise redaction: one is named `Authorization`, the others have names that
+  do not look like credentials.

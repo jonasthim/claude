@@ -36,7 +36,7 @@ PRODUCT = "Pangolin"
 KEY_VAR = "API_KEY"
 # Keys whose values are credentials. Anchored at the end so that passwordId, pincodeId and
 # accessTokenId (ids that only say "this is set") stay readable.
-SECRET_KEY_RE = re.compile(r"(secret|passphrase|private_?key|hash$|password$|pincode$|token$|api_?key$)", re.I)
+SECRET_KEY_RE = re.compile(r"(secret|passphrase|private_?key|hash$|password$|pincode$|token$|api_?key$|^key$)", re.I)
 
 # --------------------------------------------------------------------------
 # core: output, redaction, HTTP and the write gate. The same block is copied
@@ -67,22 +67,59 @@ def truthy(v):
     return str(v).strip().lower() in ("1", "true", "yes", "on")
 
 
-HEADER_SECRET_RE = re.compile(r"(authorization|cookie|token|secret|api-?key|password)", re.I)
+HEADER_SECRET_RE = re.compile(r"(auth|cookie|token|secret|key|password|credential|session|signature)", re.I)
+# Lists of headers that are sent to a backend. Operators put credentials there under any name,
+# so every value is masked and the names stay readable. Response headers are not matched.
+REQUEST_HEADERS_RE = re.compile(r"^(hc_?|request_?)?headers$", re.I)
+
+
+def mask_header(h):
+    return dict(h, value=REDACTED) if isinstance(h, dict) and h.get("value") not in (None, "") else h
 
 
 def redact(obj):
     """Replace the values of credential-shaped keys so they do not land in a transcript by default.
-    A {"name": ..., "value": ...} pair (an HTTP header) is masked when its name looks like a credential."""
+    A {"name": ..., "value": ...} pair (an HTTP header) is masked when its name looks like a credential,
+    and always inside a list of request headers."""
     if isinstance(obj, dict):
-        if isinstance(obj.get("name"), str) and obj.get("value") not in (None, "") \
-                and HEADER_SECRET_RE.search(obj["name"]):
-            return dict(obj, value=REDACTED)
-        return {k: (REDACTED if SECRET_KEY_RE.search(str(k)) and not isinstance(v, bool)
-                    and v not in (None, "", [], {}) else redact(v))
-                for k, v in obj.items()}
+        if isinstance(obj.get("name"), str) and HEADER_SECRET_RE.search(obj["name"]):
+            return mask_header(obj)
+        out = {}
+        for k, v in obj.items():
+            if SECRET_KEY_RE.search(str(k)) and not isinstance(v, bool) and v not in (None, "", [], {}):
+                out[k] = REDACTED
+            elif REQUEST_HEADERS_RE.match(str(k)) and isinstance(v, list):
+                out[k] = [mask_header(h) for h in v]
+            else:
+                out[k] = redact(v)
+        return out
     if isinstance(obj, list):
         return [redact(x) for x in obj]
     return obj
+
+
+class Scrubbed:
+    """Wraps stdout and stderr: the credential this tool authenticates with is never printed,
+    whatever key it turns up under and even with --show-secrets (servers echo request headers,
+    and error pages quote them)."""
+
+    def __init__(self, stream, secrets):
+        self.stream = stream
+        self.secrets = [s for s in secrets if s and len(s) >= 6]
+
+    def write(self, text):
+        for s in self.secrets:
+            text = text.replace(s, "<this tool's own credential>")
+        return self.stream.write(text)
+
+    def __getattr__(self, name):
+        return getattr(self.stream, name)
+
+
+def scrub_own_credential():
+    key = env(KEY_VAR) or ""
+    parts = [key] + [p for p in key.split(".") if len(p) >= 12]  # "<id>.<secret>" keys: each half too
+    sys.stdout, sys.stderr = Scrubbed(sys.stdout, parts), Scrubbed(sys.stderr, parts)
 
 
 def emit(obj, table=False, columns=None):
@@ -92,6 +129,11 @@ def emit(obj, table=False, columns=None):
         print_table(obj, columns)
     else:
         print(json.dumps(obj, indent=2, sort_keys=False))
+
+
+def emit_table(rows, columns=None):
+    """A table printed outside emit() goes through the same redaction."""
+    print_table(rows if SHOW_SECRETS else redact(rows), columns)
 
 
 def get_path(d, dotted, default=""):
@@ -230,7 +272,8 @@ def http_json(method, url, headers, body=None, timeout=20):
         try:
             payload = json.loads(raw)
         except ValueError:
-            payload = {"message": raw.decode(errors="replace")[:500]}
+            # Not the API's own error format (a proxy's page, say): keep it short, it is not redacted by key.
+            payload = {"message": " ".join(raw.decode(errors="replace").split())[:200]}
         if not isinstance(payload, dict):
             payload = {"message": payload}
         if e.code == 429:
@@ -245,8 +288,8 @@ def http_json(method, url, headers, body=None, timeout=20):
     try:
         return json.loads(raw)
     except ValueError:
-        die("%s did not answer with JSON; is %s_HOST the API address? First bytes: %r"
-            % (url, PREFIX, raw[:80].decode(errors="replace")), kind="not-json")
+        die("%s answered %d bytes that are not JSON; is %s_HOST the API address?"
+            % (url, len(raw), PREFIX), kind="not-json")
 
 
 def normalize_host(host):
@@ -721,9 +764,9 @@ def cmd_report(api, args):
         print("## Summary\n")
         print(json.dumps(summary, indent=2))
         print("\n## Sites\n")
-        print_table(sites, COLUMNS["sites"])
+        emit_table(sites, COLUMNS["sites"])
         print("\n## Resources\n")
-        print_table(resources, COLUMNS["resources"])
+        emit_table(resources, COLUMNS["resources"])
     else:
         emit({"summary": summary, "sites": sites, "resources": resources})
 
@@ -849,6 +892,7 @@ def build_parser():
 def main(argv=None):
     global SHOW_SECRETS
     args = build_parser().parse_args(argv)
+    scrub_own_credential()
     SHOW_SECRETS = bool(getattr(args, "show_secrets", False))
     for attr, default in (("yes", False), ("dry_run", False), ("body", None), ("filter", None), ("limit", None),
                           ("table", False), ("id", None), ("verb", None)):

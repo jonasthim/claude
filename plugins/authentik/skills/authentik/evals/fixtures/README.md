@@ -6,7 +6,8 @@ workflows and are not a schema reference (an event's `context` in particular is 
 name is under `example.com`, every address is from a documentation range, and every "secret" is a
 marker string that tests look for.
 
-Collections are `<name>.json`; `me.json` and `version.json` back the connection check;
+Collections are `<name>.json`; `me.json` and `version.json` back the connection check; `system.json`
+is `/admin/system/` with echoed request headers, to exercise redaction;
 `check_access.json` is keyed by `<slug>:<user pk>` and `outpost_health.json` by outpost UUID, each
 with `_default` as the fallback. Writes are echoed back and never stored.
 

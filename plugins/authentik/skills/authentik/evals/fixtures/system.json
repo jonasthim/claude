@@ -1,0 +1,22 @@
+{
+  "http_headers": {
+    "HTTP_HOST": "auth.example.com",
+    "HTTP_AUTHORIZATION": "Bearer mock-echoed-bearer",
+    "HTTP_COOKIE": "authentik_session=mock-echoed-cookie",
+    "HTTP_USER_AGENT": "Python-urllib/3"
+  },
+  "http_host": "auth.example.com",
+  "http_is_secure": true,
+  "runtime": {
+    "python_version": "3.13",
+    "environment": "custom",
+    "architecture": "x86_64",
+    "platform": "Linux",
+    "uname": "Linux"
+  },
+  "brand": "Default brand",
+  "server_time": "2026-10-06T08:00:00Z",
+  "embedded_outpost_disabled": false,
+  "embedded_outpost_host": "https://auth.example.com/",
+  "base_url": "/"
+}

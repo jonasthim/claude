@@ -62,6 +62,8 @@ def make_handler(backend, key, log_path=None, max_page=None):
                 for size in ("pageSize", "limit"):
                     if size in query:
                         query[size] = str(min(int(query[size]), max_page))
+            if path == "/echo":  # a server or proxy that quotes the request back
+                return self._send(200, envelope({"note": "seen " + auth, "apiKey": key}))
             if path.startswith("/orgs"):
                 return self._send(403, envelope(None, 403, "Key does not have root access"))
             body = None

@@ -82,6 +82,16 @@ class FixtureBackend(unittest.TestCase):
         code, out, _ = self.cli("raw", "POST", "/resource/101/password", "--body", '{"password": "hunter22"}', "--dry-run")
         self.assertNotIn("hunter22", out)
 
+    def test_request_header_values_are_masked_whatever_the_header_is_called(self):
+        out = self.cli("targets", "get", "61")[1]
+        self.assertNotIn("mock-unnamed-credential", out)
+        self.assertIn("X-Upstream-Id", out)
+        out = self.cli("resources", "get", "status")[1]
+        self.assertNotIn("mock-backend-credential", out)
+        self.assertIn("DENY", out)  # response headers go to browsers and are not secret
+        self.assertNotIn("mock-backend-credential", self.cli("report", "health")[1])
+        self.assertNotIn("mock-backend-credential", self.cli("report", "health", "--table")[1])
+
     def test_ids_that_only_flag_a_secret_stay_visible(self):
         code, out, _ = self.cli("resources", "find", "status")
         self.assertEqual(json.loads(out)[0]["passwordId"], 7)
@@ -178,6 +188,13 @@ class HttpPath(unittest.TestCase):
         body = '{"siteId": 1, "ip": "198.51.100.13", "port": 8080}'
         self.assertEqual(self.cli("targets", "create", "101", "--body", body, "--yes")[0], 0)
         self.assertEqual(self.requests()[-1], ["PUT", "/v1/resource/101/target", "201"])
+
+    def test_the_tools_own_key_is_never_printed(self):
+        for extra in ([], ["--show-secrets"]):
+            code, out, err = self.cli("raw", "GET", "/echo", *extra)
+            self.assertEqual(code, 0, err)
+            self.assertIn("seen", out)
+            self.assertNotIn("mock.key", out + err)
 
     def test_redirect_is_not_followed(self):
         code, _, err = self.cli("raw", "GET", "/redirect")

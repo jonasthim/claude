@@ -283,6 +283,18 @@
         "siteNiceId": "lab",
         "online": false
       }
+    ],
+    "requestHeaders": [
+      {
+        "name": "X-Backend-User",
+        "value": "mock-backend-credential"
+      }
+    ],
+    "responseHeaders": [
+      {
+        "name": "X-Frame-Options",
+        "value": "DENY"
+      }
     ]
   }
 ]

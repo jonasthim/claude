@@ -60,8 +60,8 @@ The fixtures describe a synthetic organization; writes are echoed back and never
   clearing a password or emptying the allowed roles can open an application to the internet.
 - A new service is created as resource, then access settings, then targets, so nothing is served before its
   login is in place.
-- Site secrets, access tokens, identity-provider client secrets and credential-looking header values are
-  redacted unless `--show-secrets` is passed.
+- Site secrets, access tokens, identity-provider client secrets and the values of health-check and request
+  headers are redacted unless `--show-secrets` is passed. The CLI's own API key is never printed.
 
 See also the [safety model](safety.md).
 

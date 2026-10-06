@@ -266,6 +266,10 @@
       {
         "name": "Authorization",
         "value": "Bearer mock-probe-token"
+      },
+      {
+        "name": "X-Upstream-Id",
+        "value": "mock-unnamed-credential"
       }
     ],
     "hcFollowRedirects": true,

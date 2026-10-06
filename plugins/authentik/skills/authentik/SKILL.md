@@ -143,8 +143,9 @@ credential for someone's account into the conversation. The user does these in a
 
 authentik returns OAuth2 `client_secret` values in cleartext in every provider read, and other
 calls return cookie secrets, RADIUS shared secrets, kubeconfigs and service-account
-credentials. `authentik.py` redacts credential-shaped keys in everything it prints, dry-run
-bodies included, unless `--show-secrets` is passed. Use that flag only when the user asked for
+credentials. `/admin/system/` echoes the request's own headers, token included.
+`authentik.py` redacts credential-shaped keys in everything it prints, dry-run bodies included,
+unless `--show-secrets` is passed, and never prints its own token, with or without that flag. Use that flag only when the user asked for
 the value itself and it goes straight to them, never into a report, a file or a commit. To
 hand a new application its client secret, tell the user where to read it in authentik
 (Applications → Providers → the provider), or print it once with `--show-secrets` when they
