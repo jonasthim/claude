@@ -73,10 +73,19 @@ for one guest.
 
 ## Recipes
 
-Read-only token (inventory, status, task logs, doctor):
+Read-only token (inventory, status, task logs, doctor). With `-privsep 0` the token
+inherits the user's ACL, so one grant is enough:
 
 ```
 pveum user add claude@pve -comment "Claude Code"
+pveum user token add claude@pve ro -privsep 0 -comment "Claude read-only"
+pveum acl modify / -user claude@pve -role PVEAuditor -propagate 1
+```
+
+Variant: privilege-separated token (`-privsep 1`, the default). Effective rights are the
+intersection of user and token, so both the user and the token need the ACL:
+
+```
 pveum user token add claude@pve ro -privsep 1 -comment "Claude read-only"
 pveum acl modify / -user claude@pve -role PVEAuditor -propagate 1
 pveum acl modify / -token 'claude@pve!ro' -role PVEAuditor -propagate 1

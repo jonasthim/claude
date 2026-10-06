@@ -22,7 +22,9 @@ marked UNVERIFIED were not confirmed.
 14. Cloud-init keys
 15. PVE 9.x additions
 
-Endpoint line format: `METHOD path - params - privilege` (`none` = no params). Paths are relative to
+Endpoint line format: `METHOD path - params - privilege`. `none` marks a GET that takes no
+params; `params not in notes` marks a write endpoint whose parameters the notes do not list,
+print them with `pvesh usage <path> -v` on a node before calling it. Paths are relative to
 `https://HOST:8006/api2/json`. `n/a` in the privilege column means the notes do not state
 it; find it with `pvesh usage <path> -v` on a node or from the 403 message. `(UPID)` marks
 calls whose `data` is a UPID string to poll with `pve-task.sh`.
@@ -69,7 +71,7 @@ Bodies: POST/PUT accept `application/x-www-form-urlencoded` or `application/json
   and `exitstatus` (`OK`, `WARNINGS: n`, or error text). Only `OK` and `WARNINGS` are success.
 - `GET /nodes/{node}/tasks/{upid}/log - start, limit, download=1 for raw text - n/a`
   returns `[{n, t}]`.
-- `DELETE /nodes/{node}/tasks/{upid} - none - n/a` stops a running task.
+- `DELETE /nodes/{node}/tasks/{upid} - params not in notes - n/a` stops a running task.
 - `GET /nodes/{node}/tasks - start, limit, userfilter, typefilter, vmid, errors, source - n/a`
 - `GET /cluster/tasks - none - n/a`
 
@@ -91,10 +93,10 @@ Calls that return a UPID: qemu/lxc create, destroy, start, stop, shutdown, reboo
 - `GET /nodes - none - n/a`
 - `GET /nodes/{node}/status - none - n/a`
 - `POST /nodes/{node}/status - command=reboot|shutdown - Sys.PowerMgmt on /nodes/{node}` (gated)
-- `POST /nodes/{node}/startall - none - n/a`
-- `POST /nodes/{node}/stopall - none - n/a` (gated)
-- `POST /nodes/{node}/suspendall - none - n/a` (gated)
-- `POST /nodes/{node}/migrateall - none - n/a` (gated)
+- `POST /nodes/{node}/startall - params not in notes - n/a`
+- `POST /nodes/{node}/stopall - params not in notes - n/a` (gated)
+- `POST /nodes/{node}/suspendall - params not in notes - n/a` (gated)
+- `POST /nodes/{node}/migrateall - target=NODE (param name UNVERIFIED; CLI: pvenode migrateall <target> [--vms] [--with-local-disks] [--max-workers]) - n/a` (gated)
 - `GET /nodes/{node}/syslog - none - n/a`
 - `GET /nodes/{node}/journal - none - n/a`
 - `GET /nodes/{node}/apt/update - none - n/a` (lists pending updates)
@@ -142,12 +144,12 @@ Prefix `/nodes/{node}/qemu`. Privileges are checked on `/vms/{vmid}` unless note
 - `POST /nodes/{node}/qemu/{vmid}/snapshot/{snap}/rollback - start (UPID) - VM.Snapshot or VM.Snapshot.Rollback` (gated)
 - `DELETE /nodes/{node}/qemu/{vmid}/snapshot/{snap} - force (UPID) - VM.Snapshot` (gated)
 - `GET /nodes/{node}/qemu/{vmid}/snapshot/{snap}/config - none - VM.Audit`
-- `PUT /nodes/{node}/qemu/{vmid}/snapshot/{snap}/config - none - n/a`
+- `PUT /nodes/{node}/qemu/{vmid}/snapshot/{snap}/config - params not in notes - n/a`
 - `GET /nodes/{node}/qemu/{vmid}/cloudinit - none - n/a` (pending cloud-init changes)
-- `PUT /nodes/{node}/qemu/{vmid}/cloudinit - none - n/a` (regenerates the drive)
+- `PUT /nodes/{node}/qemu/{vmid}/cloudinit - params not in notes - n/a` (regenerates the drive)
 - `GET /nodes/{node}/qemu/{vmid}/cloudinit/dump - type=user|network|meta - n/a`
-- `POST /nodes/{node}/qemu/{vmid}/agent/... - none - n/a` (guest exec needs VM.GuestAgent.Unrestricted)
-- `POST /nodes/{node}/qemu/{vmid}/monitor - none - Sys.Audit/Sys.Modify in 9.x` (VM.Monitor removed)
+- `POST /nodes/{node}/qemu/{vmid}/agent/... - params not in notes - n/a` (guest exec needs VM.GuestAgent.Unrestricted)
+- `POST /nodes/{node}/qemu/{vmid}/monitor - params not in notes - Sys.Audit/Sys.Modify in 9.x` (VM.Monitor removed)
 
 ## 6. LXC containers
 
@@ -184,59 +186,59 @@ Prefix `/nodes/{node}/lxc`. No `reset` endpoint for containers.
 - `POST /cluster/backup - id, schedule (calendar event), vzdump params - Sys.Modify on /`
 - `GET /cluster/backup/{id} - none - Sys.Modify on /`
 - `PUT /cluster/backup/{id} - vzdump params - Sys.Modify on /`
-- `DELETE /cluster/backup/{id} - none - Sys.Modify on /` (gated)
+- `DELETE /cluster/backup/{id} - params not in notes - Sys.Modify on /` (gated)
 - `GET /cluster/backup/{id}/included_volumes - none - Sys.Modify on /`
 - `GET /nodes/{node}/storage/{storage}/content - content=backup, vmid - n/a` (list backups)
 - Restore VM: `POST /nodes/{node}/qemu - vmid, archive=<volid>, storage, force=1, unique, live-restore (UPID) - VM.Backup when overwriting`
 - Restore CT: `POST /nodes/{node}/lxc - vmid, ostemplate=<backup volid>, restore=1, storage, force, unique (UPID) - VM.Backup when overwriting`
-- `POST /nodes/{node}/storage/{storage}/prunebackups - none - n/a` (gated; params not in notes)
+- `POST /nodes/{node}/storage/{storage}/prunebackups - params not in notes - n/a` (gated)
 
 ## 8. Storage
 
 - `GET /storage - none - n/a`
-- `POST /storage - none - n/a`
+- `POST /storage - params not in notes (type-dependent; `pvesh usage /storage -v --command create`) - n/a`
 - `GET /storage/{storage} - none - n/a`
-- `PUT /storage/{storage} - none - n/a`
-- `DELETE /storage/{storage} - none - n/a` (gated)
+- `PUT /storage/{storage} - params not in notes (type-dependent) - n/a`
+- `DELETE /storage/{storage} - params not in notes - n/a` (gated)
 - `GET /nodes/{node}/storage - storage, content, enabled, target, format - n/a`
 - `GET /nodes/{node}/storage/{storage}/status - none - n/a`
 - `GET /nodes/{node}/storage/{storage}/content - content, vmid - n/a`
 - `POST /nodes/{node}/storage/{storage}/content - (alloc) - n/a`
 - `GET /nodes/{node}/storage/{storage}/content/{volume} - none - n/a`
-- `PUT /nodes/{node}/storage/{storage}/content/{volume} - none - n/a`
-- `POST /nodes/{node}/storage/{storage}/content/{volume} - none - n/a`
-- `DELETE /nodes/{node}/storage/{storage}/content/{volume} - none - n/a` (gated)
+- `PUT /nodes/{node}/storage/{storage}/content/{volume} - params not in notes - n/a`
+- `POST /nodes/{node}/storage/{storage}/content/{volume} - params not in notes - n/a`
+- `DELETE /nodes/{node}/storage/{storage}/content/{volume} - params not in notes - n/a` (gated)
 - `POST /nodes/{node}/storage/{storage}/upload - multipart/form-data: content=iso|vztmpl|import, file part "filename", checksum, checksum-algorithm - Datastore.AllocateTemplate`
 - `POST /nodes/{node}/storage/{storage}/download-url - url, content, filename, checksum, checksum-algorithm md5|sha1|sha224|sha256|sha384|sha512, compression, verify-certificates - Datastore.AllocateTemplate + (Sys.Audit and Sys.Modify on /, or Sys.AccessNetwork on the node)`
-- `POST /nodes/{node}/storage/{storage}/oci-registry-pull - none - n/a` (9.x)
+- `POST /nodes/{node}/storage/{storage}/oci-registry-pull - params not in notes - n/a` (9.x)
 
 ## 9. Node network
 
 - `GET /nodes/{node}/network - type=... (also any_bridge, any_local_bridge, include_sdn) - n/a`
 - `POST /nodes/{node}/network - iface, type, bridge_ports, bridge_vlan_aware, cidr, gateway, autostart, mtu, slaves, bond_mode, vlan-id, vlan-raw-device, comments - Sys.Modify on /nodes/{node}` (staged only)
 - `GET /nodes/{node}/network/{iface} - none - n/a`
-- `PUT /nodes/{node}/network/{iface} - none - Sys.Modify on /nodes/{node}` (staged only)
-- `DELETE /nodes/{node}/network/{iface} - none - Sys.Modify on /nodes/{node}` (staged; gated as DELETE)
+- `PUT /nodes/{node}/network/{iface} - same keys as create - Sys.Modify on /nodes/{node}` (staged only)
+- `DELETE /nodes/{node}/network/{iface} - params not in notes - Sys.Modify on /nodes/{node}` (staged; gated as DELETE)
 - `PUT /nodes/{node}/network - regenerate-frr (UPID) - Sys.Modify on /nodes/{node}` (APPLY staged changes; gated)
-- `DELETE /nodes/{node}/network - none - Sys.Modify on /nodes/{node}` (revert staged changes; gated as DELETE)
+- `DELETE /nodes/{node}/network - params not in notes - Sys.Modify on /nodes/{node}` (revert staged changes; gated as DELETE)
 
 ## 10. SDN
 
 - `GET /cluster/sdn/zones - none - n/a`
 - `POST /cluster/sdn/zones - zone, type simple|vlan|qinq|vxlan|evpn|faucet - n/a`
 - `GET /cluster/sdn/zones/{zone} - none - n/a`
-- `PUT /cluster/sdn/zones/{zone} - none - n/a`
-- `DELETE /cluster/sdn/zones/{zone} - none - n/a` (gated)
+- `PUT /cluster/sdn/zones/{zone} - same keys as create - n/a`
+- `DELETE /cluster/sdn/zones/{zone} - params not in notes - n/a` (gated)
 - `GET /cluster/sdn/vnets - none - n/a`
 - `POST /cluster/sdn/vnets - vnet, zone, tag, alias, vlanaware, isolate-ports - n/a`
 - `GET /cluster/sdn/vnets/{vnet} - none - n/a`
-- `PUT /cluster/sdn/vnets/{vnet} - none - n/a`
-- `DELETE /cluster/sdn/vnets/{vnet} - none - n/a` (gated)
+- `PUT /cluster/sdn/vnets/{vnet} - same keys as create - n/a`
+- `DELETE /cluster/sdn/vnets/{vnet} - params not in notes - n/a` (gated)
 - `GET /cluster/sdn/vnets/{vnet}/subnets - none - n/a`
 - `POST /cluster/sdn/vnets/{vnet}/subnets - subnet (CIDR), type=subnet, gateway, snat, dhcp-range, dhcp-dns-server, dnszoneprefix - n/a`
 - `GET /cluster/sdn/vnets/{vnet}/subnets/{id} - none - n/a` (id format `<zone>-<ip>-<mask>`)
-- `PUT /cluster/sdn/vnets/{vnet}/subnets/{id} - none - n/a`
-- `DELETE /cluster/sdn/vnets/{vnet}/subnets/{id} - none - n/a` (gated)
+- `PUT /cluster/sdn/vnets/{vnet}/subnets/{id} - same keys as create - n/a`
+- `DELETE /cluster/sdn/vnets/{vnet}/subnets/{id} - params not in notes - n/a` (gated)
 - `PUT /cluster/sdn - lock-token, release-lock - SDN.Allocate on /sdn` (APPLY; gated)
 - Paths `/cluster/sdn/rollback` (gated), `/cluster/sdn/lock` and `/cluster/sdn/dry-run` exist; their HTTP methods are UNVERIFIED, check `pvesh usage /cluster/sdn/rollback -v`.
 - Other subpaths: `controllers`, `ipams`, `dns`, `fabrics` (new in 9), `prefix-lists`, `route-maps`.
@@ -250,46 +252,46 @@ Prefixes: `/cluster/firewall` (options, rules, groups, ipset, aliases, macros, r
 - `GET <prefix>/rules - none - n/a`
 - `POST <prefix>/rules - type in|out|forward|group, action ACCEPT|DROP|REJECT|<group>, enable, source, dest, proto, dport, sport, iface, macro, icmp-type, pos, log, comment, digest - n/a`
 - `GET <prefix>/rules/{pos} - none - n/a`
-- `PUT <prefix>/rules/{pos} - none - n/a`
-- `DELETE <prefix>/rules/{pos} - none - n/a` (gated)
+- `PUT <prefix>/rules/{pos} - same keys as create plus digest - n/a`
+- `DELETE <prefix>/rules/{pos} - params not in notes - n/a` (gated)
 
 ## 12. HA
 
 - `GET /cluster/ha/resources - none - n/a`
 - `POST /cluster/ha/resources - sid (vm:100 | ct:101), state started|stopped|enabled|disabled|ignored, max_restart, max_relocate, failback, comment - n/a`
 - `GET /cluster/ha/resources/{sid} - none - n/a`
-- `PUT /cluster/ha/resources/{sid} - none - n/a` (gated when setting `state=stopped|disabled`)
-- `DELETE /cluster/ha/resources/{sid} - none - n/a` (gated)
+- `PUT /cluster/ha/resources/{sid} - same keys as create, e.g. state= - n/a` (gated when setting `state=stopped|disabled`)
+- `DELETE /cluster/ha/resources/{sid} - params not in notes - n/a` (gated)
 - `POST /cluster/ha/resources/{sid}/migrate - node (UNVERIFIED param name) - n/a` (gated)
 - `GET /cluster/ha/rules - none - n/a`
 - `POST /cluster/ha/rules - rule id and type (param names UNVERIFIED); node-affinity: resources, nodes, affinity positive|negative, strict; resource-affinity: resources, affinity - n/a`
 - `GET /cluster/ha/rules/{rule} - none - n/a`
-- `PUT /cluster/ha/rules/{rule} - none - n/a`
-- `DELETE /cluster/ha/rules/{rule} - none - n/a` (gated)
+- `PUT /cluster/ha/rules/{rule} - params not in notes - n/a` (gated)
+- `DELETE /cluster/ha/rules/{rule} - params not in notes - n/a` (gated)
 - `/cluster/ha/groups` is deprecated in 9; the endpoints are refused once groups were
   migrated to node-affinity rules.
 - `GET /cluster/ha/status/current - none - n/a`
 - `GET /cluster/ha/status/manager_status - none - n/a`
-- `POST /cluster/ha/status/disarm-ha - none - n/a` (gated)
-- `POST /cluster/ha/status/arm-ha - none - n/a`
+- `POST /cluster/ha/status/disarm-ha - params not in notes - n/a` (gated)
+- `POST /cluster/ha/status/arm-ha - params not in notes - n/a`
 
 ## 13. Access control
 
 - `GET /access/users - none - n/a`
-- `POST /access/users - none - n/a`
+- `POST /access/users - userid (required; API param name UNVERIFIED, CLI: pveum user add USER@REALM -comment ...), others not in notes - n/a`
 - `GET /access/users/{userid} - none - n/a`
-- `PUT /access/users/{userid} - none - n/a`
-- `DELETE /access/users/{userid} - none - n/a` (gated)
+- `PUT /access/users/{userid} - params not in notes - n/a`
+- `DELETE /access/users/{userid} - params not in notes - n/a` (gated)
 - `GET /access/users/{userid}/token - none - n/a`
 - `GET /access/users/{userid}/token/{tokenid} - none - n/a`
 - `POST /access/users/{userid}/token/{tokenid} - expire, privsep, comment - n/a` (returns `full-tokenid` and `value`; the value is shown once)
-- `PUT /access/users/{userid}/token/{tokenid} - none - n/a`
-- `DELETE /access/users/{userid}/token/{tokenid} - none - n/a` (gated)
-- `GET /access/groups - none - n/a`; `GET /access/roles - - n/a`
+- `PUT /access/users/{userid}/token/{tokenid} - params not in notes - n/a`
+- `DELETE /access/users/{userid}/token/{tokenid} - params not in notes - n/a` (gated)
+- `GET /access/groups - none - n/a`; `GET /access/roles - none - n/a`
 - `GET /access/acl - none - n/a`
 - `PUT /access/acl - path, roles, users, groups, tokens, propagate, delete - n/a`
 - `GET /access/permissions - none - any authenticated user` (response shape UNVERIFIED)
-- `PUT /access/password - none - n/a`
+- `PUT /access/password - params not in notes - n/a`
 
 ## 14. Cloud-init keys
 

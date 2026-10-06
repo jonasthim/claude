@@ -80,7 +80,7 @@ first one looks wrong.
 
 | Script | 0 | 1 | 2 | 3 | 4 | 5 |
 |---|---|---|---|---|---|---|
-| `pve-api.sh` | 2xx | usage, missing env var, missing curl/jq | transport/TLS (curl failed) | HTTP 4xx | HTTP 5xx | |
+| `pve-api.sh` | 2xx | usage, missing env var, missing curl/jq | transport/TLS (curl failed) | HTTP 4xx | HTTP 5xx or any other non-2xx/non-4xx status | |
 | `pve-task.sh` | task OK or WARNINGS | task failed (see log) | API/transport error | usage or bad UPID | timeout, task still running | |
 | `pve-doctor.sh` | all checks ok | prerequisite or env | transport/TLS | HTTP 401 | HTTP 403 | other API error |
 | `pve-ssh.sh` | remote exit 0 | usage or no host | | | | (255 = ssh failure; otherwise the remote exit code) |

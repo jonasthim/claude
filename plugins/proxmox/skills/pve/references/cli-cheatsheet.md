@@ -206,8 +206,8 @@ ha-manager rules add node-affinity ha-rule-vm100 --resources vm:100 --nodes node
 ha-manager rules add resource-affinity keep-together --affinity positive --resources vm:100,vm:200
 ```
 
-Gated: `remove`, `set`, `migrate`, `relocate`, every `crm-command`. Free: `status`,
-`config`, `add`, `rules list|config|add`.
+Gated (confirm first): `remove`, `set`, `migrate`, `relocate`, `rules set|remove`, every
+`crm-command`. Free: `status`, `config`, `add`, `rules list|config|add`.
 
 ## 9. pvenode
 

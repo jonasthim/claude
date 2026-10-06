@@ -24,7 +24,7 @@ act on them when the node goes away.
 
 - `POST /nodes/N/status command=reboot|shutdown` (Sys.PowerMgmt on `/nodes/N`).
 - `POST /nodes/N/startall` (free), `POST /nodes/N/stopall`, `POST /nodes/N/suspendall`,
-  `POST /nodes/N/migrateall` (gated). CLI: `pvenode startall [--vms] [--force]`,
+  `POST /nodes/N/migrateall target=N2 (param name UNVERIFIED)` (gated). CLI: `pvenode startall [--vms] [--force]`,
   `pvenode stopall`, `pvenode migrateall <target> [--vms] [--with-local-disks] [--max-workers]`.
 - 9.x bulk actions: `POST /cluster/bulk-action/guest/start|shutdown|suspend|migrate`
   with `vms`, `timeout`, `max-workers`; start is free, the rest gated.
@@ -106,8 +106,8 @@ ha-manager rules config
 ```
 
 The list separator for several `nodes` and any per-node priority syntax is UNVERIFIED;
-`pvesh usage` prints the accepted format. Rule add/list are free; `rules set|remove` change
-placement and are gated.
+`pvesh usage` prints the accepted format. Rule add/list are free; `ha-manager rules set|remove`
+change placement and are gated: confirm first, like `ha-manager remove|set|migrate|relocate|crm-command`.
 
 Pattern "make CT 105 highly available, prefer pve1 or pve2":
 

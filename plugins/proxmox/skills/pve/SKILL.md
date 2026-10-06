@@ -14,7 +14,7 @@ over SSH, or the node-served docs at `https://NODE:8006/pve-docs/`.
 
 Two classes of action. Gated actions are planned and confirmed; free actions run directly.
 
-Gated set: destroy; stop/reset/shutdown/reboot/suspend of a guest; snapshot rollback/delete; migrate (guest or HA); template conversion; disk/volume move/unlink or `delete=` on config; backup/volume deletion (`pvesm free|remove|prune-backups`, `pveam remove`, `prunebackups`, `vzdump --remove 1`/`--prune-backups`, `rm` of `vzdump-*`); any `DELETE`/`pvesh delete`; node reboot/shutdown/stopall/migrateall/suspendall; network apply (`PUT /nodes/{node}/network`, `ifreload`/`ifdown`/`ifup` over SSH); SDN apply/rollback (`PUT /cluster/sdn`, `/cluster/sdn/rollback`); HA `remove|set|migrate|relocate|crm-command`, `disarm-ha`, HA resource `state=stopped|disabled`; `pvecm delnode|expected|add|create|qdevice`; bulk shutdown/suspend/migrate; `apt upgrade/dist-upgrade/full-upgrade/remove/purge/autoremove` over SSH; `systemctl stop|restart|reboot|poweroff|halt|isolate`, `reboot|shutdown|poweroff|halt|init 0|init 6` over SSH.
+Gated set: destroy; stop/reset/shutdown/reboot/suspend of a guest; snapshot rollback/delete; migrate (guest or HA); template conversion; disk/volume move/unlink or `delete=` on config; backup/volume deletion (`pvesm free|remove|prune-backups`, `pveam remove`, `prunebackups`, `vzdump --remove 1`/`--prune-backups`, `rm` of `vzdump-*`); any `DELETE`/`pvesh delete`; node reboot/shutdown/stopall/migrateall/suspendall; network apply (`PUT /nodes/{node}/network`, `ifreload`/`ifdown`/`ifup` over SSH); SDN apply/rollback (`PUT /cluster/sdn`, `/cluster/sdn/rollback`); HA `remove|set|migrate|relocate|crm-command`, `rules set|remove`, `disarm-ha`, HA resource `state=stopped|disabled`; `pvecm delnode|expected|add|create|qdevice`; bulk shutdown/suspend/migrate; `apt upgrade/dist-upgrade/full-upgrade/remove/purge/autoremove` over SSH; `systemctl stop|restart|reboot|poweroff|halt|isolate`, `reboot|shutdown|poweroff|halt|init 0|init 6` over SSH.
 
 Free set: all GETs; start/resume; create VM/CT; clone; set config without `delete`; snapshot create; vzdump run without explicit prune; create backup job; HA resource add; SDN/network object create/edit (staged, not applied); storage add/edit; user/role/token create; apt update (refresh); task log reads.
 
@@ -24,7 +24,7 @@ For every gated action, print exactly this block, then stop and wait:
 PLAN
 Target:        <guest/node/object, e.g. VM 101 "web01" on pve1>
 Current state: <from the API: status, lock, HA state, snapshots, disks>
-Action:        <exact call(s), e.g. pve-api.sh DELETE /nodes/pve1/qemu/101 purge=1>
+Action:        <exact call(s), e.g. ${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh DELETE /nodes/pve1/qemu/101 purge=1>
 Effect:        <what changes, what is lost, expected downtime>
 Revert:        <how to undo, or "irreversible">
 Reply yes to proceed.
@@ -84,7 +84,8 @@ All scripts: bash + curl + jq only, `-h` for usage, secret never printed.
   `--data-urlencode`, so values with `,` `=` `:` `/` are safe: `net0=virtio,bridge=vmbr0`.
 - Prints `.data` (bare UPID string, or pretty JSON). Errors on stderr as
   `pve-api: HTTP <code> <METHOD> <path>: <message>` plus `  <param>: <msg>` lines.
-- Exit: 0 2xx; 1 usage/env/missing curl or jq; 2 transport/TLS; 3 HTTP 4xx; 4 HTTP 5xx.
+- Exit: 0 2xx; 1 usage/env/missing curl or jq; 2 transport/TLS; 3 HTTP 4xx; 4 HTTP 5xx or any
+  other non-2xx/non-4xx status.
 
 ```
 ${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh GET /cluster/resources type=vm
@@ -97,7 +98,7 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh PUT /nodes/pve1/qemu/100/config memory=
 - Polls `GET /nodes/{node}/tasks/{upid}/status` until stopped (default timeout 600 s),
   then prints the task log and a final `exitstatus: <value>` line.
 - Exit: 0 `OK` or `WARNINGS: n`; 1 task failed; 2 API/transport error; 3 bad UPID; 4 timeout.
-- Pipe form: `pve-api.sh POST .../status/shutdown timeout=60 | pve-task.sh -`
+- Pipe form: `${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh POST .../status/shutdown timeout=60 | ${CLAUDE_PLUGIN_ROOT}/scripts/pve-task.sh -`
 
 `${CLAUDE_PLUGIN_ROOT}/scripts/pve-ssh.sh [-n HOST] [--check] <command> [args...]`
 
@@ -127,7 +128,7 @@ curl -sS --cacert "$PVE_CA_CERT" -H "Authorization: PVEAPIToken=${PVE_TOKEN_ID}=
 4. Execute. Capture the UPID the call returns (create, destroy, start, stop, shutdown,
    reboot, reset, suspend, resume, clone, migrate, resize, snapshot create/rollback/delete,
    template, `POST .../config`, vzdump, `PUT /nodes/{node}/network`, `POST .../apt/update`).
-5. Verify. `pve-task.sh <UPID>`; only `OK` or `WARNINGS: n` count as success. Re-read
+5. Verify. `${CLAUDE_PLUGIN_ROOT}/scripts/pve-task.sh <UPID>`; only `OK` or `WARNINGS: n` count as success. Re-read
    `status/current` or `config` to confirm the end state.
 6. Report. Calls made, UPIDs with exit status, state after, revert path.
 
@@ -158,9 +159,9 @@ Paths are relative to `/api2/json`; `N` is a node, `V` a vmid, `S` a storage id.
 | Template (gated) | `POST /nodes/N/qemu/V/template` |
 | Destroy (gated) | `DELETE /nodes/N/qemu/V purge=1 destroy-unreferenced-disks=1`; CT accepts `force=1` (even if running); stop the guest first; HA/replicated guests need `purge=1` |
 | Resize | `PUT /nodes/N/qemu/V/resize disk=scsi0 size=+10G digest=D` (also `/lxc`) |
-| Create VM | `GET /cluster/nextid`; `POST /nodes/N/qemu vmid=V name=X memory=2048 cores=2 net0=virtio,bridge=vmbr0 scsihw=virtio-scsi-pci scsi0=S:32` (`S:32` as a new 32 GiB disk is UNVERIFIED; `S:0,import-from=VOLID` is documented) |
+| Create VM | `GET /cluster/nextid`; `POST /nodes/N/qemu vmid=V name=X memory=2048 cores=2 net0=virtio,bridge=vmbr0 scsihw=virtio-scsi-pci scsi0=S:32` (`S:32` as a new 32 GiB disk is UNVERIFIED; `import-from` on create is UNVERIFIED, the documented form is `qm set`/`POST .../config`, see `references/cloud-init.md`) |
 | Create CT | `POST /nodes/N/lxc vmid=V ostemplate=local:vztmpl/FILE hostname=X rootfs=S:8 cores=2 memory=2048 net0=name=eth0,bridge=vmbr0,ip=dhcp unprivileged=1 ssh-public-keys=... start=1` |
-| Backup run | `POST /nodes/N/vzdump vmid=V storage=S mode=snapshot compress=zstd` (`remove=1`/`prune-backups=` gated) |
+| Backup run | `POST /nodes/N/vzdump vmid=V storage=S mode=snapshot compress=zstd remove=0` (`remove` defaults to 1 and prunes by storage retention; explicit `remove=1`/`prune-backups=` gated) |
 | Backup list | `GET /nodes/N/storage/S/content content=backup vmid=V` |
 | Backup jobs | `GET /cluster/backup`; `GET /cluster/backup/ID`; `GET /cluster/backup/ID/included_volumes` |
 | Restore VM | `POST /nodes/N/qemu vmid=V archive=S:backup/FILE storage=S2 force=1` (gated when V exists) |
@@ -169,7 +170,7 @@ Paths are relative to `/api2/json`; `N` is a node, `V` a vmid, `S` a storage id.
 | Storage | `GET /storage`; `GET /nodes/N/storage`; `GET /nodes/N/storage/S/status`; `GET .../content content=vztmpl` |
 | Templates/ISOs | `POST /nodes/N/storage/S/download-url url=... content=vztmpl filename=...` |
 | HA | `GET /cluster/ha/resources`; `POST /cluster/ha/resources sid=ct:105 state=started`; `GET /cluster/ha/rules`; `GET /cluster/ha/status/current` |
-| Node ops (gated) | `POST /nodes/N/status command=reboot`; `POST /nodes/N/stopall`; `POST /nodes/N/migrateall` |
+| Node ops (gated) | `POST /nodes/N/status command=reboot`; `POST /nodes/N/stopall`; `POST /nodes/N/migrateall target=N2 (param name UNVERIFIED)` |
 | Updates | `POST /nodes/N/apt/update` (refresh, free); `GET /nodes/N/apt/update` (pending); `GET /nodes/N/apt/versions`; upgrade only via SSH (gated) |
 | Access | `GET /access/permissions`; `GET /access/users`; `POST /access/users/USER/token/NAME privsep=1`; `PUT /access/acl path=/vms roles=PVEVMAdmin tokens=USER!NAME propagate=1` |
 

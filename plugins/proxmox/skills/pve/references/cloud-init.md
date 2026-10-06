@@ -29,20 +29,27 @@ encodes it; `--cipassword` prompts interactively.
    `import` (or `images`) first:
 
    ```
-   pve-api.sh POST /nodes/N/storage/S/download-url url=https://.../noble-server-cloudimg-amd64.img content=import filename=noble-server-cloudimg-amd64.img checksum-algorithm=sha256 checksum=... | pve-task.sh -
+   pve-api.sh POST /nodes/N/storage/S/download-url url=https://.../noble-server-cloudimg-amd64.img content=import filename=noble-server-cloudimg-amd64.img checksum-algorithm=sha256 checksum=...
    ```
 
-   Needs Datastore.AllocateTemplate plus Sys.Audit/Sys.Modify on `/` or Sys.AccessNetwork
+   (returns a UPID: UNVERIFIED; if the response is a bare UPID string, pipe it to
+   `pve-task.sh -`). Needs Datastore.AllocateTemplate plus Sys.Audit/Sys.Modify on `/` or Sys.AccessNetwork
    on the node. Then find the volid: `pve-api.sh GET /nodes/N/storage/S/content content=import`.
 
-2. Create the VM and import the disk (the import runs inside the create task):
+2. Create the VM, then import the disk with a config write (the documented path is
+   `qm set --scsi0 STORAGE:0,import-from=...`; `POST .../config` is its async API form):
 
    ```
    pve-api.sh GET /cluster/nextid
-   pve-api.sh POST /nodes/N/qemu vmid=9000 name=noble-template memory=2048 cores=2 net0=virtio,bridge=vmbr0 scsihw=virtio-scsi-pci scsi0=local-lvm:0,import-from=IMPORT_VOLID ide2=local-lvm:cloudinit boot=order=scsi0 serial0=socket vga=serial0 | pve-task.sh -
+   pve-api.sh POST /nodes/N/qemu vmid=9000 name=noble-template memory=2048 cores=2 net0=virtio,bridge=vmbr0 scsihw=virtio-scsi-pci | pve-task.sh -
+   pve-api.sh GET /nodes/N/qemu/9000/config            # take digest
+   pve-api.sh POST /nodes/N/qemu/9000/config scsi0=local-lvm:0,import-from=IMPORT_VOLID ide2=local-lvm:cloudinit boot=order=scsi0 serial0=socket vga=serial0 digest=D | pve-task.sh -
    ```
 
-   `IMPORT_VOLID` is the volid from the content listing in step 1.
+   `IMPORT_VOLID` is the volid from the content listing in step 1. Passing
+   `scsi0=...,import-from=...` directly on `POST /nodes/N/qemu` (import inside the create
+   task) is UNVERIFIED; prefer the two-step form above. `PUT .../config` also accepts the
+   key but is synchronous, so it blocks until the import finishes.
    `scsi0=<storage>:0,import-from=<volid>` imports; `ide2=<storage>:cloudinit` is the
    documented cloud-init drive slot (`scsi1` as the slot is UNVERIFIED). Optional:
    `efidisk0=<storage>:1,efitype=4m,pre-enrolled-keys=1` (needs `efitype` and

@@ -21,7 +21,7 @@ Modes and trade-offs:
 |---|---|---|---|
 | `stop` | most consistent | guest is stopped for the backup | |
 | `snapshot` | lower than stop | least downtime | default; CT needs snapshot-capable storage on all volumes |
-| `suspend` | between the two | guest suspended | CT suspend mode uses rsync |
+| `suspend` | UNVERIFIED (not ranked in the notes) | guest suspended | CT suspend mode uses rsync |
 
 `remove`/`prune-backups` semantics: `remove` defaults to 1 and removes older backups
 according to the configured retention (which settings apply is UNVERIFIED). Pass
@@ -101,9 +101,9 @@ pve-api.sh GET /nodes/N/storage/S/status                  # space left on the ta
 pve-api.sh GET /cluster/backup                            # which job, which guests, which storage
 ```
 
-Read the task log from the end; vzdump prints one `INFO`/`ERROR` block per guest, so a
-multi-guest job can be partly successful (`exitstatus` then reads `WARNINGS: n` or names
-the failed vmid; exact wording UNVERIFIED). Common causes to check, in order: target storage
+Read the task log from the end. A multi-guest job can be partly successful; the per-guest
+layout of the log and the exact `exitstatus` wording for a partial failure are UNVERIFIED
+(only `OK` and `WARNINGS: n` are success). Common causes to check, in order: target storage
 full or unreachable (`storage/S/status`), guest locked by another task (`lock` in
 `status/current`), snapshot mode on a CT volume without snapshot support (switch that guest
 to `mode=suspend` or `stop`), a guest that was migrated to another node after the job was

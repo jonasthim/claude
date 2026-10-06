@@ -31,10 +31,11 @@ Download from a URL (free; needs Datastore.AllocateTemplate plus Sys.Audit and S
 on `/` or Sys.AccessNetwork on the node):
 
 ```
-pve-api.sh POST /nodes/N/storage/S/download-url url=https://... content=iso filename=debian.iso checksum-algorithm=sha256 checksum=... verify-certificates=1 | pve-task.sh -
+pve-api.sh POST /nodes/N/storage/S/download-url url=https://... content=iso filename=debian.iso checksum-algorithm=sha256 checksum=... verify-certificates=1
 ```
 
-Params: `url`, `content` (`iso|vztmpl|import`), `filename`, `checksum`,
+(returns a UPID: UNVERIFIED; if the response is a bare UPID string, pipe it to
+`pve-task.sh -`). Params: `url`, `content` (`iso|vztmpl|import`), `filename`, `checksum`,
 `checksum-algorithm md5|sha1|sha224|sha256|sha384|sha512`, `compression`,
 `verify-certificates`. There is no `pvesm download-url` CLI command.
 
@@ -68,8 +69,9 @@ Container images from OCI registries (9.x): `POST /nodes/N/storage/S/oci-registr
 - Move between storages (gated): `POST /nodes/N/qemu/V/move_disk`, `POST /nodes/N/lxc/V/move_volume`;
   CLI `qm disk move V scsi0 <storage>`, `pct move-volume V mp0 <storage>`.
 - Unlink or remove a disk from a config (gated): `PUT .../config delete=scsi1`, `qm disk unlink`.
-- Import an image as a disk: `scsi0=S:0,import-from=<volid>` on create or set; absolute
-  paths are root@pam only. See `cloud-init.md`.
+- Import an image as a disk: `scsi0=S:0,import-from=<volid>` on `qm set` or
+  `PUT|POST .../config` (documented); the same key on `POST /nodes/N/qemu` (create) is
+  UNVERIFIED. Absolute paths are root@pam only. See `cloud-init.md`.
 
 ## PVE 9 notes
 
