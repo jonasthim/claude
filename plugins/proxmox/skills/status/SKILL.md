@@ -26,7 +26,7 @@ Argument: `$ARGUMENTS` (empty, a node name, a numeric VMID, or a storage id). Us
 1. `${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh GET /nodes/<node>/status` for load, memory, uptime and version fields present in the response.
 2. `${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh GET /nodes/<node>/qemu` and `GET /nodes/<node>/lxc` for guests on that node.
 3. `${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh GET /nodes/<node>/storage` for storages visible on that node.
-4. `${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh GET /nodes/<node>/tasks errors=1 limit=10` for recent failed tasks; print type, id, starttime and the UPID of each.
+4. `${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh GET /nodes/<node>/tasks errors=1 limit=10` for recent failed tasks; print type, id, starttime and the UPID of each (field names UNVERIFIED).
 
 ## VMID argument
 
@@ -40,7 +40,7 @@ Argument: `$ARGUMENTS` (empty, a node name, a numeric VMID, or a storage id). Us
 
 1. Find the storage items for that id in `GET /cluster/resources type=storage` (one per node).
 2. `${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh GET /nodes/<node>/storage/<storage>/status` on one node where it is active.
-3. `${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh GET /nodes/<node>/storage/<storage>/content` and summarise counts per `content` type (images, rootdir, backup, iso, vztmpl, snippets, import).
+3. `${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh GET /nodes/<node>/storage/<storage>/content` and summarise counts per `content` type (images, backup, iso, vztmpl, snippets, import).
 4. Report usage, enabled/active state, content types and the warning when usage is at or above 80 %.
 
 Do not run any POST, PUT or DELETE from this command. Suggest `/proxmox:vm`, `/proxmox:ct`, `/proxmox:snapshot` or `/proxmox:backup` when the user wants to act on what they see.

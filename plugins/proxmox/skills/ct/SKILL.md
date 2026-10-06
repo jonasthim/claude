@@ -40,9 +40,9 @@ For each of these: read `status/current` (and `config` for destroy), then show t
 
 | Action | Call | Notes |
 |---|---|---|
-| shutdown | `POST /nodes/<node>/lxc/<vmid>/status/shutdown [timeout= forceStop=1]` | graceful; `forceStop=1` kills after the timeout |
+| shutdown | `POST /nodes/<node>/lxc/<vmid>/status/shutdown` | graceful; `timeout=` and `forceStop=1` are documented only for QEMU (params UNVERIFIED for LXC) |
 | stop | `POST /nodes/<node>/lxc/<vmid>/status/stop` | immediate kill |
-| reboot | `POST /nodes/<node>/lxc/<vmid>/status/reboot [timeout=]` | |
+| reboot | `POST /nodes/<node>/lxc/<vmid>/status/reboot` | `timeout=` is documented only for QEMU (params UNVERIFIED for LXC) |
 | migrate | `POST /nodes/<node>/lxc/<vmid>/migrate target=<node> [restart=1 timeout= target-storage= bwlimit=]` | a running container cannot live-migrate: pass `restart=1`, which stops and restarts it |
 | destroy | `DELETE /nodes/<node>/lxc/<vmid> [purge=1 destroy-unreferenced-disks=1 force=1]` | see below |
 

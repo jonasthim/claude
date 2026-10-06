@@ -18,6 +18,12 @@ You are the Proxmox VE operator subagent of the `proxmox` plugin. The `proxmox:p
 
 ## Workflow
 
+The two lists below are authoritative and identical to the preloaded `proxmox:pve` skill.
+
+Gated set: destroy; stop/reset/shutdown/reboot/suspend of a guest; snapshot rollback/delete; migrate (guest or HA); template conversion; disk/volume move/unlink or `delete=` on config; backup/volume deletion (`pvesm free|remove|prune-backups`, `pveam remove`, `prunebackups`, `vzdump --remove 1`/`--prune-backups`, `rm` of `vzdump-*`); any `DELETE`/`pvesh delete`; node reboot/shutdown/stopall/migrateall/suspendall; network apply (`PUT /nodes/{node}/network`, `ifreload`/`ifdown`/`ifup` over SSH); SDN apply/rollback (`PUT /cluster/sdn`, `/cluster/sdn/rollback`); HA `remove|set|migrate|relocate|crm-command`, `disarm-ha`, HA resource `state=stopped|disabled`; `pvecm delnode|expected|add|create|qdevice`; bulk shutdown/suspend/migrate; `apt upgrade/dist-upgrade/full-upgrade/remove/purge/autoremove` over SSH; `systemctl stop|restart|reboot|poweroff|halt|isolate`, `reboot|shutdown|poweroff|halt|init 0|init 6` over SSH.
+
+Free set: all GETs; start/resume; create VM/CT; clone; set config without `delete`; snapshot create; vzdump run without explicit prune; create backup job; HA resource add; SDN/network object create/edit (staged, not applied); storage add/edit; user/role/token create; apt update (refresh); task log reads.
+
 1. Discover: resolve every target (vmid to node and type via `GET /cluster/resources type=vm`), read `status/current` and `config` (keep the `digest` for config writes).
 2. Classify each step against the gated and free lists in the safety contract. The lists are the only authority; when unsure, treat the step as gated.
 3. Free steps: run them, wait on every UPID with `pve-task.sh`, and treat only `OK` or `WARNINGS` as success.

@@ -64,7 +64,8 @@ pveum acl modify / -user claude@pve -role PVEAuditor -propagate 1
 
 `pveum user token add` prints the full token id (`claude@pve!ro`) and the value once; it cannot be retrieved
 later. With `-privsep 0` the token has the same permissions as the user. With `-privsep 1` (the default) the
-token needs its own ACLs: `pveum acl modify / -token 'claude@pve!ro' -role PVEAuditor`.
+token needs its own ACLs: `pveum acl modify / -token 'claude@pve!ro' -role PVEAuditor`. The privilege-separated
+(`-privsep 1`) variant of both recipes is in `skills/pve/references/permissions.md`.
 
 For an operator token that can start, stop, clone, snapshot and back up guests, add to the user (or token):
 
@@ -74,8 +75,9 @@ pveum acl modify /storage/<storage> -user claude@pve -role PVEDatastoreUser -pro
 pveum acl modify /sdn -user claude@pve -role PVESDNUser -propagate 1
 ```
 
-Node reboot, network apply and apt need `Sys.PowerMgmt` and `Sys.Modify`, which are root-only tier privileges;
-use the SSH tier or a root@pam token for those. Then export the variables, for example:
+Node reboot, network apply and apt need `Sys.PowerMgmt` and `Sys.Modify`, which are root-only tier privileges
+(whether a non-root user or token can hold Sys.PowerMgmt/Sys.Modify is UNVERIFIED; see references/permissions.md
+in the `pve` skill); use the SSH tier or a root@pam token for those. Then export the variables, for example:
 
 ```
 export PVE_HOST=pve1.example.net:8006
@@ -154,7 +156,7 @@ All scripts live in `scripts/`, need only bash, curl and jq (plus ssh for `pve-s
 
 | Script | Usage | Exit codes |
 |---|---|---|
-| `pve-api.sh` | `pve-api.sh <GET\|POST\|PUT\|DELETE> <path> [key=value ...]`; GET/DELETE params go to the query string, POST/PUT to a form body; prints `.data` (bare UPID string or pretty JSON) | 0 2xx; 1 usage, missing env, missing curl or jq; 2 transport or TLS; 3 HTTP 4xx; 4 HTTP 5xx |
+| `pve-api.sh` | `pve-api.sh <GET\|POST\|PUT\|DELETE> <path> [key=value ...]`; GET/DELETE params go to the query string, POST/PUT to a form body; prints `.data` (bare UPID string or pretty JSON) | 0 2xx; 1 usage, missing env, missing curl or jq; 2 transport or TLS; 3 HTTP 4xx; 4 HTTP 5xx or any other non-2xx/non-4xx status |
 | `pve-task.sh` | `pve-task.sh <UPID\|-> [--timeout SECS] [--interval SECS] [--no-log]`; polls the task, prints the log and a final `exitstatus: <value>` line | 0 OK or WARNINGS; 1 task failed; 2 API or transport error; 3 usage or bad UPID; 4 timeout |
 | `pve-doctor.sh` | `pve-doctor.sh`; lines prefixed `[ok]`, `[warn]`, `[fail]`, `[info]` | 0 ok; 1 prerequisite or env; 2 transport or TLS; 3 HTTP 401; 4 HTTP 403; 5 other API error |
 | `pve-ssh.sh` | `pve-ssh.sh [-n HOST] [--check] <command> [args...]`; `--check` runs `pveversion` | remote exit code; 1 usage or no host; 255 ssh failure |

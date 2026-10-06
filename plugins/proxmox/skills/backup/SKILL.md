@@ -21,8 +21,8 @@ Arguments: `$ARGUMENTS` = one of the forms in the argument hint. Use `${CLAUDE_P
 
 1. Resolve the node from `GET /cluster/resources type=vm`.
 2. Storage: `storage=` from the arguments, else list backup-capable storages on that node and ask.
-3. `POST /nodes/<node>/vzdump vmid=<vmid> storage=<storage> [mode=snapshot|suspend|stop] [compress=zstd] [notes-template=...] [protected=1]`. Default `mode` is snapshot. Returns a UPID; wait on it.
-4. `remove` defaults to 1 and applies the storage retention. If the user asks for `remove=1` explicitly, or passes `prune-backups=...`, treat the call as gated: show the PLAN block (which backups the retention would delete, from the `list` output), stop, and run only after the user says yes in a later message. Pass `remove=0` to keep every existing backup.
+3. `POST /nodes/<node>/vzdump vmid=<vmid> storage=<storage> remove=0 [mode=snapshot|suspend|stop] [compress=zstd] [notes-template=...] [protected=1]`. Default `mode` is snapshot. Always pass `remove=0` unless the user asked for pruning. Returns a UPID; wait on it.
+4. `remove` defaults to 1 on the API side and prunes by the storage retention, which is why the default call sets `remove=0`. If the user asks for `remove=1` explicitly, or passes `prune-backups=...`, treat the call as gated: show the PLAN block (which backups the retention would delete, from the `list` output), stop, and run only after the user says yes in a later message.
 
 ## jobs (free)
 

@@ -40,7 +40,7 @@ For each of these: read `status/current` (and `config` for destroy), then show t
 | migrate | `GET /nodes/<node>/qemu/<vmid>/migrate` first (preconditions), then `POST /nodes/<node>/qemu/<vmid>/migrate target=<node> [online=1 with-local-disks=1 targetstorage= migration_type= bwlimit=]` | running VM needs `online=1`; local disks need `with-local-disks=1` |
 | destroy | `DELETE /nodes/<node>/qemu/<vmid> [purge=1 destroy-unreferenced-disks=1]` | see below |
 
-Destroy rules: the VM must be stopped (`status/current` shows `stopped`); if it is running, offer `shutdown` as a separate gated step first. Ask whether to pass `purge=1` (also removes the VM from backup jobs, replication and HA; required when the VM is HA-managed or replicated) and `destroy-unreferenced-disks=1` (also deletes disks owned by the VMID that the config no longer references). State the disks that will be deleted from `config`. There is no revert; name the newest backup from `GET /nodes/<node>/storage/<storage>/content content=backup vmid=<vmid>` when one exists, otherwise say that none exists.
+Destroy rules: the VM must be stopped (`status/current` shows `stopped`); if it is running, offer `shutdown` as a separate gated step first. Ask whether to pass `purge=1` (also removes the VM from backup jobs, replication and HA; required when the VM is HA-managed or replicated) and `destroy-unreferenced-disks=1` (the parameter exists and defaults to 0; its exact semantics are UNVERIFIED). State the disks that will be deleted from `config`. There is no revert; name the newest backup from `GET /nodes/<node>/storage/<storage>/content content=backup vmid=<vmid>` when one exists, otherwise say that none exists.
 
 ## Step 3: verify and report
 
