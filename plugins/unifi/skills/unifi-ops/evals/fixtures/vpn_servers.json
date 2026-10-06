@@ -1,0 +1,9 @@
+[
+  {
+    "id": "vpn-wg",
+    "name": "WireGuard",
+    "type": "WIREGUARD",
+    "enabled": true,
+    "port": 51820
+  }
+]

@@ -1,0 +1,12 @@
+{
+  "orderedFirewallPolicyIds": {
+    "beforeSystemDefined": [
+      "fp-iot-ha-allow",
+      "fp-iot-to-lan-block",
+      "fp-lan-to-iot-allow"
+    ],
+    "afterSystemDefined": [
+      "fp-hotspot-internal-block"
+    ]
+  }
+}

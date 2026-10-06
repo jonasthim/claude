@@ -1,0 +1,22 @@
+{
+  "name": "proxmox",
+  "displayName": "Proxmox VE",
+  "version": "0.2.0",
+  "description": "Operate Proxmox VE 9 clusters safely from Claude Code: inventory, VM/CT lifecycle, snapshots, backups, cloud-init templates, storage, networking/SDN, HA and access control via REST API token or SSH, with a confirmation guard for destructive actions.",
+  "author": {
+    "name": "Jonas Thim",
+    "url": "https://github.com/jonasthim"
+  },
+  "homepage": "https://github.com/jonasthim/claude/tree/main/plugins/proxmox",
+  "repository": "https://github.com/jonasthim/claude",
+  "license": "MIT",
+  "keywords": [
+    "proxmox",
+    "pve",
+    "virtualization",
+    "lxc",
+    "qemu",
+    "homelab",
+    "devops"
+  ]
+}

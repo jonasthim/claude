@@ -1,0 +1,39 @@
+[
+  {
+    "siteId": "88f7af54-98f8-306a-a1c7-c9349722b1f6",
+    "hostId": "A1B2C3D4E5F6A1B2C3D4E5F6A1B2C3D4E5F6A1B2",
+    "meta": {
+      "name": "Default",
+      "desc": "Thim Home",
+      "gatewayMac": "74:ac:b9:11:22:01",
+      "timezone": "Europe/Stockholm"
+    },
+    "statistics": {
+      "counts": {
+        "totalDevice": 6,
+        "offlineDevice": 1,
+        "wifiClient": 9,
+        "wiredClient": 5,
+        "guestClient": 1,
+        "criticalNotification": 0
+      },
+      "percentages": {
+        "wanUptime": 99.93
+      },
+      "ispInfo": {
+        "name": "Bahnhof",
+        "organization": "Bahnhof AB"
+      },
+      "internetIssues": [
+        {
+          "index": 0,
+          "count": 1,
+          "timestamp": "2026-10-03T02:14:00Z"
+        }
+      ]
+    },
+    "isOwner": true,
+    "permission": "admin",
+    "subscriptionEndTime": null
+  }
+]

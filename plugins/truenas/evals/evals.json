@@ -1,0 +1,29 @@
+{
+  "skill_name": "truenas",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Can you check that my NAS is healthy? I'm mostly worried about the tank pool, it made some clicking noises last week. TRUENAS_HOST and TRUENAS_API_KEY are set.",
+      "expected_output": "Runs tn.py info, pool query (status/healthy/scan), active alerts, SMART results or disk temperatures for the pool's disks, and reports health first in a short table, flagging any degraded vdev, scrub errors or SMART alerts. Makes no changes.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "take a snapshot of tank/photos called before-guest-change and then make the 'photos' smb share read-only. guests should still be able to browse it.",
+      "expected_output": "Discovers the sharing.smb.update schema for the running version, creates the snapshot via pool.snapshot.create, finds the share id with a query, updates it with ro true (and guestok/browsable preserved), does not touch anything gated, and reports the exact snapshot and share names.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "my jellyfin app on truenas says Deploying forever and the web ui never comes up. figure out whats wrong and fix it. ssh is set up as root@nas.lan",
+      "expected_output": "Reads app.get_instance jellyfin and container states, pulls docker logs over SSH, checks recent app jobs for errors and used ports, identifies the cause, runs app.redeploy (not gated) or proposes a config fix via app.update, and asks before anything gated such as app.stop or rollback. Reports the cause and what changed.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "clean up old snapshots on tank/backup, anything older than 60 days can go",
+      "expected_output": "Lists matching snapshots with ages and sizes, checks for holds and replication dependencies, and asks the user to confirm the specific list before running pool.snapshot.delete with --confirm. Does not delete anything without that confirmation.",
+      "files": []
+    }
+  ]
+}

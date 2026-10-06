@@ -1,0 +1,135 @@
+{
+  "d1a1-gw": {
+    "uptimeSec": 1382400,
+    "lastHeartbeatAt": "2026-10-06T08:14:55Z",
+    "nextHeartbeatAt": "2026-10-06T08:15:55Z",
+    "loadAverage1Min": 0.31,
+    "loadAverage5Min": 0.28,
+    "loadAverage15Min": 0.25,
+    "cpuUtilizationPct": 12.5,
+    "memoryUtilizationPct": 48.0,
+    "uplink": {
+      "txRateBps": 18500000,
+      "rxRateBps": 92000000
+    },
+    "interfaces": {
+      "radios": []
+    }
+  },
+  "d2b2-sw-core": {
+    "uptimeSec": 1382100,
+    "lastHeartbeatAt": "2026-10-06T08:14:55Z",
+    "nextHeartbeatAt": "2026-10-06T08:15:55Z",
+    "loadAverage1Min": 0.1,
+    "loadAverage5Min": 0.09,
+    "loadAverage15Min": 0.08,
+    "cpuUtilizationPct": 4.1,
+    "memoryUtilizationPct": 31.2,
+    "uplink": {
+      "txRateBps": 61000000,
+      "rxRateBps": 60500000
+    },
+    "interfaces": {
+      "radios": []
+    }
+  },
+  "d4d4-ap-living": {
+    "uptimeSec": 1381900,
+    "lastHeartbeatAt": "2026-10-06T08:14:55Z",
+    "nextHeartbeatAt": "2026-10-06T08:15:55Z",
+    "loadAverage1Min": 0.25,
+    "loadAverage5Min": 0.22,
+    "loadAverage15Min": 0.2,
+    "cpuUtilizationPct": 9.8,
+    "memoryUtilizationPct": 55.4,
+    "uplink": {
+      "txRateBps": 9200000,
+      "rxRateBps": 1100000
+    },
+    "interfaces": {
+      "radios": [
+        {
+          "frequencyGHz": 2.4,
+          "txRetriesPct": 4.2
+        },
+        {
+          "frequencyGHz": 5,
+          "txRetriesPct": 2.1
+        }
+      ]
+    }
+  },
+  "d5e5-ap-office": {
+    "uptimeSec": 3120,
+    "lastHeartbeatAt": "2026-10-06T08:14:55Z",
+    "nextHeartbeatAt": "2026-10-06T08:15:55Z",
+    "loadAverage1Min": 0.95,
+    "loadAverage5Min": 0.84,
+    "loadAverage15Min": 0.76,
+    "cpuUtilizationPct": 38.0,
+    "memoryUtilizationPct": 71.9,
+    "uplink": {
+      "txRateBps": 14800000,
+      "rxRateBps": 2400000
+    },
+    "interfaces": {
+      "radios": [
+        {
+          "frequencyGHz": 2.4,
+          "txRetriesPct": 31.7
+        },
+        {
+          "frequencyGHz": 5,
+          "txRetriesPct": 18.9
+        }
+      ]
+    }
+  },
+  "d6f6-ap-hall": {
+    "uptimeSec": 1381850,
+    "lastHeartbeatAt": "2026-10-06T08:14:55Z",
+    "nextHeartbeatAt": "2026-10-06T08:15:55Z",
+    "loadAverage1Min": 0.15,
+    "loadAverage5Min": 0.14,
+    "loadAverage15Min": 0.12,
+    "cpuUtilizationPct": 6.2,
+    "memoryUtilizationPct": 44.0,
+    "uplink": {
+      "txRateBps": 3100000,
+      "rxRateBps": 700000
+    },
+    "interfaces": {
+      "radios": [
+        {
+          "frequencyGHz": 2.4,
+          "txRetriesPct": 3.0
+        },
+        {
+          "frequencyGHz": 5,
+          "txRetriesPct": 1.4
+        },
+        {
+          "frequencyGHz": 6,
+          "txRetriesPct": 0.9
+        }
+      ]
+    }
+  },
+  "_default": {
+    "uptimeSec": 0,
+    "lastHeartbeatAt": null,
+    "nextHeartbeatAt": "2026-10-06T08:15:55Z",
+    "loadAverage1Min": 0.0,
+    "loadAverage5Min": 0.0,
+    "loadAverage15Min": 0.0,
+    "cpuUtilizationPct": 0,
+    "memoryUtilizationPct": 0,
+    "uplink": {
+      "txRateBps": 0,
+      "rxRateBps": 0
+    },
+    "interfaces": {
+      "radios": []
+    }
+  }
+}

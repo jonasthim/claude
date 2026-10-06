@@ -1,0 +1,28 @@
+{
+  "name": "jonasthim",
+  "owner": { "name": "Jonas Thim", "url": "https://github.com/jonasthim" },
+  "metadata": { "description": "Claude Code plugins by Jonas Thim for running a homelab: TrueNAS, Proxmox VE and UniFi." },
+  "plugins": [
+    {
+      "name": "truenas",
+      "source": "./plugins/truenas",
+      "description": "Operate a TrueNAS SCALE 25.x system: pools, datasets, snapshots, shares, apps, alerts, services, updates and replication.",
+      "category": "storage",
+      "keywords": ["truenas", "nas", "zfs", "storage", "homelab"]
+    },
+    {
+      "name": "proxmox",
+      "source": "./plugins/proxmox",
+      "description": "Proxmox VE 9 operations skill, slash commands, operator agent and destructive-action guard.",
+      "category": "devops",
+      "keywords": ["proxmox", "pve", "virtualization", "homelab"]
+    },
+    {
+      "name": "unifi",
+      "source": "./plugins/unifi",
+      "description": "UniFi network operations: troubleshoot clients, health reports, guarded config changes and device actions via the official UniFi Network and Site Manager APIs.",
+      "category": "networking",
+      "keywords": ["unifi", "ubiquiti", "network", "wifi", "firewall", "vlan"]
+    }
+  ]
+}

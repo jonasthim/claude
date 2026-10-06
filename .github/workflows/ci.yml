@@ -1,0 +1,51 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  truenas:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: plugins/truenas
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # websockets only backs the fake middleware in test_e2e.py; tn.py itself is stdlib-only.
+      - run: pip install websockets
+      - run: python -m unittest discover -v tests
+
+  proxmox:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y shellcheck jq
+      - run: bash plugins/proxmox/tests/run.sh --no-validate
+
+  unifi:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: bash plugins/unifi/tests/smoke.sh
+
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install -g @anthropic-ai/claude-code
+      - run: claude plugin validate .
+      - run: for p in plugins/*/; do claude plugin validate "$p" || exit 1; done
