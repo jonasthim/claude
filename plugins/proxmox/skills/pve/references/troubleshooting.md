@@ -3,12 +3,22 @@
 Condensed from Proxmox 9.x sources (pve-http-server, pve-manager, pve-docs) and the
 plugin's script contracts; items marked UNVERIFIED were not confirmed.
 
+## Contents
+
+1. HTTP codes and what to do
+2. Task problems
+3. Guest locked or inconsistent
+4. Node and service checks
+5. Storage content list empty
+6. Network lockout prevention
+7. Script exit codes
+
 ## HTTP codes and what to do
 
 | Code | Typical message | Cause | Do |
 |---|---|---|---|
 | 400 | `errors: {<param>: <msg>}` | parameter validation; `nextid` taken | fix the named parameter; re-run `GET /cluster/nextid` |
-| 401 | `authentication failure` (UNVERIFIED wording); `token '<id>' access expired` | wrong `PVE_TOKEN_ID`/`PVE_TOKEN_SECRET`, expired token | run `pve-doctor.sh`; ask the user for a new token; never guess credentials |
+| 401 | `authentication failure` (UNVERIFIED wording); `token '<id>' access expired` | wrong `PVE_TOKEN_ID`/`PVE_TOKEN_SECRET`, expired token | run `/proxmox:doctor` (or the three-call check in the pve skill's Setup section); ask the user for a new token; never guess credentials |
 | 403 | `Permission check failed (/vms/109, VM.PowerMgmt)`: names the ACL path and the privilege exactly (confirmed on a PVE 9.2 cluster) | token lacks the role, or `privsep=1` token without its own ACL | map the privilege with `permissions.md`; do not escalate on your own |
 | 500 | `VM already running`, `VM <N> already exists`, `no such task` | state conflict or uncaught server error | re-discover state, re-plan; read the task log if a UPID exists |
 | 501 | `no such uri`; body on GET/DELETE | wrong path or method; a body sent with GET/DELETE | check the path in `api-cheatsheet.md`; use `pve-api.sh`, which never sends a body on GET/DELETE |
@@ -96,9 +106,8 @@ first one looks wrong.
 | Script | 0 | 1 | 2 | 3 | 4 | 5 |
 |---|---|---|---|---|---|---|
 | `pve-api.sh` | 2xx | usage, missing env var, missing curl/jq | transport/TLS (curl failed) | HTTP 4xx | HTTP 5xx or any other non-2xx/non-4xx status | |
-| `pve-task.sh` | task OK or WARNINGS | task failed (see log) | API/transport error | usage or bad UPID | timeout, task still running | |
-| `pve-doctor.sh` | all checks ok | prerequisite or env | transport/TLS | HTTP 401 | HTTP 403 | other API error |
-| `pve-ssh.sh` | remote exit 0 | usage or no host | | | | (255 = ssh failure; otherwise the remote exit code) |
+| `pve-task.sh` | task OK or WARNINGS | task failed (see log) | API/transport error | usage, bad UPID or jq missing | timeout, task still running | |
+| `pve-ssh.sh` | remote exit 0 | usage, no host or no ssh | | | | (255 = ssh failure; otherwise the remote exit code) |
 
 Error lines: `pve-api: HTTP <code> <METHOD> <path>: <message>` then `  <param>: <msg>`
 per entry in `errors`; `pve-api: curl failed (<exit>): <stderr>` for transport problems.
@@ -106,3 +115,5 @@ Example (exit 3; confirmed on a PVE 9.2 cluster):
 `pve-api: HTTP 403 POST /nodes/<node>/lxc/109/status/stop: Permission check failed (/vms/109, VM.PowerMgmt)`.
 `PVE_API_DEBUG=1` prints method and URL (never the header). TLS errors: set `PVE_CA_CERT`
 to the cluster CA; do not set `PVE_INSECURE=1` yourself.
+`PVE_DRY_RUN=1` prints `{method, url, params}` and makes no request; use it to check a path
+and its encoding.

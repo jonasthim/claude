@@ -3,6 +3,14 @@
 Condensed from Proxmox 9.x sources (pve-guest-common, vzdump.adoc, qmrestore, pve-manager
 backup jobs); items marked UNVERIFIED were not confirmed.
 
+## Contents
+
+1. Run a backup
+2. Backup jobs (need Sys.Modify on /)
+3. List archives
+4. Restore
+5. Diagnose a failed backup
+
 ## Run a backup
 
 ```

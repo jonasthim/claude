@@ -1,0 +1,82 @@
+[
+  {
+    "query": "qm list shows VM 104 as locked (backup) but there is no backup running anymore. how do I get it unstuck without breaking anything?",
+    "should_trigger": true
+  },
+  {
+    "query": "pct enter 105 just hangs on my node, the container shows running in the web UI. what can I check?",
+    "should_trigger": true
+  },
+  {
+    "query": "my homelab hypervisor node is out of space on local-lvm, can you figure out what's eating it and what I can safely delete?",
+    "should_trigger": true
+  },
+  {
+    "query": "Give me an overview of my Proxmox cluster: what is running where, is it quorate, and is any storage getting full? Credentials are in PVE_HOST, PVE_TOKEN_ID and PVE_TOKEN_SECRET.",
+    "should_trigger": true
+  },
+  {
+    "query": "I need a cloud-init Ubuntu 24.04 template on pve2 as VMID 9000 and then three full clones from it with static IPs 10.0.10.21-23 on vmbr0, 2 cores and 4 GB each",
+    "should_trigger": true
+  },
+  {
+    "query": "the nightly vzdump job to the NAS failed again last night with some snapshot error, can you look at the task log and tell me what's wrong and how to fix the job",
+    "should_trigger": true
+  },
+  {
+    "query": "Migrate everything off pve3 so I can reboot it for a kernel update, then put it back into HA rotation afterwards. Tell me what you plan before you touch anything.",
+    "should_trigger": true
+  },
+  {
+    "query": "I upgraded to PVE 9 and my ha groups disappeared?? is that expected and how do i get the same node preference behaviour back",
+    "should_trigger": true
+  },
+  {
+    "query": "Create an API token for a monitoring user that can only read stuff. pveum syntax please, I always get the privsep thing wrong",
+    "should_trigger": true
+  },
+  {
+    "query": "VM 101 won't shut down from the GUI, it just sits at 'shutting down'. I want it stopped and then deleted, it's a leftover test box.",
+    "should_trigger": true
+  },
+  {
+    "query": "My Proxmox Backup Server datastore is at 92%, how do I set up prune and garbage collection schedules so it stops filling up?",
+    "should_trigger": false
+  },
+  {
+    "query": "we have a vSphere 8 cluster and I need a PowerCLI script that lists all VMs with snapshots older than 7 days and emails the owners",
+    "should_trigger": false
+  },
+  {
+    "query": "virsh list --all shows my domain as paused after a host reboot, how do I resume it and make it autostart? ubuntu 22.04 with libvirt/KVM",
+    "should_trigger": false
+  },
+  {
+    "query": "my k3s pods keep getting OOMKilled on the worker node, help me set proper memory requests and limits in the deployment yaml",
+    "should_trigger": false
+  },
+  {
+    "query": "writing terraform with the bpg/proxmox provider: how do I reference a cloud-init snippet file in the proxmox_virtual_environment_vm resource? pure HCL syntax question, I have the snippet uploaded already",
+    "should_trigger": false
+  },
+  {
+    "query": "TrueNAS SCALE: my ZFS pool shows DEGRADED after a disk swap, how do I resilver onto the new disk and clear the error?",
+    "should_trigger": false
+  },
+  {
+    "query": "I want to set up VLANs on my UniFi Dream Machine for IoT devices and block them from reaching the main LAN but still allow mDNS",
+    "should_trigger": false
+  },
+  {
+    "query": "apt full-upgrade on my debian 12 box fails with unmet dependencies on libssl3, how do I fix the package state? it's a plain web server",
+    "should_trigger": false
+  },
+  {
+    "query": "Proxmox Mail Gateway is quarantining legit newsletters from our CRM, how do I whitelist the sender domain and release the queued mails?",
+    "should_trigger": false
+  },
+  {
+    "query": "building a 3 node homelab for virtualization on a budget, should I go with used Dell R730s or minisforum mini PCs? mostly a handful of VMs and containers, power bill matters",
+    "should_trigger": false
+  }
+]

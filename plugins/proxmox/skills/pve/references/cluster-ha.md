@@ -3,6 +3,15 @@
 Condensed from Proxmox 9.x sources (pve-cluster, pve-manager node API, pve-ha-manager,
 pve-docs); items marked UNVERIFIED were not confirmed.
 
+## Contents
+
+1. Cluster and node status
+2. Node power and bulk guest actions (all gated)
+3. Updates
+4. Cluster membership (gated; SSH only)
+5. HA resources
+6. HA rules (PVE 9)
+
 ## Cluster and node status
 
 ```

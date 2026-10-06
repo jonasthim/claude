@@ -1,6 +1,6 @@
 ---
 name: pve
-description: "Operate and troubleshoot Proxmox VE 9 clusters through the REST API (API token) or SSH to nodes. Covers inventory and health, VM (qm) and LXC container (pct) lifecycle, snapshots, vzdump backups and restores, cloud-init templates and provisioning, storage, networking and SDN, cluster, HA and node maintenance, users, roles and API tokens. Use this whenever the user mentions Proxmox, PVE, pvesh, qm, pct, vzdump, a hypervisor node, a homelab cluster, or a VMID, even when they do not say Proxmox explicitly. Every destructive or disruptive action is planned and confirmed before it runs."
+description: "Operate and troubleshoot Proxmox VE 9 clusters through the REST API (API token) or SSH to nodes: inventory and health, VM (qm) and LXC container (pct) lifecycle, snapshots, vzdump backups and restores, cloud-init templates, storage, networking and SDN, cluster, HA and node maintenance, users, roles and API tokens. Use this whenever the user mentions Proxmox, PVE, pvesh, qm, pct, vzdump, pvesm, pveum, ha-manager, a VMID, a hypervisor node or a homelab cluster, even when they never say Proxmox. Every destructive or disruptive action is planned and confirmed before it runs. Do NOT use for Proxmox Backup Server or Proxmox Mail Gateway administration, for VMware, libvirt, Docker or Kubernetes workloads, or for plain Debian questions with no PVE context."
 argument-hint: "[task or question about your Proxmox cluster]"
 ---
 
@@ -51,7 +51,7 @@ Rules (they exist because the API has no undo and the guard hook is the only bac
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `PVE_HOST` | (required) | `host[:port]` or full `https://host:8006`; port 8006 added when absent |
+| `PVE_HOST` | (required) | `host[:port]` or a URL with scheme; `https://` and `:8006` are added when absent; a trailing `/` or `/api2/json` is stripped; IPv6 literals must be bracketed (`[::1]:8006`) |
 | `PVE_TOKEN_ID` | (required) | `USER@REALM!TOKENID` |
 | `PVE_TOKEN_SECRET` | (required) | token value; never printed |
 | `PVE_CA_CERT` | unset | CA path passed to `curl --cacert`; the cluster CA is `/etc/pve/pve-root-ca.pem` on any node (path confirmed on a PVE 9.x cluster, not in the notes) |
@@ -59,26 +59,36 @@ Rules (they exist because the API has no undo and the guard hook is the only bac
 | `PVE_TIMEOUT` | `30` | curl `--max-time` seconds |
 | `PVE_API_RAW` | unset | `1` prints the full `{"data":...}` envelope |
 | `PVE_API_DEBUG` | unset | `1` prints method and URL to stderr (no header) |
+| `PVE_API_QUIET_TLS` | unset | `1` suppresses the PVE_INSECURE warning; pve-task.sh sets it for polling |
+| `PVE_DRY_RUN` | unset | `1` makes pve-api.sh print `{method, url, params}` as JSON and exit 0 without contacting the API |
 | `PVE_SSH_HOST` | host part of `PVE_HOST` | node for the SSH tier |
 | `PVE_SSH_USER` | `root` | SSH user (`pvesh`, `qm`, `pct` need root on the node) |
 | `PVE_SSH_PORT` | `22` | SSH port |
 | `PVE_SSH_KEY` | unset | identity file (`ssh -i`) |
 | `PVE_SSH_OPTS` | unset | extra ssh options |
 
-First call in a session, and again after any 401 or 403:
+Connection check, first thing in a session and again after any 401 or 403
+(`/proxmox:doctor` runs the same calls plus `GET /cluster/status` and the SSH check, and
+maps every failure to a remedy):
 
 ```
-${CLAUDE_PLUGIN_ROOT}/scripts/pve-doctor.sh
+${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh GET /version
+${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh GET /access/permissions
+${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh GET /nodes
 ```
 
-Exit codes: 0 ok; 1 missing prerequisite or env var; 2 transport/TLS; 3 HTTP 401 (bad or
-expired token); 4 HTTP 403 (token lacks privileges, see `references/permissions.md`);
-5 other API error. Its capability summary (read-only / operator / admin-capable) tells you
-which gated actions will fail with 403 before you plan them.
+Read the exit code: 1 = missing env var or curl/jq; 2 = transport/TLS (check `PVE_HOST`,
+set `PVE_CA_CERT`); 3 with `HTTP 401` on stderr = token rejected or expired; 3 with
+`HTTP 403` = token lacks a privilege (`references/permissions.md`). The permissions map
+(object keyed by ACL path, each value `{privilege: 1}`) tells you before planning which
+gated actions will fail with 403: only `*.Audit` keys = read-only; `VM.PowerMgmt`,
+`VM.Allocate`, `VM.Snapshot`, `VM.Migrate` or `Datastore.AllocateSpace` = operator;
+`Sys.Modify` or `Sys.PowerMgmt` = admin-capable.
 
 ## 3. Tooling
 
-All scripts: bash + curl + jq only, `-h` for usage, secret never printed.
+All scripts: bash + curl + jq only; run them, do not read them into context; `--help`
+prints the contract; the secret is never printed.
 
 `${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh <GET|POST|PUT|DELETE> <path> [key=value ...]`
 
@@ -89,6 +99,9 @@ All scripts: bash + curl + jq only, `-h` for usage, secret never printed.
   `pve-api: HTTP <code> <METHOD> <path>: <message>` plus `  <param>: <msg>` lines.
 - Exit: 0 2xx; 1 usage/env/missing curl or jq; 2 transport/TLS; 3 HTTP 4xx; 4 HTTP 5xx or any
   other non-2xx/non-4xx status.
+- `PVE_DRY_RUN=1` prints `{method, url, params}` and exits 0 without calling the API; use
+  it to check the path and parameter encoding of a free call. The guard hook still matches
+  a gated command in dry-run mode; that is intended, write gated calls into the PLAN by hand.
 
 ```
 ${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh GET /cluster/resources type=vm
@@ -100,13 +113,14 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh PUT /nodes/pve1/qemu/100/config memory=
 
 - Polls `GET /nodes/{node}/tasks/{upid}/status` until stopped (default timeout 600 s),
   then prints the task log and a final `exitstatus: <value>` line.
-- Exit: 0 `OK` or `WARNINGS: n`; 1 task failed; 2 API/transport error; 3 bad UPID; 4 timeout.
+- Exit: 0 `OK` or `WARNINGS: n`; 1 task failed; 2 API/transport error; 3 usage, bad UPID or
+  jq missing; 4 timeout.
 - Pipe form: `${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh POST .../status/shutdown timeout=60 | ${CLAUDE_PLUGIN_ROOT}/scripts/pve-task.sh -`
 
 `${CLAUDE_PLUGIN_ROOT}/scripts/pve-ssh.sh [-n HOST] [--check] <command> [args...]`
 
 - Runs the command on a node with `ssh -o BatchMode=yes`; exit code is the remote one
-  (255 = ssh failure, 1 = no host). `--check` runs `pveversion`.
+  (255 = ssh failure, 1 = usage, no host or no ssh). `--check` runs `pveversion`.
 - Use SSH only for what the API cannot do: node maintenance mode
   (`ha-manager crm-command node-maintenance enable|disable <node>`), package upgrades
   (`apt dist-upgrade`; there is no API endpoint), `pvecm add|delnode`, hand edits of

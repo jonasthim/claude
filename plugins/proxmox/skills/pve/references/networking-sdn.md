@@ -3,6 +3,14 @@
 Condensed from Proxmox 9.x sources (pve-network, pve-manager network API, pve-firewall,
 pve-docs); items marked UNVERIFIED were not confirmed.
 
+## Contents
+
+1. How node networking changes work
+2. Inspect
+3. Create and edit interfaces (staged, free)
+4. SDN
+5. Firewall
+
 ## How node networking changes work
 
 - ifupdown2 is the default since PVE 7.0. API and GUI edits are written to

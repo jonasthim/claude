@@ -3,6 +3,14 @@
 Condensed from Proxmox 9.x sources (qm-cloud-init.adoc, qemu-server); items marked
 UNVERIFIED were not confirmed.
 
+## Contents
+
+1. Recipe over SSH (verbatim from qm-cloud-init.adoc)
+2. Same recipe over the API
+3. Config keys
+4. sshkeys encoding
+5. Pitfalls
+
 ## Recipe over SSH (verbatim from qm-cloud-init.adoc)
 
 ```

@@ -3,6 +3,16 @@
 Condensed from Proxmox 9.x sources (pve-access-control, pveum.adoc, API permission checks);
 items marked UNVERIFIED were not confirmed.
 
+## Contents
+
+1. Model in one paragraph
+2. Built-in roles
+3. Privilege tiers
+4. Privilege per operation
+5. ACL paths
+6. Recipes
+7. Reading a 403
+
 ## Model in one paragraph
 
 A token (`USER@REALM!TOKENID`) authenticates as its user. With `privsep=1` (the default)
@@ -41,7 +51,7 @@ LDAP/Authentik-backed group holds the Administrator role on `/` with propagate=1
 privileges are in the Administrator role, not in PVEVMAdmin or PVEAuditor, so node reboot,
 network apply, apt refresh and backup-job edits need a user, group or token holding
 Administrator on `/` or on `/nodes/{node}`; the SSH tier is the alternative. Test with
-`pve-doctor.sh` before planning such actions.
+`/proxmox:doctor` before planning such actions.
 
 ## Privilege per operation
 
@@ -118,7 +128,7 @@ pve-api.sh PUT /access/acl path=/vms roles=PVEVMAdmin tokens='claude@pve!ops' pr
 
 Check what a token can do: `pve-api.sh GET /access/permissions`. The response is an object
 keyed by ACL path (`/`, `/storage`, `/sdn`, `/vms`, `/access`, ...), each value an object
-`{privilege-name: 1}`, not an array (confirmed on a PVE 9.2 cluster); `pve-doctor.sh`
+`{privilege-name: 1}`, not an array (confirmed on a PVE 9.2 cluster); `/proxmox:doctor`
 summarises it. Set `expire` (epoch) on tokens that should not live forever; an expired token
 answers 401 with `access expired`.
 
@@ -135,5 +145,5 @@ Map it with the table above and the tiers: a `VM.*` privilege means the token ne
 PVEVMAdmin (or a custom role) on `/vms/{vmid}` or above; `Datastore.*` means a storage role
 on `/storage/{id}`; `Sys.*` means a node-level privilege that only the Administrator role
 (on `/` or `/nodes/{node}`) carries, which a scoped token usually lacks.
-Re-run `pve-doctor.sh` after changing ACLs. Do not retry with `root@pam` credentials on
+Re-run `/proxmox:doctor` after changing ACLs. Do not retry with `root@pam` credentials on
 your own initiative; ask the user.
