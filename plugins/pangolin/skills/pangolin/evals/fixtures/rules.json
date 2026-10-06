@@ -1,0 +1,29 @@
+[
+  {
+    "ruleId": 1,
+    "resourceId": 101,
+    "priority": 1,
+    "action": "ACCEPT",
+    "match": "PATH",
+    "value": "/public/*",
+    "enabled": true
+  },
+  {
+    "ruleId": 2,
+    "resourceId": 101,
+    "priority": 2,
+    "action": "DROP",
+    "match": "CIDR",
+    "value": "203.0.113.0/24",
+    "enabled": true
+  },
+  {
+    "ruleId": 3,
+    "resourceId": 103,
+    "priority": 1,
+    "action": "DROP",
+    "match": "PATH",
+    "value": "/admin/*",
+    "enabled": true
+  }
+]

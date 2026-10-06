@@ -1,12 +1,15 @@
 import type { Register } from 'claude-code'
 
-// Commands that carry a plugin's own "I have confirmation" flag, or an HTTP DELETE.
+// Commands that carry a plugin's own "I have confirmation" flag, an HTTP DELETE, or a request to print secrets.
 // Each entry: a pattern over the Bash command, then the reason the dialog shows.
 // The `s` flag lets `.` cross newlines, so a command split with `\` is matched too.
 const GATED: readonly [RegExp, string][] = [
   [/\btn\.py\b.*\s--confirm\b/s, 'a gated TrueNAS call (tn.py --confirm)'],
   [/\bunifi\.py\b.*\s--yes\b/s, 'a UniFi write (unifi.py --yes)'],
+  [/\bpangolin\.py\b.*\s--yes\b/s, 'a Pangolin write (pangolin.py --yes)'],
+  [/\bauthentik\.py\b.*\s--yes\b/s, 'an authentik write (authentik.py --yes)'],
   [/\bpve-api\.sh\s+delete\b/i, 'an HTTP DELETE against Proxmox (pve-api.sh DELETE)'],
+  [/\b(tn|unifi|pangolin|authentik)\.py\b.*\s--show-secrets\b/s, 'a call that prints live credentials into the conversation (--show-secrets)'],
 ]
 
 export function gatedReason(command: string): string | undefined {

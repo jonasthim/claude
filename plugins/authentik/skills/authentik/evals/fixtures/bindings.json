@@ -1,0 +1,82 @@
+[
+  {
+    "pk": "00000000-0000-4000-8000-000000000601",
+    "target": "00000000-0000-4000-8000-000000000201",
+    "order": 0,
+    "policy": null,
+    "group": "00000000-0000-4000-8000-000000000102",
+    "user": null,
+    "policy_obj": null,
+    "group_obj": {
+      "pk": "00000000-0000-4000-8000-000000000102",
+      "num_pk": 102,
+      "name": "wiki-users",
+      "is_superuser": false
+    },
+    "user_obj": null,
+    "negate": false,
+    "enabled": true,
+    "timeout": 30,
+    "failure_result": false
+  },
+  {
+    "pk": "00000000-0000-4000-8000-000000000602",
+    "target": "00000000-0000-4000-8000-000000000202",
+    "order": 0,
+    "policy": null,
+    "group": "00000000-0000-4000-8000-000000000103",
+    "user": null,
+    "policy_obj": null,
+    "group_obj": {
+      "pk": "00000000-0000-4000-8000-000000000103",
+      "num_pk": 103,
+      "name": "dashboards-users",
+      "is_superuser": false
+    },
+    "user_obj": null,
+    "negate": false,
+    "enabled": true,
+    "timeout": 30,
+    "failure_result": false
+  },
+  {
+    "pk": "00000000-0000-4000-8000-000000000603",
+    "target": "00000000-0000-4000-8000-000000000202",
+    "order": 1,
+    "policy": null,
+    "group": "00000000-0000-4000-8000-000000000104",
+    "user": null,
+    "policy_obj": null,
+    "group_obj": {
+      "pk": "00000000-0000-4000-8000-000000000104",
+      "num_pk": 104,
+      "name": "dashboards-admins",
+      "is_superuser": false
+    },
+    "user_obj": null,
+    "negate": false,
+    "enabled": true,
+    "timeout": 30,
+    "failure_result": false
+  },
+  {
+    "pk": "00000000-0000-4000-8000-000000000604",
+    "target": "00000000-0000-4000-8000-000000000204",
+    "order": 0,
+    "policy": "00000000-0000-4000-8000-000000000701",
+    "group": null,
+    "user": null,
+    "policy_obj": {
+      "pk": "00000000-0000-4000-8000-000000000701",
+      "name": "office-hours",
+      "verbose_name": "Expression Policy",
+      "execution_logging": false
+    },
+    "group_obj": null,
+    "user_obj": null,
+    "negate": false,
+    "enabled": false,
+    "timeout": 30,
+    "failure_result": false
+  }
+]

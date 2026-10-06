@@ -1,0 +1,300 @@
+[
+  {
+    "resourceId": 101,
+    "orgId": "acme",
+    "niceId": "wiki",
+    "name": "Wiki",
+    "fullDomain": "wiki.example.com",
+    "domainId": "dom-example-com",
+    "subdomain": "wiki",
+    "ssl": true,
+    "mode": "http",
+    "proxyPort": null,
+    "enabled": true,
+    "sso": true,
+    "passwordId": null,
+    "pincodeId": null,
+    "headerAuthId": null,
+    "whitelist": false,
+    "wildcard": false,
+    "health": "healthy",
+    "blockAccess": false,
+    "emailWhitelistEnabled": false,
+    "applyRules": false,
+    "skipToIdpId": null,
+    "stickySession": false,
+    "resourcePolicyId": null,
+    "targets": [
+      {
+        "targetId": 11,
+        "ip": "198.51.100.11",
+        "port": 8080,
+        "enabled": true,
+        "healthStatus": "healthy",
+        "siteName": "HQ"
+      },
+      {
+        "targetId": 12,
+        "ip": "198.51.100.12",
+        "port": 8080,
+        "enabled": true,
+        "healthStatus": "healthy",
+        "siteName": "HQ"
+      }
+    ],
+    "sites": [
+      {
+        "siteId": 1,
+        "siteName": "HQ",
+        "siteNiceId": "hq",
+        "online": true
+      }
+    ]
+  },
+  {
+    "resourceId": 102,
+    "orgId": "acme",
+    "niceId": "dashboards",
+    "name": "Dashboards",
+    "fullDomain": "dashboards.example.com",
+    "domainId": "dom-example-com",
+    "subdomain": "dashboards",
+    "ssl": true,
+    "mode": "http",
+    "proxyPort": null,
+    "enabled": true,
+    "sso": true,
+    "passwordId": null,
+    "pincodeId": null,
+    "headerAuthId": null,
+    "whitelist": false,
+    "wildcard": false,
+    "health": "degraded",
+    "blockAccess": false,
+    "emailWhitelistEnabled": false,
+    "applyRules": false,
+    "skipToIdpId": 1,
+    "stickySession": false,
+    "resourcePolicyId": null,
+    "targets": [
+      {
+        "targetId": 21,
+        "ip": "198.51.100.20",
+        "port": 3000,
+        "enabled": true,
+        "healthStatus": "healthy",
+        "siteName": "HQ"
+      },
+      {
+        "targetId": 22,
+        "ip": "198.51.100.141",
+        "port": 3000,
+        "enabled": true,
+        "healthStatus": "unhealthy",
+        "siteName": "Lab"
+      }
+    ],
+    "sites": [
+      {
+        "siteId": 1,
+        "siteName": "HQ",
+        "siteNiceId": "hq",
+        "online": true
+      },
+      {
+        "siteId": 2,
+        "siteName": "Lab",
+        "siteNiceId": "lab",
+        "online": false
+      }
+    ]
+  },
+  {
+    "resourceId": 103,
+    "orgId": "acme",
+    "niceId": "files",
+    "name": "Files",
+    "fullDomain": "files.example.com",
+    "domainId": "dom-example-com",
+    "subdomain": "files",
+    "ssl": true,
+    "mode": "http",
+    "proxyPort": null,
+    "enabled": true,
+    "sso": false,
+    "passwordId": null,
+    "pincodeId": null,
+    "headerAuthId": null,
+    "whitelist": false,
+    "wildcard": false,
+    "health": "unknown",
+    "blockAccess": false,
+    "emailWhitelistEnabled": false,
+    "applyRules": false,
+    "skipToIdpId": null,
+    "stickySession": false,
+    "resourcePolicyId": null,
+    "targets": [
+      {
+        "targetId": 31,
+        "ip": "198.51.100.30",
+        "port": 8443,
+        "enabled": true,
+        "healthStatus": "unknown",
+        "siteName": "HQ"
+      }
+    ],
+    "sites": [
+      {
+        "siteId": 1,
+        "siteName": "HQ",
+        "siteNiceId": "hq",
+        "online": true
+      }
+    ]
+  },
+  {
+    "resourceId": 104,
+    "orgId": "acme",
+    "niceId": "old-blog",
+    "name": "Old blog",
+    "fullDomain": "blog.example.com",
+    "domainId": "dom-example-com",
+    "subdomain": "blog",
+    "ssl": true,
+    "mode": "http",
+    "proxyPort": null,
+    "enabled": false,
+    "sso": false,
+    "passwordId": null,
+    "pincodeId": null,
+    "headerAuthId": null,
+    "whitelist": false,
+    "wildcard": false,
+    "health": "unknown",
+    "blockAccess": false,
+    "emailWhitelistEnabled": false,
+    "applyRules": false,
+    "skipToIdpId": null,
+    "stickySession": false,
+    "resourcePolicyId": null,
+    "targets": [
+      {
+        "targetId": 41,
+        "ip": "203.0.113.40",
+        "port": 8080,
+        "enabled": true,
+        "healthStatus": "unknown",
+        "siteName": "Colo"
+      }
+    ],
+    "sites": [
+      {
+        "siteId": 3,
+        "siteName": "Colo",
+        "siteNiceId": "colo",
+        "online": true
+      }
+    ]
+  },
+  {
+    "resourceId": 105,
+    "orgId": "acme",
+    "niceId": "git-ssh",
+    "name": "Git SSH",
+    "fullDomain": null,
+    "domainId": null,
+    "subdomain": null,
+    "ssl": false,
+    "mode": "tcp",
+    "proxyPort": 2222,
+    "enabled": true,
+    "sso": false,
+    "passwordId": null,
+    "pincodeId": null,
+    "headerAuthId": null,
+    "whitelist": false,
+    "wildcard": false,
+    "health": "unknown",
+    "blockAccess": false,
+    "emailWhitelistEnabled": false,
+    "applyRules": false,
+    "skipToIdpId": null,
+    "stickySession": false,
+    "resourcePolicyId": null,
+    "targets": [
+      {
+        "targetId": 51,
+        "ip": "203.0.113.50",
+        "port": 22,
+        "enabled": true,
+        "healthStatus": "unknown",
+        "siteName": "Colo"
+      }
+    ],
+    "sites": [
+      {
+        "siteId": 3,
+        "siteName": "Colo",
+        "siteNiceId": "colo",
+        "online": true
+      }
+    ]
+  },
+  {
+    "resourceId": 106,
+    "orgId": "acme",
+    "niceId": "status",
+    "name": "Status page",
+    "fullDomain": "status.example.com",
+    "domainId": "dom-example-com",
+    "subdomain": "status",
+    "ssl": true,
+    "mode": "http",
+    "proxyPort": null,
+    "enabled": true,
+    "sso": false,
+    "passwordId": 7,
+    "pincodeId": null,
+    "headerAuthId": null,
+    "whitelist": false,
+    "wildcard": false,
+    "health": "unhealthy",
+    "blockAccess": false,
+    "emailWhitelistEnabled": false,
+    "applyRules": false,
+    "skipToIdpId": null,
+    "stickySession": false,
+    "resourcePolicyId": null,
+    "targets": [
+      {
+        "targetId": 61,
+        "ip": "198.51.100.160",
+        "port": 8080,
+        "enabled": true,
+        "healthStatus": "unhealthy",
+        "siteName": "Lab"
+      }
+    ],
+    "sites": [
+      {
+        "siteId": 2,
+        "siteName": "Lab",
+        "siteNiceId": "lab",
+        "online": false
+      }
+    ],
+    "requestHeaders": [
+      {
+        "name": "X-Backend-User",
+        "value": "mock-backend-credential"
+      }
+    ],
+    "responseHeaders": [
+      {
+        "name": "X-Frame-Options",
+        "value": "DENY"
+      }
+    ]
+  }
+]

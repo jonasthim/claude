@@ -1,0 +1,21 @@
+{
+  "_default": {
+    "roles": []
+  },
+  "101": {
+    "roles": [
+      {
+        "roleId": 2,
+        "name": "Member"
+      }
+    ]
+  },
+  "102": {
+    "roles": [
+      {
+        "roleId": 1,
+        "name": "Admin"
+      }
+    ]
+  }
+}

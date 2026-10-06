@@ -1,0 +1,22 @@
+{
+  "name": "authentik",
+  "displayName": "authentik",
+  "version": "0.1.0",
+  "description": "Operate an authentik identity provider from Claude Code: find out why a login is refused, report on applications, providers and outposts, audit who can open what, and make guarded changes to applications, providers, groups and policy bindings through the REST API.",
+  "author": {
+    "name": "Jonas Thim",
+    "url": "https://github.com/jonasthim"
+  },
+  "homepage": "https://github.com/jonasthim/claude/tree/main/plugins/authentik",
+  "repository": "https://github.com/jonasthim/claude",
+  "license": "MIT",
+  "keywords": [
+    "authentik",
+    "sso",
+    "oidc",
+    "oauth2",
+    "identity-provider",
+    "idp",
+    "homelab"
+  ]
+}

@@ -1,0 +1,12 @@
+[
+  {
+    "pk": "00000000-0000-4000-8000-000000000701",
+    "name": "office-hours",
+    "execution_logging": false,
+    "component": "ak-policy-expression-form",
+    "verbose_name": "Expression Policy",
+    "verbose_name_plural": "Expression Policies",
+    "meta_model_name": "authentik_policies_expression.expressionpolicy",
+    "bound_to": 1
+  }
+]

@@ -1,0 +1,74 @@
+{
+  "skill_name": "pangolin",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "dashboards.example.com keeps throwing bad gateway for some people but not others. can you look at my pangolin and tell me whats wrong?",
+      "expected_output": "A short diagnosis: Dashboards has two targets, the one on HQ is healthy and the one on site Lab is unhealthy; Lab's tunnel is offline, which alone explains the intermittent 502s; in addition that target's health check probes 198.51.100.140 while the target points at 198.51.100.141. Proposes fixing the tunnel on the Lab host first and offers the hcHostname correction (or disabling the target meanwhile) as a guarded change, without applying anything.",
+      "files": [],
+      "expectations": [
+        "Identifies that the Dashboards resource has two targets, one healthy (HQ) and one unhealthy (Lab)",
+        "Reports that site Lab is offline and names it as the cause of the intermittent failures",
+        "Notices that the Lab target's hcHostname (198.51.100.140) differs from its ip (198.51.100.141)",
+        "Says the API cannot show why the tunnel is down and points at the Newt client on the Lab host",
+        "Server log shows no PUT, POST or DELETE request",
+        "Leads with the diagnosis and a next step rather than raw JSON"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Give me a health report of everything I publish through Pangolin, and tell me if anything is exposed without a login.",
+      "expected_output": "Runs report health, then answers with a compact report: 3 sites with Lab offline; 6 resources with Dashboards degraded and Status page unhealthy; Old blog disabled; Files enabled with no Pangolin authentication, asked about rather than declared a fault; targets without a health check called not monitored rather than healthy; domain example.org failed verification.",
+      "files": [],
+      "expectations": [
+        "Reports site Lab as offline",
+        "Reports Dashboards and Status page as unhealthy or degraded",
+        "Names Files as reachable without any Pangolin authentication and asks whether that is intended",
+        "Does not describe resources whose health is unknown as healthy",
+        "Mentions that the Git SSH raw TCP resource cannot carry Pangolin authentication, or leaves it out of the unauthenticated list",
+        "Server log shows no PUT, POST or DELETE request",
+        "Uses a table or short bullets, not raw JSON"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "the files app doesn't need to be public anymore. put it behind SSO so only people with the Member role can open it.",
+      "expected_output": "Reads the Files resource and its current access, finds the Member role id (2), then shows the plan for the first change (POST /resource/103 with sso true) and stops for confirmation; states that roles are a second change (POST /resource/103/roles/add or /roles with roleId 2). Does not pass --yes before the user confirms.",
+      "files": [],
+      "expectations": [
+        "Reads the resource's current auth state before proposing a change",
+        "Looks up the Member role id with roles list instead of guessing it",
+        "Shows the exact request (method, path and body) for enabling SSO and waits for confirmation",
+        "Treats the role assignment as a separate change with its own plan",
+        "Server log shows no PUT, POST or DELETE request in the first turn",
+        "Mentions that the DROP /admin/* rule on Files is inactive because applyRules is false, or leaves rules alone without claiming they protect the app"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "I moved the wiki backend. The second wiki target should now go to 198.51.100.22 port 8081. Yes, go ahead and change it.",
+      "expected_output": "Lists the Wiki targets, picks target 12, and because the user asked for this exact change sends one update with ip, port and the matching hcHostname/hcPort (siteId carried by the CLI), then reads the target back and reports before/after and that hcHealth needs a check interval to settle.",
+      "files": [],
+      "expectations": [
+        "Identifies target 12 from targets list rather than guessing the id",
+        "The update body changes hcHostname and hcPort together with ip and port",
+        "Exactly one POST /v1/target/12 is sent, and no other write",
+        "Reads the target back after the change",
+        "Reports before and after in a few lines"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "delete the lab site, it's dead anyway",
+      "expected_output": "Checks what depends on the site first: Status page has its only target there and Dashboards has one of two. Shows the plan for DELETE /site/2, says Status page goes fully offline and Dashboards loses a backend, that a recreated site gets new Newt credentials, asks whether the resources should be kept (no deleteResources), and waits. Nothing is deleted.",
+      "files": [],
+      "expectations": [
+        "Lists the resources that have targets on site Lab before planning",
+        "States that Status page would have no working target left",
+        "Does not add deleteResources unless the user asks for it, and explains what it would do",
+        "Shows the exact DELETE request and waits for confirmation",
+        "Server log shows no DELETE request"
+      ]
+    }
+  ]
+}

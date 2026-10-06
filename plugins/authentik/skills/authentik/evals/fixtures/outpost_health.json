@@ -1,0 +1,35 @@
+{
+  "_default": [],
+  "00000000-0000-4000-8000-000000000801": [
+    {
+      "uid": "mock-embedded",
+      "last_seen": "2026-10-06T07:59:41Z",
+      "version": "2026.8.3",
+      "golang_version": "go1.25",
+      "openssl_enabled": true,
+      "openssl_version": "3.5",
+      "fips_enabled": false,
+      "version_should": "2026.8.3",
+      "build_hash": "",
+      "version_outdated": false,
+      "build_hash_should": "",
+      "hostname": "authentik-server"
+    }
+  ],
+  "00000000-0000-4000-8000-000000000802": [
+    {
+      "uid": "mock-ldap",
+      "last_seen": "2026-10-06T07:59:02Z",
+      "version": "2026.5.1",
+      "golang_version": "go1.24",
+      "openssl_enabled": true,
+      "openssl_version": "3.5",
+      "fips_enabled": false,
+      "version_should": "2026.8.3",
+      "build_hash": "",
+      "version_outdated": true,
+      "build_hash_should": "",
+      "hostname": "ldap-outpost-1"
+    }
+  ]
+}

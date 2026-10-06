@@ -1,0 +1,21 @@
+{
+  "user": {
+    "pk": 9,
+    "username": "svc-automation",
+    "name": "Automation",
+    "is_active": true,
+    "is_superuser": true,
+    "type": "service_account",
+    "email": "",
+    "uid": "mockuid9",
+    "groups": [
+      {
+        "name": "authentik Admins",
+        "pk": "00000000-0000-4000-8000-000000000101"
+      }
+    ],
+    "roles": [],
+    "system_permissions": [],
+    "settings": {}
+  }
+}

@@ -1,0 +1,62 @@
+[
+  {
+    "pk": 1,
+    "username": "akadmin",
+    "name": "authentik Default Admin",
+    "email": "akadmin@example.com",
+    "is_active": true,
+    "is_superuser": true,
+    "type": "internal",
+    "last_login": "2026-10-05T18:02:11Z",
+    "uid": "mockuid1",
+    "attributes": {}
+  },
+  {
+    "pk": 5,
+    "username": "alice",
+    "name": "Alice Example",
+    "email": "alice@example.com",
+    "is_active": true,
+    "is_superuser": false,
+    "type": "internal",
+    "last_login": "2026-10-05T18:02:11Z",
+    "uid": "mockuid5",
+    "attributes": {}
+  },
+  {
+    "pk": 6,
+    "username": "bob",
+    "name": "Bob Example",
+    "email": "bob@example.com",
+    "is_active": true,
+    "is_superuser": false,
+    "type": "internal",
+    "last_login": "2026-10-05T18:02:11Z",
+    "uid": "mockuid6",
+    "attributes": {}
+  },
+  {
+    "pk": 7,
+    "username": "carol",
+    "name": "Carol Example",
+    "email": "carol@example.com",
+    "is_active": false,
+    "is_superuser": false,
+    "type": "internal",
+    "last_login": "2026-03-02T09:00:00Z",
+    "uid": "mockuid7",
+    "attributes": {}
+  },
+  {
+    "pk": 9,
+    "username": "svc-automation",
+    "name": "Automation",
+    "email": "",
+    "is_active": true,
+    "is_superuser": true,
+    "type": "service_account",
+    "last_login": null,
+    "uid": "mockuid9",
+    "attributes": {}
+  }
+]

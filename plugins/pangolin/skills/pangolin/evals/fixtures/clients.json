@@ -1,0 +1,9 @@
+[
+  {
+    "clientId": 1,
+    "orgId": "acme",
+    "name": "alice-laptop",
+    "online": true,
+    "subnet": "100.90.129.2/32"
+  }
+]

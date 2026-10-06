@@ -1,0 +1,20 @@
+[
+  {
+    "id": "usr-mock-alice",
+    "username": "alice@example.com",
+    "email": "alice@example.com",
+    "name": "Alice Example",
+    "type": "oidc",
+    "roleName": "Admin",
+    "isOwner": true
+  },
+  {
+    "id": "usr-mock-bob",
+    "username": "bob@example.com",
+    "email": "bob@example.com",
+    "name": "Bob Example",
+    "type": "oidc",
+    "roleName": "Member",
+    "isOwner": false
+  }
+]

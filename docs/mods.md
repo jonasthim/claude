@@ -42,10 +42,11 @@ them in the config menu when they install the mod.
 
 ## Worked example: homelab-guard
 
-The three plugins already gate destructive calls in their own code. This mod adds one shared extra check on
+The plugins already gate destructive calls in their own code. This mod adds one shared extra check on
 top: whenever Claude is about to run a command that carries a plugin's "the user agreed" flag
-(`tn.py ... --confirm`, `unifi.py ... --yes`) or an HTTP DELETE against Proxmox, the session asks you first,
-even if a permission rule would have allowed the command.
+(`tn.py ... --confirm`, `--yes` on `unifi.py`, `pangolin.py` or `authentik.py`), an HTTP DELETE against
+Proxmox, or `--show-secrets`, the session asks you first, even if a permission rule would have allowed the
+command.
 
 It hooks `tool.check`, the event where the engine decides whether a tool call may run. `next(e)` gives the
 verdict from your rules and mode, and the hook may turn an `allow` into an `ask`:
@@ -57,7 +58,7 @@ verdict from your rules and mode, and the hook may turn an `allow` into an `ask`
   "name": "homelab-guard",
   "version": "0.1.0",
   "author": { "name": "Jonas Thim" },
-  "description": "Asks before any confirmed destructive TrueNAS, Proxmox or UniFi call runs."
+  "description": "Asks before any confirmed TrueNAS, Proxmox, UniFi, Pangolin or authentik write runs, and before secrets are printed."
 }
 ```
 
@@ -72,13 +73,16 @@ verdict from your rules and mode, and the hook may turn an `allow` into an `ask`
 ```ts
 import type { Register } from 'claude-code'
 
-// Commands that carry a plugin's own "I have confirmation" flag, or an HTTP DELETE.
+// Commands that carry a plugin's own "I have confirmation" flag, an HTTP DELETE, or a request to print secrets.
 // Each entry: a pattern over the Bash command, then the reason the dialog shows.
 // The `s` flag lets `.` cross newlines, so a command split with `\` is matched too.
 const GATED: readonly [RegExp, string][] = [
   [/\btn\.py\b.*\s--confirm\b/s, 'a gated TrueNAS call (tn.py --confirm)'],
   [/\bunifi\.py\b.*\s--yes\b/s, 'a UniFi write (unifi.py --yes)'],
+  [/\bpangolin\.py\b.*\s--yes\b/s, 'a Pangolin write (pangolin.py --yes)'],
+  [/\bauthentik\.py\b.*\s--yes\b/s, 'an authentik write (authentik.py --yes)'],
   [/\bpve-api\.sh\s+delete\b/i, 'an HTTP DELETE against Proxmox (pve-api.sh DELETE)'],
+  [/\b(tn|unifi|pangolin|authentik)\.py\b.*\s--show-secrets\b/s, 'a call that prints live credentials into the conversation (--show-secrets)'],
 ]
 
 export function gatedReason(command: string): string | undefined {
@@ -134,6 +138,18 @@ describe('homelab-guard', () => {
     on('tool.check', () => ({ decision: 'allow' }))
     expect((await $.tool.check(check('python3 tn.py call pool.dataset.delete \\\n  \'["tank/x"]\' --confirm'))).decision).toBe('ask')
     expect((await $.tool.check(check('python3 unifi.py wifi delete w1 \\\n  --yes'))).decision).toBe('ask')
+  })
+
+  test('asks before a Pangolin or authentik write', async ($, on) => {
+    on('tool.check', () => ({ decision: 'allow' }))
+    expect((await $.tool.check(check('python3 pangolin.py resources disable wiki --yes'))).decision).toBe('ask')
+    expect((await $.tool.check(check('python3 authentik.py groups add-user staff bob --yes'))).decision).toBe('ask')
+  })
+
+  test('asks before a call that prints secrets', async ($, on) => {
+    on('tool.check', () => ({ decision: 'allow' }))
+    expect((await $.tool.check(check('python3 authentik.py providers get 1 --type oauth2 --show-secrets'))).decision).toBe('ask')
+    expect((await $.tool.check(check('python3 authentik.py providers get 1 --type oauth2'))).decision).toBe('allow')
   })
 
   test('leaves reads and dry runs alone', async ($, on) => {

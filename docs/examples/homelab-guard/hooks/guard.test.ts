@@ -21,6 +21,18 @@ describe('homelab-guard', () => {
     expect((await $.tool.check(check('python3 unifi.py wifi delete w1 \\\n  --yes'))).decision).toBe('ask')
   })
 
+  test('asks before a Pangolin or authentik write', async ($, on) => {
+    on('tool.check', () => ({ decision: 'allow' }))
+    expect((await $.tool.check(check('python3 pangolin.py resources disable wiki --yes'))).decision).toBe('ask')
+    expect((await $.tool.check(check('python3 authentik.py groups add-user staff bob --yes'))).decision).toBe('ask')
+  })
+
+  test('asks before a call that prints secrets', async ($, on) => {
+    on('tool.check', () => ({ decision: 'allow' }))
+    expect((await $.tool.check(check('python3 authentik.py providers get 1 --type oauth2 --show-secrets'))).decision).toBe('ask')
+    expect((await $.tool.check(check('python3 authentik.py providers get 1 --type oauth2'))).decision).toBe('allow')
+  })
+
   test('leaves reads and dry runs alone', async ($, on) => {
     on('tool.check', () => ({ decision: 'allow' }))
     expect((await $.tool.check(check('python3 tn.py call pool.query'))).decision).toBe('allow')

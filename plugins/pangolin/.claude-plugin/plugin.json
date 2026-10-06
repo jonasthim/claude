@@ -1,0 +1,22 @@
+{
+  "name": "pangolin",
+  "displayName": "Pangolin",
+  "version": "0.1.0",
+  "description": "Operate a self-hosted Pangolin server from Claude Code: troubleshoot published resources, tunnels and health checks, report what is exposed and how it is protected, and make guarded changes to resources, targets, rules and access settings through the Integration API.",
+  "author": {
+    "name": "Jonas Thim",
+    "url": "https://github.com/jonasthim"
+  },
+  "homepage": "https://github.com/jonasthim/claude/tree/main/plugins/pangolin",
+  "repository": "https://github.com/jonasthim/claude",
+  "license": "MIT",
+  "keywords": [
+    "pangolin",
+    "newt",
+    "reverse-proxy",
+    "tunnel",
+    "traefik",
+    "sso",
+    "homelab"
+  ]
+}

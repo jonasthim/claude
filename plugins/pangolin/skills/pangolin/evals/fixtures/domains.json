@@ -1,0 +1,22 @@
+[
+  {
+    "domainId": "dom-example-com",
+    "baseDomain": "example.com",
+    "type": "wildcard",
+    "verified": true,
+    "failed": false,
+    "tries": 0,
+    "configManaged": true,
+    "errorMessage": null
+  },
+  {
+    "domainId": "dom-example-org",
+    "baseDomain": "example.org",
+    "type": "ns",
+    "verified": false,
+    "failed": true,
+    "tries": 12,
+    "configManaged": false,
+    "errorMessage": "NS records do not point to this server"
+  }
+]

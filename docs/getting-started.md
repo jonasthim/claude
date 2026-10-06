@@ -9,6 +9,8 @@ claude plugin marketplace add jonasthim/claude
 claude plugin install truenas@jonasthim
 claude plugin install proxmox@jonasthim
 claude plugin install unifi@jonasthim
+claude plugin install pangolin@jonasthim
+claude plugin install authentik@jonasthim
 ```
 
 Or inside a Claude Code session: `/plugin marketplace add jonasthim/claude`, then
@@ -42,6 +44,13 @@ export PVE_CA_CERT=~/.config/pve-root-ca.pem
 
 export UNIFI_HOST=192.168.1.1
 export UNIFI_API_KEY='...'
+
+export PANGOLIN_HOST=https://api.example.com
+export PANGOLIN_API_KEY='...'
+export PANGOLIN_ORG=my-org
+
+export AUTHENTIK_HOST=https://auth.example.com
+export AUTHENTIK_TOKEN='...'
 ```
 
 ```
@@ -50,7 +59,7 @@ source ~/.config/homelab.env && claude
 
 Start with read-only credentials and widen them when you need Claude to make changes. Where to create each
 key, and every optional variable, is on the plugin pages: [TrueNAS](truenas.md), [Proxmox VE](proxmox.md),
-[UniFi](unifi.md).
+[UniFi](unifi.md), [Pangolin](pangolin.md), [authentik](authentik.md).
 
 ## 3. First checks
 
@@ -59,6 +68,8 @@ key, and every optional variable, is on the plugin pages: [TrueNAS](truenas.md),
 | truenas | "Is my NAS healthy?" | Pool, alert and capacity summary |
 | proxmox | `/proxmox:doctor` | A `check / result / detail` table and what the token can do per ACL path |
 | unifi | "check my unifi setup" | The application version and site, or what is missing |
+| pangolin | `/pangolin:doctor` | A `check / result / detail` table: API health, organization, and which reads the key allows |
+| authentik | `/authentik:doctor` | A `check / result / detail` table: who the token is, the server version, and what it can see |
 
 ## 4. Update and uninstall
 

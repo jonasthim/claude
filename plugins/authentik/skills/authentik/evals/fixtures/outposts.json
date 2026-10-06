@@ -1,0 +1,39 @@
+[
+  {
+    "pk": "00000000-0000-4000-8000-000000000801",
+    "name": "authentik Embedded Outpost",
+    "type": "proxy",
+    "providers": [],
+    "providers_obj": [],
+    "service_connection": null,
+    "refresh_interval_s": 300,
+    "token_identifier": "ak-outpost-00000000-0000-4000-8000-000000000801-api",
+    "config": {
+      "authentik_host": "https://auth.example.com/",
+      "log_level": "info"
+    },
+    "managed": "goauthentik.io/outposts/embedded"
+  },
+  {
+    "pk": "00000000-0000-4000-8000-000000000802",
+    "name": "ldap-outpost",
+    "type": "ldap",
+    "providers": [
+      5
+    ],
+    "providers_obj": [
+      {
+        "pk": 5,
+        "name": "Directory"
+      }
+    ],
+    "service_connection": null,
+    "refresh_interval_s": 300,
+    "token_identifier": "ak-outpost-00000000-0000-4000-8000-000000000802-api",
+    "config": {
+      "authentik_host": "https://auth.example.com/",
+      "log_level": "info"
+    },
+    "managed": null
+  }
+]

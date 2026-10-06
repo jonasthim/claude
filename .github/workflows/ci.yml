@@ -39,10 +39,40 @@ jobs:
           python-version: "3.12"
       - run: bash plugins/unifi/tests/smoke.sh
 
+  pangolin:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: plugins/pangolin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m unittest discover -v tests
+
+  authentik:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: plugins/authentik
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m unittest discover -v tests
+
   validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # pangolin.py and authentik.py carry a copy of the same core block; the copies must not drift.
+      - name: Shared CLI core is identical
+        run: |
+          core() { sed -n '/^# core: output, redaction/,/^# mock backend$/p' "$1"; }
+          diff <(core plugins/pangolin/skills/pangolin/scripts/pangolin.py) \
+               <(core plugins/authentik/skills/authentik/scripts/authentik.py)
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
