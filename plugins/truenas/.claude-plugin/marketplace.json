@@ -1,0 +1,15 @@
+{
+  "name": "claude-truenas-skill",
+  "owner": {
+    "name": "Jonas Thim"
+  },
+  "description": "Claude Code skill for operating TrueNAS SCALE 25.x: storage, shares, apps, alerts, updates and replication.",
+  "plugins": [
+    {
+      "name": "truenas",
+      "source": "./",
+      "description": "Operate a TrueNAS SCALE 25.x system: pools, datasets, snapshots, shares, apps, alerts, services, updates and replication.",
+      "version": "0.1.0"
+    }
+  ]
+}

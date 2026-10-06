@@ -1,0 +1,4 @@
+# Official iXsystems websocket client (provides the Python API and the midclt CLI).
+# Not published on PyPI; pin a tag that matches your TrueNAS major version.
+# 25.10 tags also work against 25.04 servers.
+truenas_api_client @ git+https://github.com/truenas/api_client.git@TS-25.10.7
