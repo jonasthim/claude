@@ -103,8 +103,8 @@ export PVE_CA_CERT=/path/to/pve-root-ca.pem
 ```
 
 Run `/proxmox:doctor` first in every new setup, in a session started after the plugin was installed (see
-Install); it runs four read-only API calls and tells you whether the token is read-only, operator or
-admin-capable.
+Install); it runs four read-only API calls and tells you, per ACL path, whether the token is read-only,
+operator or admin-capable there.
 
 ## Safety model
 

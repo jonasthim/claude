@@ -12,6 +12,12 @@ target="${1:-}"
 [ -z "$target" ] && { echo "usage: $0 [user@]host [system|net|logs|all]" >&2; exit 1; }
 shift
 sections="${*:-all}"
+for s in $sections; do
+  case "$s" in
+    system|net|logs|all) ;;
+    *) echo "$0: unknown section '$s' (use system, net, logs or all)" >&2; exit 1 ;;
+  esac
+done
 case "$target" in *@*) ;; *) target="root@$target" ;; esac
 
 want() { [[ " $sections " == *" all "* || " $sections " == *" $1 "* ]]; }

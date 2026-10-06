@@ -411,6 +411,10 @@ assert_not_contains "pve-api dry run never prints the secret" "$out" "0123-secre
 capture api_dry_userinfo env PVE_HOST="http://user:hunter2@127.0.0.1:$port" PVE_DRY_RUN=1 "$api" GET /version
 assert_exit "pve-api dry run with userinfo exits 0" 0 "$rc"
 assert_not_contains "pve-api dry run strips userinfo from the URL" "$out" "hunter2"
+capture api_dry_password env PVE_DRY_RUN=1 "$api" POST /nodes/pve1/lxc vmid=106 password=hunter22 cipassword=hunter33 hostname=ct1
+assert_not_contains "pve-api dry run masks password parameters" "$out" "hunter2"
+assert_eq "pve-api dry run marks a masked parameter" "<redacted>" "$(printf '%s' "$out" | jq -r '.params.password' 2>/dev/null || true)"
+assert_eq "pve-api dry run keeps other parameters" "ct1" "$(printf '%s' "$out" | jq -r '.params.hostname' 2>/dev/null || true)"
 capture api_dry_dashkey env PVE_DRY_RUN=1 "$api" GET /version -x=1
 assert_exit "pve-api dry run accepts a key starting with -" 0 "$rc"
 assert_eq "pve-api dry run keeps a key starting with -" "1" "$(printf '%s' "$out" | jq -r '.params["-x"]')"

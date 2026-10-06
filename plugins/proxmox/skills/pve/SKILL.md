@@ -17,7 +17,7 @@ Two classes of action. Gated actions are planned and confirmed; free actions run
 
 Gated set: destroy; stop/reset/shutdown/reboot/suspend of a guest; snapshot rollback/delete; migrate (guest or HA); template conversion; disk/volume move/unlink or `delete=` on config; backup/volume deletion (`pvesm free|remove|prune-backups`, `pveam remove`, `prunebackups`, `vzdump --remove 1`/`--prune-backups`, `rm` of `vzdump-*`); any `DELETE`/`pvesh delete`; node reboot/shutdown/stopall/migrateall/suspendall; network apply (`PUT /nodes/{node}/network`, `ifreload`/`ifdown`/`ifup` over SSH); SDN apply/rollback (`PUT /cluster/sdn`, `/cluster/sdn/rollback`); HA `remove|set|migrate|relocate|crm-command`, `rules set|remove`, `disarm-ha`, HA resource `state=stopped|disabled`; `pvecm delnode|expected|add|create|qdevice`; bulk shutdown/suspend/migrate; `apt upgrade/dist-upgrade/full-upgrade/remove/purge/autoremove` over SSH; `systemctl stop|restart|reboot|poweroff|halt|isolate`, `reboot|shutdown|poweroff|halt|init 0|init 6` over SSH.
 
-Free set: all GETs; start/resume; create VM/CT; clone; set config without `delete`; snapshot create; vzdump run without explicit prune; create backup job; HA resource add; SDN/network object create/edit (staged, not applied); storage add/edit; user/role/token create; apt update (refresh); task log reads.
+Free set: all GETs; start/resume; create VM/CT; clone; set config without `delete`; snapshot create; vzdump run without explicit prune; create backup job; HA resource add; SDN/network object create/edit (staged, not applied); storage add/edit; user/role create and ACL grants (token creation is the user's own step: it returns the secret once); apt update (refresh); task log reads.
 
 For every gated action, print exactly this block, then stop and wait:
 
@@ -83,7 +83,8 @@ set `PVE_CA_CERT`); 3 with `HTTP 401` on stderr = token rejected or expired; 3 w
 (object keyed by ACL path, each value `{privilege: 1}`) tells you before planning which
 gated actions will fail with 403: only `*.Audit` keys = read-only; `VM.PowerMgmt`,
 `VM.Allocate`, `VM.Snapshot`, `VM.Migrate` or `Datastore.AllocateSpace` = operator;
-`Sys.Modify` or `Sys.PowerMgmt` = admin-capable.
+`Sys.Modify` or `Sys.PowerMgmt` = admin-capable. Read each class per path: a privilege
+holds only on its ACL path and below, so check the path of the target before planning.
 
 ## 3. Tooling
 
@@ -189,7 +190,7 @@ Paths are relative to `/api2/json`; `N` is a node, `V` a vmid, `S` a storage id.
 | HA | `GET /cluster/ha/resources`; `POST /cluster/ha/resources sid=ct:105 state=started`; `GET /cluster/ha/rules`; `GET /cluster/ha/status/current` |
 | Node ops (gated) | `POST /nodes/N/status command=reboot`; `POST /nodes/N/stopall`; `POST /nodes/N/migrateall target=N2 (param name UNVERIFIED)` |
 | Updates | `POST /nodes/N/apt/update` (refresh, free); `GET /nodes/N/apt/update` (pending); `GET /nodes/N/apt/versions`; upgrade only via SSH (gated) |
-| Access | `GET /access/permissions` (object keyed by ACL path, each value `{privilege: 1}`; confirmed on a PVE 9.2 cluster); `GET /access/users`; `POST /access/users/USER/token/NAME privsep=1`; `PUT /access/acl path=/vms roles=PVEVMAdmin tokens=USER!NAME propagate=1` |
+| Access | `GET /access/permissions` (object keyed by ACL path, each value `{privilege: 1}`; confirmed on a PVE 9.2 cluster); `GET /access/users`; token creation is the user's own step (its secret is returned once; see `references/permissions.md`); `PUT /access/acl path=/vms roles=PVEVMAdmin tokens=USER!NAME propagate=1` |
 
 ## 6. Domain guides
 

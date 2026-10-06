@@ -1049,6 +1049,10 @@ def main(argv=None):
         die("%s %s needs an id" % (args.group, args.verb), EXIT_USAGE)
     if args.group == "devices" and args.verb.startswith("port-") and args.port is None:
         die("port-* verbs need --port <index>", EXIT_USAGE)
+    if args.group in ("devices", "clients") and args.verb == "action" and not getattr(args, "action", None):
+        die("%s action needs --action <ACTION NAME>" % args.group, EXIT_USAGE)
+    if args.group == "devices" and args.verb == "adopt" and not getattr(args, "macs", None):
+        die("devices adopt needs --macs <mac> [<mac> ...]", EXIT_USAGE)
     if args.group == "firewall" and args.kind == "policies" and args.verb in ("ordering", "reorder") \
             and not (getattr(args, "source_zone", None) and getattr(args, "dest_zone", None)):
         die("firewall policies %s needs --source-zone <zone id> and --dest-zone <zone id>: ordering is kept per "

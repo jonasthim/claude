@@ -14,6 +14,19 @@ receive an update.
   `claude plugin marketplace add jonasthim/claude` and `claude plugin install proxmox@jonasthim`.
 - `tests/lint_plugin.py` checks the root marketplace entry (`source: ./plugins/proxmox`).
 
+### Fixed
+
+- Guard hook matches case-insensitively: `pve-api.sh` upper-cases its method, so
+  `pve-api.sh delete|post|put ...` ran without the confirmation prompt.
+- `PVE_DRY_RUN=1` masks credential-shaped parameters (`password`, `cipassword`,
+  `*secret*`, `*private*`) instead of printing them.
+- Token creation is the user's own step (web UI or their shell): the API and
+  `pveum user token add` return the secret once, into the transcript when Claude runs them.
+- `/proxmox:ct` no longer asks for a container password in chat; it uses a public key
+  and leaves password login to the user.
+- `/proxmox:doctor` classifies the token per ACL path instead of treating one node-scoped
+  `Sys.Modify` as cluster-wide admin.
+
 ## 0.2.0 - 2026-10-06
 
 ### Changed

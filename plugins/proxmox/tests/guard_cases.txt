@@ -67,6 +67,8 @@ ask	pve-ssh.sh -n pve1 ifdown vmbr0
 ask	pvesh delete /nodes/pve1/qemu/100
 # rule 19
 ask	pve-api.sh DELETE /nodes/pve1/qemu/100 purge=1
+ask	pve-api.sh delete /nodes/pve1/qemu/100 purge=1
+ask	pve-api.sh Delete /nodes/pve1/qemu/100
 ask	${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh DELETE /nodes/pve1/qemu/100/snapshot/pre-upgrade
 # PVE_DRY_RUN=1 makes no request, but the guard still prompts for a gated call (intended)
 ask	PVE_DRY_RUN=1 pve-api.sh DELETE /nodes/pve1/qemu/100
@@ -78,6 +80,8 @@ ask	pve-api.sh POST /nodes/pve1/status command=reboot
 ask	pve-api.sh POST /cluster/bulk-action/guest/shutdown vms=100
 ask	pve-api.sh POST /nodes/pve1/vzdump vmid=100 remove=1
 ask	pve-api.sh POST /nodes/pve1/qemu/100/status/stop
+ask	pve-api.sh post /nodes/pve1/qemu/100/status/stop
+ask	pve-api.sh put /nodes/pve1/network
 ask	pve-api.sh POST /nodes/pve1/lxc/105/status/shutdown timeout=60
 ask	pve-api.sh POST /nodes/pve1/qemu/100/migrate target=pve2 online=1
 ask	pve-api.sh POST /nodes/pve1/qemu/9000/template

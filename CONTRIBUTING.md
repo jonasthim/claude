@@ -24,8 +24,12 @@ no surprises for you or for Claude.
 
 ## Safety
 
-- Reads run freely. Every change goes plan → confirm → apply → verify in the skill, **and** a
-  code-level gate refuses destructive calls without an explicit flag or a guard hook asks first.
+- Reads run freely. Every destructive or disruptive action (delete, stop, rollback, network or
+  firewall changes that can cut access) goes plan → confirm → apply → verify in the skill, **and**
+  a code-level gate refuses it without an explicit flag or a guard hook asks first.
+- Which lower-risk writes run without a confirmation (creates, starts, snapshots, ordinary
+  updates) is each plugin's call and is written down in its skill: TrueNAS and Proxmox run them
+  directly, UniFi confirms every write.
 - Output redacts secrets by default; showing them needs an explicit flag.
 - Helper CLIs print JSON on stdout, a classified hint on stderr (auth, timeout, certificate, DNS),
   and use documented exit codes.

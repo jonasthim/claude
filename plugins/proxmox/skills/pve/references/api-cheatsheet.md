@@ -298,7 +298,7 @@ Prefixes: `/cluster/firewall` (options, rules, groups, ipset, aliases, macros, r
 - `DELETE /access/users/{userid} - params not in notes - n/a` (gated)
 - `GET /access/users/{userid}/token - none - n/a`
 - `GET /access/users/{userid}/token/{tokenid} - none - n/a`
-- `POST /access/users/{userid}/token/{tokenid} - expire, privsep, comment - n/a` (returns `full-tokenid` and `value`; the value is shown once)
+- `POST /access/users/{userid}/token/{tokenid} - expire, privsep, comment - n/a` (returns `full-tokenid` and `value`; the value is shown once, so the user runs this themselves, never Claude)
 - `PUT /access/users/{userid}/token/{tokenid} - params not in notes - n/a`
 - `DELETE /access/users/{userid}/token/{tokenid} - params not in notes - n/a` (gated)
 - `GET /access/groups - none - n/a`; `GET /access/roles - none - n/a`

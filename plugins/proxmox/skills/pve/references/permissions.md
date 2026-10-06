@@ -88,6 +88,11 @@ for one guest.
 
 ## Recipes
 
+Creating a token prints its secret once, so the user runs every `token add` below
+(or uses Datacenter > Permissions > API Tokens in the web UI) in their own shell, not
+through Claude: output of a command Claude runs, over SSH or the API, lands in the
+transcript. Claude can prepare the commands and run the ACL grants afterwards.
+
 Read-only token (inventory, status, task logs, doctor). With `-privsep 0` the token
 inherits the user's ACL, so one grant is enough:
 
@@ -118,11 +123,11 @@ pveum acl modify /sdn -token 'claude@pve!ops' -role PVESDNUser -propagate 1
 Grant the same roles to the user (`-user claude@pve`) or the intersection with a
 rights-less user is empty. Replace `/vms` with `/pool/<pool>` to scope to a pool.
 
-Token and ACL via the API (create the user with `pveum user add` first; the token value
-is returned once, never print it):
+ACL via the API, once the user has created the token themselves (`POST
+/access/users/<user>/token/<name>` returns the secret in `.data.value`, and `pve-api.sh`
+prints `.data` as is, so Claude never calls it):
 
 ```
-pve-api.sh POST /access/users/claude@pve/token/ops privsep=1 comment="Claude operator"
 pve-api.sh PUT /access/acl path=/vms roles=PVEVMAdmin tokens='claude@pve!ops' propagate=1
 ```
 

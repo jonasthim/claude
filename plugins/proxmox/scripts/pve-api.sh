@@ -148,10 +148,14 @@ fi
 if [ "${PVE_DRY_RUN:-0}" = "1" ]; then
   # Dry run: show exactly what would be sent, then stop before any network access.
   # "$@" still holds the raw key=value parameters (validated above). The URL is
-  # printed without any user:pass@ userinfo so a dry run never echoes a secret.
+  # printed without any user:pass@ userinfo, and credential-shaped parameters
+  # (password, cipassword, *secret*, *private*/privkey) are masked, so a dry run
+  # never echoes a secret.
   dry_url="$(printf '%s' "$url" | sed -e 's#://[^@/]*@#://#')"
   jq -n --arg method "$method" --arg url "$dry_url" \
-    '{method: $method, url: $url, params: ($ARGS.positional | map(index("=") as $i | {key: .[:$i], value: .[$i+1:]}) | from_entries)}' \
+    '{method: $method, url: $url, params: ($ARGS.positional | map(index("=") as $i | {key: .[:$i], value: .[$i+1:]})
+      | map(if (.key | test("pass(word|wd)?|secret|private|privkey"; "i")) then .value = "<redacted>" else . end)
+      | from_entries)}' \
     --args -- "$@"
   exit 0
 fi

@@ -71,15 +71,17 @@ emit() {
   exit 0
 }
 
+# Matching ignores case: pve-api.sh upper-cases its method, so "delete" is a DELETE.
+
 # First fragment of $cmd matching an ERE (empty when there is no match).
 first_match() {
-  printf '%s' "$cmd" | grep -Eo -- "$1" 2>/dev/null | head -n 1 || true
+  printf '%s' "$cmd" | grep -Eio -- "$1" 2>/dev/null | head -n 1 || true
 }
 
 # Test a simple rule: ask when the ERE matches the command.
 rule() {
   local re="$1" reason="$2" m
-  if printf '%s' "$cmd" | grep -Eq -- "$re"; then
+  if printf '%s' "$cmd" | grep -Eiq -- "$re"; then
     m="$(first_match "$re")"
     emit "$reason" "${m:-$cmd}"
   fi
@@ -87,7 +89,7 @@ rule() {
 
 # Return 0 when the ERE matches the command.
 has() {
-  printf '%s' "$cmd" | grep -Eq -- "$1"
+  printf '%s' "$cmd" | grep -Eiq -- "$1"
 }
 
 # Rule 1: qm/pct destroy permanently deletes the guest and its disks.

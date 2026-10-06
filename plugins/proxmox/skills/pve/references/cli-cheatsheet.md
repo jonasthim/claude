@@ -242,7 +242,8 @@ pveum acl modify /vms -token 'joe@pve!monitoring' -role PVEAuditor
 
 - `acl modify <path> --roles <list> [--users] [--groups] [--tokens user@realm!tokenid] [--propagate 1] [--delete]`
 - `user token add`: `--privsep` defaults on (the token needs its own ACLs); `--expire <epoch>`;
-  `--comment`; prints `full-tokenid` and `value` once; the value cannot be retrieved later.
+  `--comment`; prints `full-tokenid` and `value` once; the value cannot be retrieved later, so
+  the user runs it in their own shell, never Claude.
 - Roles, privileges and recipes: `permissions.md`.
 
 ## 11. Logs and diagnostics

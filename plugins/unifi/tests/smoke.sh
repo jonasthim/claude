@@ -24,6 +24,16 @@ done
 # The write gate: a mutating call without --yes is refused with exit 3; --dry-run never sends.
 expect 3 devices restart d1a1-gw
 expect 0 devices restart d1a1-gw --dry-run
+# Incomplete action and adopt calls are refused locally (exit 1) before any request.
+expect 1 devices action d1a1-gw --yes
+expect 1 clients action c1 --yes
+expect 1 devices adopt --yes
+expect 0 devices adopt --macs aa:bb:cc:dd:ee:ff --dry-run
+
+# ssh_diag.sh rejects an unknown section before it opens SSH.
+if bash "$root/skills/unifi-ops/scripts/ssh_diag.sh" host sytem >/dev/null 2>&1; then
+  failed=$((failed + 1)); echo "FAIL ssh_diag.sh accepted an unknown section"
+else passed=$((passed + 1)); echo "PASS ssh_diag.sh rejects an unknown section"; fi
 
 echo
 echo "summary: $passed passed, $failed failed"

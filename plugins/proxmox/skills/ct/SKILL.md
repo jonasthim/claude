@@ -29,8 +29,8 @@ Safety contract, tooling and workflow come from `proxmox:pve`; invoke it with th
 1. Node: use `node=` from the arguments; otherwise ask which node (list them from `GET /nodes`).
 2. VMID: use the given one, else `GET /cluster/nextid` (not a reservation; handle "already exists" by picking the next free id).
 3. Template: `GET /nodes/<node>/storage` to find storages with `vztmpl` content, then `GET /nodes/<node>/storage/<storage>/content content=vztmpl`. Pick the volid that matches the requested distribution; ask if several match. Never invent a volid.
-4. Credentials: a container needs `password` (min 5 characters) or `ssh-public-keys` (plain text key, not percent-encoded). Ask the user for one of them; never invent a password and never print one you were given.
-5. Call: `POST /nodes/<node>/lxc vmid=<n> ostemplate=<volid> hostname=<name> rootfs=<storage>:<GiB> cores=<n> memory=<MiB> net0=name=eth0,bridge=<bridge>,ip=dhcp unprivileged=1 ssh-public-keys=<key>` (or `password=`), add `start=1` when the user wants it running, plus any extra pairs (`storage=`, `pool=`, `features=`, `ostype=`). Wait on the UPID.
+4. Credentials: a container needs `ssh-public-keys` (plain text key, not percent-encoded) or `password`. Use a public key: ask which local `.pub` file to read (for example `~/.ssh/id_ed25519.pub`); a public key is not a secret. Never ask for a password in chat and never invent one: if the user wants password login, create the container with a key and tell them to set the password themselves afterwards (`pct exec <vmid> -- passwd` on the node, or the web console).
+5. Call: `POST /nodes/<node>/lxc vmid=<n> ostemplate=<volid> hostname=<name> rootfs=<storage>:<GiB> cores=<n> memory=<MiB> net0=name=eth0,bridge=<bridge>,ip=dhcp unprivileged=1 ssh-public-keys=<key>`, add `start=1` when the user wants it running, plus any extra pairs (`storage=`, `pool=`, `features=`, `ostype=`). Wait on the UPID.
 
 ## Gated actions (PLAN block first)
 
