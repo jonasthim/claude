@@ -40,7 +40,7 @@ committed file.
 | `PVE_HOST` | yes | | Node address, `host` or `host:port`; `https://` and `:8006` are added when missing. A value with `://` is used verbatim |
 | `PVE_TOKEN_ID` | yes | | `user@realm!tokenid` |
 | `PVE_TOKEN_SECRET` | yes | | Token value shown once at creation. Never printed by the scripts |
-| `PVE_CA_CERT` | no | | Path to the CA certificate that signed the node certificate (`--cacert`) |
+| `PVE_CA_CERT` | no | | Path to the CA that signed the node certificate (`--cacert`). Every cluster has it at `/etc/pve/pve-root-ca.pem` on any node; see TLS below |
 | `PVE_INSECURE` | no | unset | `1` disables TLS verification (`curl -k`) and prints one warning. Opt in yourself; Claude never sets it |
 | `PVE_TIMEOUT` | no | `30` | curl `--max-time` in seconds |
 | `PVE_API_RAW` | no | unset | `1` prints the full `{"data": ...}` envelope instead of `.data` |
@@ -51,10 +51,19 @@ committed file.
 | `PVE_SSH_KEY` | no | | Private key file (`ssh -i`) |
 | `PVE_SSH_OPTS` | no | | Extra `ssh` options |
 
+### TLS
+
+Node certificates are issued by the cluster's own CA (`PVE Cluster Manager CA`), so verification works without
+any insecure flag: copy `/etc/pve/pve-root-ca.pem` from any node to the machine that runs Claude Code and export
+`PVE_CA_CERT=<path>`. The CA file is public; only the node keys are secret. `PVE_INSECURE=1` exists for a
+node you cannot copy the CA from; it is a last resort, and Claude never sets it on its own. (CA path confirmed
+on a PVE 9.x cluster; it is not in the condensed reference notes.)
+
 ### Create an API token
 
-On a node, as root. The read-only recipe is enough for `/proxmox:status`, `/proxmox:doctor`, listings and
-diagnostics:
+If a token with `PVEAuditor` on `/` already exists (for example one used by a monitoring exporter), reuse it for
+the read-only checks; creating a user is a permanent change to the cluster. Otherwise, on a node, as root. The
+read-only recipe is enough for `/proxmox:status`, `/proxmox:doctor`, listings and diagnostics:
 
 ```
 pveum user add claude@pve -comment "Claude Code"
@@ -153,6 +162,28 @@ with its exit status, the verified state afterwards and the revert path.
 
 All scripts live in `scripts/`, need only bash, curl and jq (plus ssh for `pve-ssh.sh`), print usage with
 `-h`, and never print `PVE_TOKEN_SECRET`.
+
+### Why ship scripts at all
+
+A skill can teach Claude the API and let it compose `curl` itself, and that degrades more gracefully when the
+API changes. Each script here exists because it provides a property that an instruction cannot:
+
+- `pve-api.sh`: the token secret never enters a command line. A hand-written `curl` puts the `Authorization`
+  header into the command string, which lands in the session transcript and in any pasted report. The script
+  reads `PVE_TOKEN_SECRET` from the environment and builds the header internally. It also gives every call a
+  fixed shape (`pve-api.sh METHOD /path key=value`), which is what makes a method-scoped permission rule such
+  as `Bash(*/scripts/pve-api.sh GET *)` possible.
+- `guard.sh`: the hook matches on command text. Rules can only be reliable against a fixed command shape; against
+  free-form `curl`, where `-X DELETE` and a URL built from variables can sit anywhere, a text guard can be evaded
+  by rephrasing, and a guard that looks like protection but is not is worse than none.
+- `pve-task.sh`: polling a UPID, paging the log and mapping `exitstatus` to an exit code is deterministic work
+  that Claude would otherwise re-implement, slightly differently, on every call.
+- `pve-doctor.sh`: a fixed first-contact check with stable exit codes (1 env, 2 TLS, 3 401, 4 403) that the
+  `/proxmox:doctor` skill can map to remedies, and that a human can run without Claude to rule the plugin in or
+  out when something fails. It is the script most easily replaced by prose; keep it only while that holds.
+- `pve-ssh.sh`: quoting remote arguments correctly and keeping host, user, port and key in one place.
+
+If the alternative to a script is prose that works as well, prefer the prose.
 
 | Script | Usage | Exit codes |
 |---|---|---|

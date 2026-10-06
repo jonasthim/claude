@@ -51,7 +51,7 @@ Rules (they exist because the API has no undo and the guard hook is the only bac
 | `PVE_HOST` | (required) | `host[:port]` or full `https://host:8006`; port 8006 added when absent |
 | `PVE_TOKEN_ID` | (required) | `USER@REALM!TOKENID` |
 | `PVE_TOKEN_SECRET` | (required) | token value; never printed |
-| `PVE_CA_CERT` | unset | CA bundle path passed to `curl --cacert` |
+| `PVE_CA_CERT` | unset | CA path passed to `curl --cacert`; the cluster CA is `/etc/pve/pve-root-ca.pem` on any node (path confirmed on a PVE 9.x cluster, not in the notes) |
 | `PVE_INSECURE` | unset | `1` skips TLS verification (`curl -k`), warns once; user opt-in only |
 | `PVE_TIMEOUT` | `30` | curl `--max-time` seconds |
 | `PVE_API_RAW` | unset | `1` prints the full `{"data":...}` envelope |
