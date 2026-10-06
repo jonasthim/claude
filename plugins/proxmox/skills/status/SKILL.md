@@ -3,17 +3,16 @@ name: status
 description: "Slash command: read-only overview of the Proxmox VE cluster (nodes, quorum, guests per node, HA, storage usage), or detail for one node, VMID or storage. Never changes anything."
 argument-hint: "[node | vmid | storage]"
 disable-model-invocation: true
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh GET *)
 ---
 
 # /proxmox:status
 
-If the `proxmox:pve` skill is not loaded in this conversation, invoke it with the Skill tool and apply its safety contract. This command is read-only: every call below is a GET and runs freely without confirmation.
-
-Argument: `$ARGUMENTS` (empty, a node name, a numeric VMID, or a storage id). Use `${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh` for every call. Never print `PVE_TOKEN_SECRET`. If a call fails with HTTP 401 or 403, stop and tell the user to run `/proxmox:doctor`.
+Safety contract and tooling come from `proxmox:pve`; invoke it with the Skill tool if it is not loaded. Read-only: every call is a GET and runs without confirmation; run each as a single plain command (no pipes) so the pre-approved rule applies. Argument: `$ARGUMENTS` (empty, a node name, a numeric VMID, or a storage id). On HTTP 401 or 403 stop and point the user to `/proxmox:doctor`.
 
 ## No argument: cluster overview
 
-1. `${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh GET /cluster/status` for the node list and quorum. The response is a mixed array (confirmed on a PVE 9.2 cluster); branch on `type`: the single `type=cluster` item carries `name`, `nodes`, `quorate` and `version`; each `type=node` item carries `name`, `nodeid`, `ip`, `online`, `local` and `level`. Report quorum from the cluster item and online/offline from the node items; do not invent other fields.
+1. `${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh GET /cluster/status` for quorum and node list: report quorum from the `type=cluster` item and online/offline from the `type=node` items (shape in the pve quick reference); do not invent other fields.
 2. `${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh GET /cluster/resources` and group items by `type`:
    - `node`: `status`, `cpu`/`maxcpu`, `mem`/`maxmem`, `uptime`.
    - `qemu` and `lxc`: count running and stopped per `node`; list `template` guests separately; note any `lock` or `hastate`.
@@ -26,7 +25,7 @@ Argument: `$ARGUMENTS` (empty, a node name, a numeric VMID, or a storage id). Us
 1. `${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh GET /nodes/<node>/status` for load, memory, uptime and version fields present in the response.
 2. `${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh GET /nodes/<node>/qemu` and `GET /nodes/<node>/lxc` for guests on that node.
 3. `${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh GET /nodes/<node>/storage` for storages visible on that node.
-4. `${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh GET /nodes/<node>/tasks errors=1 limit=10` for recent failed tasks; print type, id, user, starttime, status and the UPID of each (items carry `endtime, id, node, pid, pstart, starttime, status, type, upid, user`; confirmed on a PVE 9.2 cluster). `status` is the task's final status text: `OK` or the error message itself, so quote it as the failure reason.
+4. `${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh GET /nodes/<node>/tasks errors=1 limit=10` for recent failed tasks; print type, id, user, starttime, status and the UPID of each (fields in the pve quick reference; `status` is `OK` or the error text itself, quote it as the failure reason).
 
 ## VMID argument
 
@@ -40,7 +39,7 @@ Argument: `$ARGUMENTS` (empty, a node name, a numeric VMID, or a storage id). Us
 
 1. Find the storage items for that id in `GET /cluster/resources type=storage` (one per node).
 2. `${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh GET /nodes/<node>/storage/<storage>/status` on one node where it is active.
-3. `${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh GET /nodes/<node>/storage/<storage>/content` and summarise counts per `content` type (images, backup, iso, vztmpl, snippets, import). An empty list from a storage whose `status` or `/cluster/resources` item shows non-zero `used`/`disk` is suspect (a PVEAuditor token got `[]` from a storage holding 431 backups on a PVE 9.2 cluster; cause UNVERIFIED): report "could not enumerate contents with this token", not "no content" or "no backups", and suggest `pvesm list <storage>` over the SSH tier or a token with more privileges.
+3. `${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh GET /nodes/<node>/storage/<storage>/content` and summarise counts per `content` type (images, backup, iso, vztmpl, snippets, import). An empty list from a storage whose `status` or `/cluster/resources` item shows non-zero `used`/`disk` is suspect: apply the empty-content-list pitfall from the pve skill (report "could not enumerate contents with this token", never "no content").
 4. Report usage, enabled/active state, content types and the warning when usage is at or above 80 %.
 
 Do not run any POST, PUT or DELETE from this command. Suggest `/proxmox:vm`, `/proxmox:ct`, `/proxmox:snapshot` or `/proxmox:backup` when the user wants to act on what they see.

@@ -40,7 +40,7 @@ committed file.
 
 | Variable | Required | Default | Purpose |
 |---|---|---|---|
-| `PVE_HOST` | yes | | Node address, `host` or `host:port`; `https://` and `:8006` are added when missing. A value with `://` is used verbatim |
+| `PVE_HOST` | yes | | `host[:port]` or a URL with scheme; `https://` and `:8006` are added when absent; a trailing `/` or `/api2/json` is stripped; IPv6 literals must be bracketed (`[::1]:8006`) |
 | `PVE_TOKEN_ID` | yes | | `user@realm!tokenid` |
 | `PVE_TOKEN_SECRET` | yes | | Token value shown once at creation. Never printed by the scripts |
 | `PVE_CA_CERT` | no | | Path to the CA that signed the node certificate (`--cacert`). Every cluster has it at `/etc/pve/pve-root-ca.pem` on any node; see TLS below |
@@ -48,6 +48,8 @@ committed file.
 | `PVE_TIMEOUT` | no | `30` | curl `--max-time` in seconds |
 | `PVE_API_RAW` | no | unset | `1` prints the full `{"data": ...}` envelope instead of `.data` |
 | `PVE_API_DEBUG` | no | unset | `1` prints method and URL on stderr (never the header) |
+| `PVE_API_QUIET_TLS` | no | unset | `1` suppresses the `PVE_INSECURE` warning; `pve-task.sh` sets it for polling |
+| `PVE_DRY_RUN` | no | unset | `1` makes `pve-api.sh` print `{method, url, params}` as JSON and exit 0 without contacting the API |
 | `PVE_SSH_HOST` | no | host part of `PVE_HOST` | Node for the SSH tier |
 | `PVE_SSH_USER` | no | `root` | SSH user |
 | `PVE_SSH_PORT` | no | `22` | SSH port |
@@ -102,7 +104,8 @@ export PVE_CA_CERT=/path/to/pve-root-ca.pem
 ```
 
 Run `/proxmox:doctor` first in every new setup, in a session started after the plugin was installed (see
-Install).
+Install); it runs four read-only API calls and tells you whether the token is read-only, operator or
+admin-capable.
 
 ## Safety model
 
@@ -138,19 +141,23 @@ destroy; stop/reset/shutdown/reboot/suspend of a guest; snapshot rollback/delete
 
 all GETs; start/resume; create VM/CT; clone; set config without `delete`; snapshot create; vzdump run without explicit prune; create backup job; HA resource add; SDN/network object create/edit (staged, not applied); storage add/edit; user/role/token create; apt update (refresh); task log reads.
 
+The `pve` skill's section 1 is the authoritative copy of both lists.
+
 ## Commands
 
 | Command | Arguments | What it does |
 |---|---|---|
-| `/proxmox:pve` | `[task or question]` | Main knowledge skill; also loads automatically when you mention Proxmox, PVE, qm, pct, vzdump or a VMID |
-| `/proxmox:status` | `[node \| vmid \| storage]` | Read-only cluster overview, node detail with failed tasks, or guest detail |
-| `/proxmox:doctor` | | Checks tools, env, TLS, API version, token capabilities, nodes, optional SSH tier; explains exit codes |
-| `/proxmox:vm` | `<action> <vmid> [key=value ...]` | QEMU VM: list, status, config, start, shutdown, stop, reboot, reset, suspend, resume, clone, migrate, destroy |
-| `/proxmox:ct` | `<action> <vmid> [key=value ...]` | LXC: list, status, config, create, start, shutdown, stop, reboot, migrate, destroy |
-| `/proxmox:snapshot` | `<vmid> <list\|create\|rollback\|delete> [snapname]` | Snapshots for VMs and containers |
-| `/proxmox:backup` | `list [vmid] \| run <vmid> \| jobs \| restore <vmid> <volid> \| failures` | vzdump backups, jobs, restores and failure diagnosis |
+| `/proxmox:pve` | `[task or question about your Proxmox cluster]` | Main knowledge skill; also loads automatically when you mention Proxmox, PVE, qm, pct, vzdump or a VMID |
+| `/proxmox:status` | `[node \| vmid \| storage]` | Read-only cluster overview, node detail with failed tasks, guest detail, or storage detail |
+| `/proxmox:doctor` | | Four read-only API calls (version, token permissions, nodes, cluster status) plus the optional SSH check; classifies the token and explains how to fix each failure |
+| `/proxmox:vm` | `<list\|status\|config\|start\|shutdown\|stop\|reboot\|reset\|suspend\|resume\|clone\|migrate\|destroy> <vmid> [key=value ...]` | QEMU VM: list, status, config, start, shutdown, stop, reboot, reset, suspend, resume, clone, migrate, destroy |
+| `/proxmox:ct` | `<list\|status\|config\|create\|start\|shutdown\|stop\|reboot\|migrate\|destroy> <vmid> [key=value ...]` | LXC: list, status, config, create, start, shutdown, stop, reboot, migrate, destroy |
+| `/proxmox:snapshot` | `<vmid> <list\|create\|rollback\|delete> [snapname] [key=value ...]` | Snapshots for VMs and containers |
+| `/proxmox:backup` | `<list [vmid] \| run <vmid> [storage=...] \| jobs \| restore <vmid> <archive volid> [key=value ...] \| failures>` | vzdump backups, jobs, restores and failure diagnosis |
 
-Only `pve` is model-invocable; the other skills run when you type the command.
+Only `pve` is model-invocable; the other skills run when you type the command. `/proxmox:status` and
+`/proxmox:doctor` pre-approve `pve-api.sh GET` calls through `allowed-tools`, so read-only checks run without a
+permission prompt; writes still prompt.
 
 ## Subagent
 
@@ -185,19 +192,18 @@ API changes. Each script here exists because it provides a property that an inst
   by rephrasing, and a guard that looks like protection but is not is worse than none.
 - `pve-task.sh`: polling a UPID, paging the log and mapping `exitstatus` to an exit code is deterministic work
   that Claude would otherwise re-implement, slightly differently, on every call.
-- `pve-doctor.sh`: a fixed first-contact check with stable exit codes (1 env, 2 TLS, 3 401, 4 403) that the
-  `/proxmox:doctor` skill can map to remedies, and that a human can run without Claude to rule the plugin in or
-  out when something fails. It is the script most easily replaced by prose; keep it only while that holds.
 - `pve-ssh.sh`: quoting remote arguments correctly and keeping host, user, port and key in one place.
+
+The connection check (`/proxmox:doctor`) is prose: four `pve-api.sh` GET calls that Claude interprets, because
+mapping exit codes to remedies needs no determinism a script would add.
 
 If the alternative to a script is prose that works as well, prefer the prose.
 
 | Script | Usage | Exit codes |
 |---|---|---|
-| `pve-api.sh` | `pve-api.sh <GET\|POST\|PUT\|DELETE> <path> [key=value ...]`; GET/DELETE params go to the query string, POST/PUT to a form body; prints `.data` (bare UPID string or pretty JSON) | 0 2xx; 1 usage, missing env, missing curl or jq; 2 transport or TLS; 3 HTTP 4xx; 4 HTTP 5xx or any other non-2xx/non-4xx status |
-| `pve-task.sh` | `pve-task.sh <UPID\|-> [--timeout SECS] [--interval SECS] [--no-log]`; polls the task, prints the log and a final `exitstatus: <value>` line | 0 OK or WARNINGS; 1 task failed; 2 API or transport error; 3 usage or bad UPID; 4 timeout |
-| `pve-doctor.sh` | `pve-doctor.sh`; lines prefixed `[ok]`, `[warn]`, `[fail]`, `[info]` | 0 ok; 1 prerequisite or env; 2 transport or TLS; 3 HTTP 401; 4 HTTP 403; 5 other API error |
-| `pve-ssh.sh` | `pve-ssh.sh [-n HOST] [--check] <command> [args...]`; `--check` runs `pveversion` | remote exit code; 1 usage or no host; 255 ssh failure |
+| `pve-api.sh` | `pve-api.sh <GET\|POST\|PUT\|DELETE> <path> [key=value ...]`; GET/DELETE params go to the query string, POST/PUT to a form body; prints `.data` (bare UPID string or pretty JSON); `PVE_DRY_RUN=1` prints `{method, url, params}` and exits 0 without a request | 0 2xx; 1 usage, missing env, missing curl or jq; 2 transport or TLS; 3 HTTP 4xx; 4 HTTP 5xx or any other non-2xx/non-4xx status |
+| `pve-task.sh` | `pve-task.sh <UPID\|-> [--timeout SECS] [--interval SECS] [--no-log]`; polls the task, prints the log and a final `exitstatus: <value>` line | 0 OK or WARNINGS; 1 task failed; 2 API or transport error; 3 usage, bad UPID or jq missing; 4 timeout |
+| `pve-ssh.sh` | `pve-ssh.sh [-n HOST] [--check] <command> [args...]`; `--check` runs `pveversion` | remote exit code; 1 usage, no host or no ssh; 255 ssh failure |
 | `guard.sh` | PreToolUse hook; reads the tool input JSON on stdin and prints an `ask` decision for gated commands | always 0 |
 
 Error lines on stderr look like `pve-api: HTTP 403 POST /nodes/<node>/lxc/109/status/stop: Permission check

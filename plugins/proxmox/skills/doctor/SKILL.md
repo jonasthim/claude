@@ -1,45 +1,43 @@
 ---
 name: doctor
-description: "Slash command: check the Proxmox VE connection from this machine (tools, environment variables, TLS, API version, token capabilities, nodes, cluster status, optional SSH tier) and explain how to fix each failure."
-argument-hint: ""
+description: "Slash command: check the Proxmox VE connection from this machine with four read-only API calls (version, token permissions, nodes, cluster status) plus the optional SSH tier, classify the token as read-only, operator or admin-capable, and explain how to fix each failure."
 disable-model-invocation: true
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh GET *)
 ---
 
 # /proxmox:doctor
 
-If the `proxmox:pve` skill is not loaded in this conversation, invoke it with the Skill tool and apply its safety contract. This command is read-only. Ignore `$ARGUMENTS`; the doctor takes none.
+Read-only connection check; it takes no arguments, so ignore `$ARGUMENTS`. If the `proxmox:pve` skill is not loaded in this conversation, invoke it with the Skill tool. Never print `PVE_TOKEN_SECRET`; refer to it as "set (hidden)". Run each call below as a single plain command (no pipes, no `&&`) so the pre-approved rule applies.
 
-Run exactly one command:
+## Calls, in order (stop only if call 1 fails; later failures go into the report)
 
-```
-${CLAUDE_PLUGIN_ROOT}/scripts/pve-doctor.sh
-```
+1. `${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh GET /version`: fields `version`, `release`, `repoid` (confirmed on a PVE 9.2 cluster). Warn when `version` does not start with `9.`; the `pve` skill documents 9.x.
+2. `${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh GET /access/permissions`: an object keyed by ACL path, each value `{privilege-name: 1}` (confirmed on a PVE 9.2 cluster). Collect the distinct `Family.Privilege` keys across all paths and classify the token with the table below. A failure here is a warning only.
+3. `${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh GET /nodes`: one item per node; print `node` and `status` (field names UNVERIFIED; print what is there).
+4. `${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh GET /cluster/status`: a mixed array with a single `type=cluster` item (`name`, `quorate`, `nodes`) and one `type=node` item per node (`name`, `online`) (confirmed on a PVE 9.2 cluster). No cluster item = standalone node; `quorate` not equal to 1 = warning. A failure here is a warning only.
+5. Only when `PVE_SSH_HOST` is set: `${CLAUDE_PLUGIN_ROOT}/scripts/pve-ssh.sh --check` (255 = ssh failure, 1 = usage, no host or no ssh, anything else = the remote exit code). Otherwise report "ssh tier: not configured (set PVE_SSH_HOST for node-level commands)".
 
-Show the user the `[ok]`, `[warn]`, `[fail]` and `[info]` lines as they are. Never print `PVE_TOKEN_SECRET`; the script itself prints the secret only as `set (hidden)`.
-
-## Interpret the exit code
+## Failures (pve-api.sh exit code plus its `pve-api:` stderr line)
 
 | Exit | Meaning | Remedy |
 |---|---|---|
-| 0 | Everything the script could check is fine | Continue with `/proxmox:status` |
-| 1 | Prerequisite or environment problem (curl or jq missing, `PVE_HOST`, `PVE_TOKEN_ID` or `PVE_TOKEN_SECRET` unset, `PVE_CA_CERT` file missing) | Install the missing tool or export the named variable and run the doctor again |
-| 2 | Transport or TLS failure (host unreachable, wrong port, certificate not trusted) | Check `PVE_HOST` (host or host:port, port 8006 by default), firewall and DNS; for the cluster-signed certificate copy `/etc/pve/pve-root-ca.pem` from a node and export `PVE_CA_CERT=<path>`; only if that is impossible and the user accepts the risk, `PVE_INSECURE=1`. Never set `PVE_INSECURE=1` yourself |
-| 3 | HTTP 401: the API rejected the token | The token id must have the form `user@realm!tokenid` and the secret must match; expired tokens report "access expired". Recreate the token on a node with `pveum user token add <user@realm> <tokenid>` |
-| 4 | HTTP 403: the token authenticates but lacks privileges | Give the user or token a role via `pveum acl modify <path> -user <user@realm> -role <Role> -propagate 1` (or `-token 'user@realm!tokenid'` when `privsep` is 1). Read-only: `PVEAuditor` on `/`. Operator: `PVEVMAdmin` on `/vms`, `PVEDatastoreUser` on `/storage/<id>`, `PVESDNUser` on `/sdn` |
-| 5 | Any other API error (4xx other than 401/403, or 5xx) | Read the `pve-api:` error line; a 501 "no such uri" usually means the API path or the `/api2/json` base is wrong |
+| 1 | Usage, env var missing, or curl/jq missing | Export the named variable or install the tool, then rerun |
+| 2 | Transport or TLS | Check `PVE_HOST` (`host[:port]`, 8006 by default), DNS and firewall. For the cluster-signed certificate copy `/etc/pve/pve-root-ca.pem` from a node and export `PVE_CA_CERT=<path>`. Only the user may opt into `PVE_INSECURE=1`; never set it yourself |
+| 3 with `HTTP 401` | Token rejected | The id must be `user@realm!tokenid` and the secret must match; "access expired" means the token expired. Recreate it with `pveum user token add <user@realm> <tokenid>` |
+| 3 with `HTTP 403` | Token lacks a privilege | The message names the ACL path and the privilege. Grant it with `pveum acl modify <path> -user <user@realm> -role <Role> -propagate 1` (or `-token 'user@realm!tokenid'` when `privsep` is 1). Read-only: `PVEAuditor` on `/`. Operator: `PVEVMAdmin` on `/vms`, `PVEDatastoreUser` on `/storage/<id>`, `PVESDNUser` on `/sdn`. Details in `permissions.md` under the `pve` skill's references |
+| 3 other, or 4 | Other API error | Read the `pve-api:` line; a 501 "no such uri" means the path or the `/api2/json` base is wrong |
 
-## Interpret the capability summary
+## Token capability (from call 2; test admin-capable first, then operator, then read-only)
 
-The script lists privilege names found in `GET /access/permissions` (an object keyed by ACL path, each value `{privilege-name: 1}`; confirmed on a PVE 9.2 cluster) and classifies the token:
+| Class | Test | What works |
+|---|---|---|
+| admin-capable | `Sys.Modify` or `Sys.PowerMgmt` present | Everything; the safety contract and the guard hook are the only protection. Say so |
+| operator | Any of `VM.PowerMgmt`, `VM.Allocate`, `VM.Snapshot`, `VM.Migrate`, `Datastore.AllocateSpace` | Lifecycle, snapshots, clones and backups. Node reboot, network apply and apt need `Sys.PowerMgmt`/`Sys.Modify`, which only Administrator carries (on `/` or `/nodes/<node>`), or the SSH tier |
+| read-only | Every privilege ends in `.Audit` | Status, listings and task logs. Power, snapshot create, backup run and destroy return 403. An empty storage content list may be a privilege gap (see the `pve` skill pitfalls) |
+| limited | None of the above | List the privileges seen and point to `permissions.md` under the `pve` skill's references |
 
-- read-only (audit privileges only): `/proxmox:status`, `/proxmox:snapshot <vmid> list`, `/proxmox:backup list` and `failures` work; power, snapshot create, backup run and destroy will return 403. A PVEAuditor token on `/` shows exactly these seven: `Datastore.Audit Mapping.Audit Pool.Audit SDN.Audit Sys.Audit VM.Audit VM.GuestAgent.Audit`, reported as `[ok] token capability: read-only (7 distinct privileges seen)` (confirmed on a PVE 9.2 cluster). Such a token may also get an empty storage content list from a storage that is not empty; see the `pve` skill pitfalls.
-- operator (VM.PowerMgmt, VM.Snapshot, VM.Allocate, VM.Migrate, Datastore.AllocateSpace): VM/CT lifecycle, snapshots, clones and backups work; node reboot, network apply and apt need `Sys.PowerMgmt` and `Sys.Modify`, which only the Administrator role carries (not PVEVMAdmin or PVEAuditor): the user, group or token must hold Administrator on `/` or on `/nodes/<node>` (a non-root principal can; confirmed on a PVE 9.2 cluster), or the SSH tier is the alternative.
-- admin-capable: everything, so the guard hook and the confirmation rule in the safety contract are the only protection. Say so.
+A PVEAuditor token on `/` shows exactly `Datastore.Audit Mapping.Audit Pool.Audit SDN.Audit Sys.Audit VM.Audit VM.GuestAgent.Audit` (confirmed on a PVE 9.2 cluster).
 
-## Warnings worth repeating
+## Report
 
-- `[warn]` major version is not 9: the `proxmox:pve` skill documents 9.x; endpoints or privileges may differ.
-- `[warn]` `PVE_INSECURE=1`: TLS verification is off; recommend `PVE_CA_CERT` instead.
-- `[info]` SSH tier skipped: `PVE_SSH_HOST` or `PVE_SSH_USER` is unset; only needed for node maintenance, apt upgrades, cluster join/leave and `pct enter/exec`.
-
-End with one line: ready for read-only, operator or admin tasks, or the single next step to fix.
+One table `check | result | detail` with the rows `version`, `token`, `nodes`, `cluster`, `ssh`; result is `ok`, `warn`, `fail` or `skipped`. Add a `warn` row `tls` whenever `PVE_INSECURE=1` is set (`PVE_CA_CERT` is the fix). Below the table print exactly one line: `ready for read-only|operator|admin tasks` or `next step: <the single remedy>`.

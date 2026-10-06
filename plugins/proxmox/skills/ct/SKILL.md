@@ -7,11 +7,9 @@ disable-model-invocation: true
 
 # /proxmox:ct
 
-If the `proxmox:pve` skill is not loaded in this conversation, invoke it with the Skill tool and apply its safety contract.
+Safety contract, tooling and workflow come from `proxmox:pve`; invoke it with the Skill tool if it is not loaded. Arguments: `$ARGUMENTS` = `<action> <vmid> [key=value ...]`. Extra `key=value` pairs are passed to the API call unchanged. Containers have no `reset`; use `/proxmox:vm` for QEMU guests.
 
-Arguments: `$ARGUMENTS` = `<action> <vmid> [key=value ...]`. Extra `key=value` pairs are passed to the API call unchanged. Use `${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh` for calls and `${CLAUDE_PLUGIN_ROOT}/scripts/pve-task.sh <UPID>` to wait for every task; only `OK` or `WARNINGS` count as success. Never print `PVE_TOKEN_SECRET`. Containers have no `reset`; use `/proxmox:vm` for QEMU guests.
-
-## Step 1: resolve the container
+## Resolve the container
 
 - `list`: `${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh GET /cluster/resources type=vm`, keep `type == "lxc"`, print vmid, name, node, status, hastate, lock. Done.
 - `create`: see the create workflow below; the VMID may be omitted.
@@ -48,6 +46,6 @@ For each of these: read `status/current` (and `config` for destroy), then show t
 
 Destroy rules: the container should be stopped; `force=1` destroys even a running one, so prefer a separate gated `shutdown` first. Ask whether to pass `purge=1` (removes it from backup jobs, replication and HA; required when HA-managed or replicated) and `destroy-unreferenced-disks=1`. List `rootfs` and every `mpN` volume from `config` that will be deleted. There is no revert; name the newest backup from `GET /nodes/<node>/storage/<storage>/content content=backup vmid=<vmid>` when one exists, otherwise say that none exists.
 
-## Step 3: verify and report
+## Verify and report
 
-Pipe each UPID into `${CLAUDE_PLUGIN_ROOT}/scripts/pve-task.sh -`, then re-read `status/current`. Report the call made, the UPID, the `exitstatus:` line and the state after. If a task fails, show its log tail and do not retry a gated action on your own.
+Pipe each UPID into `${CLAUDE_PLUGIN_ROOT}/scripts/pve-task.sh -`, re-read `status/current`, then report the call, the UPID, the `exitstatus:` line and the state after (workflow steps 5 and 6 of the pve skill).

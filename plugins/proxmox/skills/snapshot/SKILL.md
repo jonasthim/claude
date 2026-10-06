@@ -7,11 +7,9 @@ disable-model-invocation: true
 
 # /proxmox:snapshot
 
-If the `proxmox:pve` skill is not loaded in this conversation, invoke it with the Skill tool and apply its safety contract.
+Safety contract, tooling and workflow come from `proxmox:pve`; invoke it with the Skill tool if it is not loaded. Arguments: `$ARGUMENTS` = `<vmid> <action> [snapname] [key=value ...]`.
 
-Arguments: `$ARGUMENTS` = `<vmid> <action> [snapname] [key=value ...]`. Use `${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh` for calls and `${CLAUDE_PLUGIN_ROOT}/scripts/pve-task.sh <UPID>` to wait; only `OK` or `WARNINGS` count as success. Never print `PVE_TOKEN_SECRET`.
-
-## Step 1: resolve the guest
+## Resolve the guest
 
 `${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh GET /cluster/resources type=vm`, find the item with the given `vmid`, remember `node` and `type` (`qemu` or `lxc`). Stop with a clear message if the VMID does not exist. Below, `<kind>` is `qemu` or `lxc`; snapshot endpoints are the same for both.
 
@@ -41,4 +39,4 @@ Arguments: `$ARGUMENTS` = `<vmid> <action> [snapname] [key=value ...]`. Use `${C
 
 ## Report
 
-For every call: the exact call, the UPID, the `exitstatus:` line from pve-task.sh and the snapshot list after. If a task fails, show its log tail and do not retry a gated action on your own.
+For every call: the exact call, the UPID, the `exitstatus:` line from pve-task.sh and the snapshot list after.
