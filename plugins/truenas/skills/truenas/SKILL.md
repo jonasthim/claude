@@ -37,6 +37,18 @@ setup problem; the message says which:
   API Keys) and export both variables, then stop. Do not guess hostnames or ask for the key in
   chat; it belongs in the environment, not the transcript.
 
+Exit code 1 from `info` is a connection problem; the JSON names a `cause`:
+
+- **`timeout`**: the NAS is on a network this machine cannot reach (typical when the NAS sits
+  on a server VLAN and the workstation is firewalled from its web ports). Do not keep
+  retrying. Offer the SSH port-forward recipe in `references/api-basics.md` ("Reaching a NAS
+  on another VLAN") and let the user set it up.
+- **`certificate`**: the NAS uses a self-signed certificate, or the name you connect through
+  (for example a forwarded `127.0.0.1:8443`) is not on it. Report it and stop. Disabling
+  verification is the user's call, never yours.
+- **`refused`** or **`dns`**: wrong port or hostname, or the middleware is down. If SSH works,
+  `midclt call system.info` on the box tells the two apart.
+
 Note the version from `info`. 25.04 and 25.10 differ in a few argument shapes (SMB share
 options, update methods), which is why the next rule exists.
 
@@ -121,17 +133,22 @@ Habits that make the gate rarely matter:
 ## 5. SSH for inspection and logs
 
 The API covers state and changes; the shell is better for live diagnostics. Use
-`TRUENAS_SSH_HOST` if set, otherwise `root@$TRUENAS_HOST`:
+`TRUENAS_SSH_HOST` if set; otherwise build the target from the bare hostname (`TRUENAS_HOST`
+may carry a scheme or port, which ssh would misread, so never paste it into ssh directly):
 
 ```
-ssh "${TRUENAS_SSH_HOST:-root@$TRUENAS_HOST}" zpool status -v
-ssh ... zfs list -r -o name,used,avail,refer,mountpoint tank
-ssh ... zfs list -t snapshot -r -o name,used,creation tank/photos
-ssh ... docker ps --format '{{.Names}}\t{{.Status}}'      # containers are named ix-<app>-<service>-1
-ssh ... docker logs --tail 200 ix-jellyfin-jellyfin-1
-ssh ... journalctl -u middlewared -n 200 --no-pager
-ssh ... midclt call system.info                           # local API when the websocket is down
+SSH_TARGET="${TRUENAS_SSH_HOST:-root@$($TN host)}"
+ssh "$SSH_TARGET" zpool status -v
+ssh "$SSH_TARGET" zfs list -r -o name,used,avail,refer,mountpoint tank
+ssh "$SSH_TARGET" zfs list -t snapshot -r -o name,used,creation tank/photos
+ssh "$SSH_TARGET" docker ps --format '{{.Names}}\t{{.Status}}'   # containers are named ix-<app>-<service>-1
+ssh "$SSH_TARGET" docker logs --tail 200 ix-jellyfin-jellyfin-1
+ssh "$SSH_TARGET" journalctl -u middlewared -n 200 --no-pager
+ssh "$SSH_TARGET" midclt call system.info                        # local API when the websocket is down
 ```
+
+When the API goes through a port-forward, `TRUENAS_SSH_HOST` should point at the real NAS
+(possibly via `ssh -J jump`), not at the forwarded address.
 
 Keep SSH read-only unless the user asks for a shell-level change and the API has no equivalent.
 If SSH is not configured, say so and continue with the API alone.

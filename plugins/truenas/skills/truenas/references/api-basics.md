@@ -10,6 +10,37 @@
 - Per-method docs live at https://api.truenas.com/v<version>/ but the live schema from
   `core.get_methods` is authoritative for the box you are talking to.
 
+## Reaching a NAS on another VLAN
+
+A common homelab layout puts the NAS on a server VLAN and firewalls its web ports (443, 80,
+8080) from the admin workstation, while SSH to a jump host (a hypervisor node, a bastion) is
+allowed. `tn.py info` then fails with `"cause": "timeout"`. Two ways through, both the user's
+to set up:
+
+**SSH port-forward from the workstation** (keeps the skill running locally):
+
+```
+ssh -fN -L 8443:<nas-ip>:443 <user>@<jump-host>      # background tunnel
+export TRUENAS_HOST=127.0.0.1:8443
+export TRUENAS_SSH_HOST=root@<nas-ip>                  # shell access goes via the jump too:
+#   ~/.ssh/config:  Host <nas-ip>\n  ProxyJump <user>@<jump-host>
+```
+
+The certificate on the NAS will not carry `127.0.0.1`, so `info` fails next with
+`"cause": "certificate"` unless the NAS cert is trusted on this machine. Options, in order of
+preference: forward to the NAS's real hostname instead (add `127.0.0.1 nas.example.lan` to
+`/etc/hosts` and connect by name, which works if the cert has that SAN), import the NAS CA
+into the system trust store, or `TRUENAS_VERIFY_SSL=0`. The last one sends the API key over a
+connection whose peer is not verified; the tunnel itself is SSH-protected, so the exposure
+is limited to the jump-host-to-NAS hop. State that trade-off and let the user choose.
+
+**Run the skill on the jump host** instead: copy the plugin directory there, run `setup.sh`
+there, and run `tn.py` over SSH. This installs a Python virtualenv on that host, which some
+people will not want on a hypervisor; ask first.
+
+The quickest proof that the NAS is fine and only the path is blocked:
+`ssh <jump> curl -sk -m 5 https://<nas-ip>/api/versions`.
+
 ## Authentication
 
 - API keys are user-linked (Settings → API Keys, or user menu → API Keys). The key string

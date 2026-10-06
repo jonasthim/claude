@@ -11,7 +11,8 @@ you confirm them in the conversation.
 
 ## Install
 
-From the marketplace in this repo:
+From the marketplace in this repo (the repo is private, so the machine needs GitHub access
+that can read it: a `gh auth login`, a credential helper, or an SSH key):
 
 ```
 claude plugin marketplace add jonasthim/claude-truenas-skill
@@ -21,7 +22,7 @@ claude plugin install truenas@claude-truenas-skill
 Or for local development:
 
 ```
-git clone https://github.com/jonasthim/claude-truenas-skill
+gh repo clone jonasthim/claude-truenas-skill            # or: git clone git@github.com:jonasthim/claude-truenas-skill
 claude --plugin-dir ./claude-truenas-skill
 ```
 
@@ -94,9 +95,36 @@ tests/                          offline unit tests (python -m unittest discover 
 evals/evals.json                example prompts for skill evaluation
 ```
 
-## Compatibility
+## Reaching a NAS on another VLAN
+
+If the NAS web ports are firewalled from where you run Claude, `tn.py info` reports
+`"cause": "timeout"`. Forward the port through a host you can SSH to and point the skill at
+the tunnel:
+
+```
+ssh -fN -L 8443:<nas-ip>:443 <user>@<jump-host>
+export TRUENAS_HOST=127.0.0.1:8443
+export TRUENAS_SSH_HOST=root@<nas-ip>      # with a ProxyJump entry in ~/.ssh/config
+```
+
+The NAS certificate will not match `127.0.0.1`; `skills/truenas/references/api-basics.md`
+lists the options, of which `TRUENAS_VERIFY_SSL=0` is the bluntest. Claude will report the
+certificate error and wait for your decision rather than set it.
+
+## Compatibility and verification status
 
 Written for TrueNAS SCALE 25.04 (Fangtooth) and 25.10 (Goldeye). The skill asks the live
 system for method schemas (`core.get_methods`) before unfamiliar calls, so minor API drift
 between releases is handled at run time. TrueNAS CORE and 24.10 are not supported (different
 API protocol).
+
+What has actually been exercised so far:
+
+- `tn.py` with client tag `TS-25.10.7` on Python 3.13 against `tests/fake_middleware.py`
+  (login, queries, a job with progress events, validation and call errors). Python 3.14 is
+  untested; the pinned client predates it.
+- Static review of the scripts and references by a second session.
+- Not yet: a run against a real TrueNAS. The method names and argument shapes in
+  `references/` are from documentation and memory. The first live target is a 25.10.6 system;
+  until that run lands, treat a reference example as a starting point and the live schema
+  from `tn.py methods <name> --schema` as the truth.

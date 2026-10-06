@@ -11,6 +11,7 @@ Environment:
 
 Subcommands:
   info                      connectivity check: version, hostname, uptime, alert summary
+  host                      print the bare hostname from TRUENAS_HOST (for building an SSH target)
   call METHOD [ARG ...]     call any API method; ARGs are JSON (fallback: plain string)
   methods [PREFIX]          list methods and their argument schema (core.get_methods)
   jobs [--running|--id N]   inspect background jobs (core.get_jobs)
@@ -27,6 +28,7 @@ import inspect
 import json
 import os
 import re
+import socket
 import ssl
 import sys
 import urllib.request
@@ -157,6 +159,41 @@ def http_base(uri: str) -> str:
     return uri.replace("wss://", "https://").replace("ws://", "http://").removesuffix("/api/current")
 
 
+def bare_host(host: str) -> str:
+    """Strip scheme, path and port from TRUENAS_HOST: 'wss://nas:8443/api/current' -> 'nas'."""
+    h = host.strip()
+    if "://" in h:
+        h = h.split("://", 1)[1]
+    h = h.split("/", 1)[0]
+    if h.startswith("["):  # bracketed IPv6 literal
+        return h[1 : h.index("]")] if "]" in h else h[1:]
+    if h.count(":") == 1:
+        h = h.rsplit(":", 1)[0]
+    return h
+
+
+def classify_connection_error(exc: BaseException) -> tuple[str, str]:
+    """Map a connection failure to (cause, hint) so the user hears a diagnosis, not a stack."""
+    text = str(exc).lower()
+    if isinstance(exc, ssl.SSLError) or "certificate" in text or "ssl" in text or "tls" in text:
+        return ("certificate", "the NAS presented a certificate this machine does not trust (self-signed, "
+                "or the name you connect to is not on the cert). Only the user may decide to set "
+                "TRUENAS_VERIFY_SSL=0 or to trust the NAS CA; report this and ask")
+    if isinstance(exc, (socket.timeout, TimeoutError)) or "timed out" in text or "timeout" in text:
+        return ("timeout", "nothing answered on that address: the NAS is probably on a network this machine "
+                "cannot reach (another VLAN, firewalled web ports). See 'Reaching a NAS on another VLAN' "
+                "in references/api-basics.md for the SSH port-forward recipe")
+    if isinstance(exc, ConnectionRefusedError) or "refused" in text or "errno 111" in text:
+        return ("refused", "the host answered but nothing listens on that port: check the port in "
+                "TRUENAS_HOST (web UI port, default 443) or whether the middleware is down "
+                "(ssh in and run: midclt call system.info)")
+    if isinstance(exc, socket.gaierror) or "name or service not known" in text or "nodename" in text \
+            or "getaddrinfo" in text:
+        return ("dns", "the hostname in TRUENAS_HOST does not resolve from this machine")
+    return ("unknown", "check TRUENAS_HOST, that the web UI is reachable on that address from this machine, "
+            "and the error text above")
+
+
 def emit(obj, compact: bool = False):
     if compact:
         print(json.dumps(obj, default=str))
@@ -227,10 +264,9 @@ class Session:
         try:
             self.client = Client(**kwargs)
             self.client.__enter__()
-        except Exception as exc:  # connection refused, TLS failure, DNS
-            fail(f"could not connect to {self.uri}: {exc}", EXIT_ERROR, hint=(
-                "check TRUENAS_HOST, that the web UI is reachable on that address, and set "
-                "TRUENAS_VERIFY_SSL=0 only if the user accepts a self-signed certificate"))
+        except Exception as exc:  # connection refused, TLS failure, DNS, timeout
+            cause, hint = classify_connection_error(exc)
+            fail(f"could not connect to {self.uri}: {exc}", EXIT_ERROR, cause=cause, hint=hint)
         self._login()
         return self.client
 
@@ -348,6 +384,13 @@ def cmd_info(args):
     emit(out, args.compact)
 
 
+def cmd_host(args):
+    host = os.environ.get("TRUENAS_HOST")
+    if not host:
+        fail("TRUENAS_HOST is not set", EXIT_SETUP)
+    print(bare_host(host))
+
+
 def cmd_call(args):
     if args.args == ["-"]:
         params = json.load(sys.stdin)
@@ -459,6 +502,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     s = sub.add_parser("info", help="connectivity and health summary")
     s.set_defaults(func=cmd_info)
+
+    s = sub.add_parser("host", help="print the bare hostname from TRUENAS_HOST")
+    s.set_defaults(func=cmd_host)
 
     s = sub.add_parser("call", help="call an API method")
     s.add_argument("method")

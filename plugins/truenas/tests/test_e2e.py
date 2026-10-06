@@ -141,6 +141,19 @@ class EndToEnd(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertEqual(json.loads(err)["response"], {"response_type": "AUTH_ERR"})
 
+    def test_host_matches_fake_server(self):
+        code, out, _ = self.tn("host")
+        self.assertEqual(code, 0)
+        self.assertEqual(out.strip(), "127.0.0.1")
+
+    def test_refused_port_is_classified(self):
+        env = dict(self.env, TRUENAS_HOST="ws://127.0.0.1:9")
+        code, _, err = self.tn("info", env=env)
+        self.assertEqual(code, 1)
+        info = json.loads(err)
+        self.assertEqual(info["cause"], "refused")
+        self.assertIn("port", info["hint"])
+
     def test_stdin_args(self):
         p = subprocess.run([PY, str(TN), "call", "pool.dataset.query", "-"], input='[[["name","=","x"]], {"limit": 1}]',
                            capture_output=True, text=True, env=self.env, timeout=30)
