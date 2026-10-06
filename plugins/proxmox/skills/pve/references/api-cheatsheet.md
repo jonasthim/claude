@@ -289,6 +289,16 @@ Prefixes: `/cluster/firewall` (options, rules, groups, ipset, aliases, macros, r
 - `POST /cluster/ha/status/disarm-ha - params not in notes - n/a` (gated)
 - `POST /cluster/ha/status/arm-ha - params not in notes - n/a`
 
+Storage replication (none of these were in the notes; shapes and parameters UNVERIFIED):
+
+- `GET /cluster/replication - none - n/a` (job list; expected to be cluster-wide)
+- `POST /cluster/replication - id (<vmid>-<n>), target, type local, schedule, rate, comment, disable - n/a`
+- `GET /cluster/replication/{id} - none - n/a`
+- `PUT /cluster/replication/{id} - schedule, rate, comment, disable - n/a` (gated with `disable`)
+- `DELETE /cluster/replication/{id} - keep, force - n/a` (gated)
+- `GET /nodes/{node}/replication - guest - n/a` (status of the jobs on that node only, like `pvesr status`)
+- `POST /nodes/{node}/replication/{id}/schedule_now - none - n/a`
+
 ## 13. Access control
 
 - `GET /access/users - none - n/a`

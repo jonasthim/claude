@@ -536,11 +536,11 @@ else
 fi
 
 # ---------------------------------------------------------------- (20) guard speed
-t0="${EPOCHREALTIME/./}"
+t0="${EPOCHREALTIME/[.,]/}"
 for _ in $(seq 1 20); do
   guard_input 'pve-api.sh PUT /cluster/ha/resources/vm:100 state=stopped' | "$guard" >/dev/null
 done
-t1="${EPOCHREALTIME/./}"
+t1="${EPOCHREALTIME/[.,]/}"
 elapsed_ms=$(((t1 - t0) / 1000))
 if [ "$elapsed_ms" -lt 5000 ]; then pass "20 guard runs take < 5 s (${elapsed_ms} ms)"; else fail "20 guard runs take < 5 s" "${elapsed_ms} ms"; fi
 

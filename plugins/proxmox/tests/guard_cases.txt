@@ -108,6 +108,15 @@ ask	curl -X PUT "$PVE_HOST/api2/json/nodes/pve1/qemu/100/config?memory=2048&dele
 # rule 23
 ask	rm -f /var/lib/vz/dump/vzdump-qemu-100.vma.zst
 ask	rm /mnt/backup/vzdump-lxc-105-2026_10_05.tar.zst
+# rule 24
+ask	pvesr delete 100-0
+ask	ssh root@pve1 pvesr disable 100-0
+ask	pvesr update 100-0 --disable 1
+ask	pve-api.sh PUT /cluster/replication/100-0 disable=1
+ask	pvesh set /cluster/replication/100-0 --disable 1
+ask	curl -X PUT "$PVE_HOST/api2/json/cluster/replication/100-0" -d disable=1
+ask	pve-api.sh DELETE /cluster/replication/100-0
+ask	pvesh delete /cluster/replication/100-0
 # --- negatives: must not prompt ---
 none	qm list
 none	qm start 100
@@ -128,6 +137,14 @@ none	grep reboot /var/log/syslog
 none	rm -rf build/
 none	ha-manager add vm:100
 none	ha-manager rules list
+none	pvesr status
+none	pvesr list
+none	pvesr create-local-job 100-0 pve2 --schedule '*/15'
+none	cat /etc/pve/replication.cfg
+none	pvesr update 100-0 --schedule '*/30'
+none	pve-api.sh PUT /cluster/replication/100-0 schedule=*/30
+none	pve-api.sh GET /cluster/replication
+none	pve-api.sh POST /cluster/replication id=100-1 target=pve3 type=local
 none	ha-manager rules add node-affinity r1 --resources vm:100 --nodes pve1
 none	pve-api.sh PUT /nodes/pve1/qemu/100/config description=do-not-delete-this
 none	pve-api.sh PUT /nodes/pve1/qemu/100/config 'description=please do not delete this vm'

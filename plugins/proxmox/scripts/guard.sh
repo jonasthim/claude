@@ -19,7 +19,7 @@ Usage: guard.sh < hook-input.json
 
 PreToolUse hook for the Bash tool. Reads {"tool_input":{"command":"..."}} on
 stdin and prints a permissionDecision "ask" JSON object when the command is a
-destructive or disruptive Proxmox VE action (23 rules, see the script).
+destructive or disruptive Proxmox VE action (24 rules, see the script).
 Always exits 0.
 EOF
 }
@@ -197,6 +197,8 @@ put_paths=(
   '/nodes/[^/ ]+/network([^/[:alnum:]_-]|$)' 'applies staged network changes (ifreload) and can cut connectivity'
   '/cluster/sdn([^/[:alnum:]_-]|$)' 'applies SDN configuration cluster-wide'
   '/cluster/ha/resources/[^/ ]+.*\bstate[= ](stopped|disabled)\b' 'changes HA state or placement'
+  # Any "disable" parameter on a replication job, whatever its value: re-enabling only costs a prompt.
+  '/cluster/replication/[^/ ]+.*\bdisable\b' 'pauses a storage replication job'
   # Same "delete" parameter/flag pattern as in post_paths above.
   '/(qemu|lxc)/[0-9]+/config\b.*(^|[^[:alnum:]_=.-])(delete=|--?delete[= ])' 'removes a config key or disk'
 
@@ -220,6 +222,10 @@ fi
 
 # Rule 23: rm of vzdump-* files or anything under a dump/ directory deletes backup files.
 rule '\brm\b.*(vzdump-|/dump/)' 'deletes backup files'
+
+# Rule 24: pvesr delete/disable, or update --disable, removes or pauses a storage replication job.
+# The API forms are covered above: DELETE by rules 18-20, PUT with disable by rule 22.
+rule '\bpvesr +(delete|disable)\b|\bpvesr +update\b.*--?disable\b' 'removes or pauses a storage replication job'
 
 # No rule matched: stay silent so the normal permission flow applies.
 exit 0

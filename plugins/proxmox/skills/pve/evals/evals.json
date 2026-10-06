@@ -79,6 +79,19 @@
         "The answer states a cause taken from the task log and proposes a specific remedy.",
         "No POST, PUT or DELETE request that changes state is executed; in particular no backups are deleted and no job is modified."
       ]
+    },
+    {
+      "id": 7,
+      "prompt": "Are all my HA-managed guests replicated to another node? They are all on local ZFS. SSH to the nodes works.",
+      "expected_output": "The agent reads the HA resources from the API, then reads the cluster-wide replication configuration (/etc/pve/replication.cfg, or GET /cluster/replication) rather than relying on pvesr status from one node, groups the jobs by guest with their source and target, and reports per guest which nodes hold a replica. If it uses pvesr status for health it runs it on every node and says the output is per node. Nothing is created or changed.",
+      "files": [],
+      "expectations": [
+        "GET /cluster/ha/resources (or ha-manager config) is used to list the HA-managed guests.",
+        "Replication coverage is read from a cluster-wide source: /etc/pve/replication.cfg or GET /cluster/replication.",
+        "pvesr status from a single node is not presented as the cluster's full job list; if used, it is run on every node or its per-node scope is stated.",
+        "The answer states, per guest or as totals, which guests have a replica and on which target nodes.",
+        "No replication job is created, disabled or deleted in this turn."
+      ]
     }
   ]
 }

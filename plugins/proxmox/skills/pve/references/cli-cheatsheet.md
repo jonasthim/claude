@@ -17,6 +17,7 @@ not confirmed.
 9. pvenode
 10. pveum
 11. Logs and diagnostics
+12. pvesr
 
 Run every command through `pve-ssh.sh`, e.g. `pve-ssh.sh -n pve1 qm list`. All these tools
 run as root on a node; options accept both `-opt` and `--opt`. The gated list in SKILL.md
@@ -257,3 +258,18 @@ pveum acl modify /vms -token 'joe@pve!monitoring' -role PVEAuditor
   Restarting any of them is gated (`systemctl restart`).
 - Upgrade path 8 to 9: latest 8.4 first, run `pve8to9`, then bookworm to trixie with
   deb822 `.sources` (`apt modernize-sources`).
+
+## 12. pvesr
+
+Storage replication jobs for guests on local ZFS storage. `status [--guest <vmid>]`; `list`;
+`read <id>`; `create-local-job <vmid>-<n> <target> [--schedule '*/15'] [--rate <MB/s>]
+[--comment]`; `update <id>`; `enable <id>`; `disable <id>`; `schedule-now <id>`;
+`delete <id> [--keep] [--force]`.
+
+- **`pvesr status` shows only the jobs whose source is the node it runs on** (confirmed on a
+  3-node PVE 9 cluster). For the whole cluster read `/etc/pve/replication.cfg`, or run
+  `status` on every node. Whether `pvesr list` is cluster-wide is UNVERIFIED.
+- Gated (confirm first): `delete` (also removes the replica on the target unless `--keep`),
+  `disable`, `update --disable`. Free: `status`, `list`, `read`, `create-local-job`, `enable`,
+  `schedule-now`, `update` of the schedule, rate or comment.
+- Details and the coverage check: `cluster-ha.md`, "Storage replication".
