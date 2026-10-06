@@ -118,19 +118,23 @@ twice. The exact schema for a given version is at
 }
 ```
 
-**WiFi broadcast (SSID) on that network:**
+**WiFi broadcast (SSID) on that network** (keys as returned by a 10.6.106 console; build a
+create body from `wifi get` of an existing SSID and change what differs):
 ```json
 {
+  "type": "STANDARD",
   "name": "Thim Guest",
   "enabled": true,
-  "networkId": "<network id>",
-  "hidden": false,
-  "security": {"type": "WPA2_WPA3_PERSONAL", "passphrase": "<at least 8 chars>", "pmfMode": "OPTIONAL"},
-  "bands": ["2.4GHz", "5GHz"],
-  "broadcastingDeviceIds": ["<ap id>", "<ap id>"],
-  "clientIsolationEnabled": true
+  "network": {"type": "SPECIFIC", "networkId": "<network id>"},
+  "securityConfiguration": {"type": "WPA2_WPA3_PERSONAL", "passphrase": "<8-63 chars>", "fastRoamingEnabled": false},
+  "hideName": false,
+  "clientIsolationEnabled": true,
+  "broadcastingFrequenciesGHz": [2.4, 5],
+  "bandSteeringEnabled": true
 }
 ```
+The observed object had no field selecting which APs broadcast the SSID, so AP targeting may
+not be part of this API version; a 400 on create names any required field that is missing.
 
 **Firewall policy (zone based):**
 ```json
@@ -149,8 +153,10 @@ Narrow a policy with `"matchingTarget": "IP"` plus `"ipAddresses": [...]` and a 
 string, or `"matchingTarget": "NETWORK"` plus `"networkIds": [...]`. `PATCH` changes one
 field (for example `{"enabled": false}`) without having to resend the whole object.
 
-**Reorder policies:** `PUT firewall/policies/ordering` with `{"policyIds": ["<id>", ...]}`
-listing every user-defined policy in the desired order. Always `GET` the current order
+**Reorder policies:** ordering is kept per zone pair. `GET firewall/policies/ordering?sourceFirewallZoneId=<zone>`
+(the API answers 400 "Required request parameter 'sourceFirewallZoneId'" without it; it may also
+want `destinationFirewallZoneId`), then `PUT` the same path with `{"policyIds": ["<id>", ...]}`.
+`unifi.py firewall policies ordering|reorder --source-zone <id> [--dest-zone <id>]`. Always `GET`
 first and move only the id you mean to move.
 
 **Device / port / client actions:** `{"action": "RESTART"}`, `{"action": "POWER_CYCLE"}`,
@@ -182,6 +188,14 @@ accepted, the 400 message lists the allowed values for that build; use
 - List endpoints are summaries: `wifi/broadcasts` lists carry `id`, `name`, `enabled` only;
   `wans` lists carry `id`, `name`; device list items have no `uplink`. Use `get <id>` for full objects.
 - `firewall/policies[].action` is an object (`{"type": "ALLOW", "allowReturnTraffic": true}`), not a string.
+- `firewall/policies/ordering` requires `sourceFirewallZoneId` as a query parameter.
+- `wifi/broadcasts/{id}` returns the WPA passphrase in cleartext under
+  `securityConfiguration.passphrase`. `unifi.py` redacts it unless `--show-secrets` is given.
+  The SSID object uses `network.networkId` and `securityConfiguration.type` (not `networkId` /
+  `security.type`), `hideName`, `broadcastingFrequenciesGHz`.
+- `devices/{id}` carries `uplink.deviceId` (id only, no name); `features` is a presence map
+  such as `{"accessPoint": {}}`, usable to classify devices without matching model strings.
+- `wans` returns `id` and `name` only; WAN health is not available from this API.
 - Per-device `statistics/latest` returned `uptimeSec`, `cpuUtilizationPct`, `memoryUtilizationPct`
   and per-radio `txRetriesPct` for every online device.
 - **Two id spaces.** The Integration API uses UUIDs for networks, policies and devices. The

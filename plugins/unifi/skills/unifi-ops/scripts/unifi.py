@@ -32,6 +32,9 @@ import urllib.parse
 import urllib.request
 
 PAGE_SIZE = 200
+SHOW_SECRETS = False
+SECRET_KEY_RE = re.compile(r"(passphrase|password|secret|\bpsk\b|private_?key|api_?key|shared_?secret|x_?password)", re.I)
+REDACTED = "<redacted; pass --show-secrets to print>"
 EXIT_USAGE = 1
 EXIT_API = 2
 EXIT_NEEDS_CONFIRM = 3
@@ -59,7 +62,20 @@ def norm_mac(s):
     return re.sub(r"[^0-9a-f]", "", (s or "").lower())
 
 
+def redact(obj):
+    """Replace values of credential-shaped keys. Controllers return WiFi passphrases,
+    RADIUS secrets and voucher codes in cleartext; they must not land in a transcript by default."""
+    if isinstance(obj, dict):
+        return {k: (REDACTED if SECRET_KEY_RE.search(k) and isinstance(v, (str, int, float)) and v != "" else redact(v))
+                for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [redact(x) for x in obj]
+    return obj
+
+
 def emit(obj, table=None, columns=None):
+    if not SHOW_SECRETS:
+        obj = redact(obj)
     if table and isinstance(obj, list):
         print_table(obj, columns)
     else:
@@ -529,7 +545,7 @@ COLUMNS = {
     "devices": ["name", "model", "ipAddress", "state", "firmwareVersion", "firmwareUpdatable", "uplinkDeviceName", "id"],
     "clients": ["name", "ipAddress", "macAddress", "type", "uplinkDeviceName", "connectedAt", "id"],
     "networks": ["name", "vlanId", "management", "enabled", "id"],
-    "wifi": ["name", "enabled", "security.type", "networkId", "id"],
+    "wifi": ["name", "enabled", "securityConfiguration.type", "network.networkId", "clientIsolationEnabled", "id"],
     "zones": ["name", "metadata.origin", "networkIds", "id"],
     "policies": ["name", "enabled", "action.type", "action", "source.zoneId", "destination.zoneId", "id"],
     "acl": ["name", "enabled", "action", "type", "id"],
@@ -624,6 +640,17 @@ def cmd_clients(api, args):
         guarded(api, args, "POST", api.sp("/clients/%s/actions" % args.id), {"action": args.action})
 
 
+def zone_query(args):
+    """Firewall policy ordering is kept per source/destination zone pair on 10.6
+    (the API answers 400 'sourceFirewallZoneId ... is not present' without it)."""
+    q = {}
+    if getattr(args, "source_zone", None):
+        q["sourceFirewallZoneId"] = args.source_zone
+    if getattr(args, "dest_zone", None):
+        q["destinationFirewallZoneId"] = args.dest_zone
+    return q or None
+
+
 def crud(api, args, base, cols, extra=None):
     """Generic list/get/create/update/patch/delete for a site collection."""
     v = args.verb
@@ -640,9 +667,9 @@ def crud(api, args, base, cols, extra=None):
     elif v == "delete":
         guarded(api, args, "DELETE", api.sp("%s/%s" % (base, args.id)))
     elif v == "ordering":
-        emit(api.request("GET", api.sp(base + "/ordering")))
+        emit(api.request("GET", api.sp(base + "/ordering"), zone_query(args)))
     elif v == "reorder":
-        guarded(api, args, "PUT", api.sp(base + "/ordering"), read_body(args.body))
+        guarded(api, args, "PUT", api.sp(base + "/ordering"), read_body(args.body), zone_query(args))
     elif extra:
         extra(v)
 
@@ -811,6 +838,8 @@ def cmd_cloud(args):
 def add_common(p, write=False, listing=False):
     p.add_argument("--site", help="site name (default: $UNIFI_SITE or 'default')")
     p.add_argument("--table", action="store_true", help="markdown table instead of JSON")
+    p.add_argument("--show-secrets", action="store_true",
+                   help="print passphrases/secrets instead of redacting them (output then holds live credentials)")
     if listing:
         p.add_argument("--filter", help="server-side filter, e.g. name.like('guest*')")
         p.add_argument("--limit", type=int, help="stop after N items (default: all)")
@@ -869,6 +898,8 @@ def build_parser():
     p.add_argument("kind", choices=["zones", "policies"])
     p.add_argument("verb", choices=crud_verbs + ["ordering", "reorder"])
     p.add_argument("id", nargs="?")
+    p.add_argument("--source-zone", help="zone id; required by the API for policies ordering/reorder")
+    p.add_argument("--dest-zone", help="zone id; destination side of the ordering pair")
     add_common(p, write=True, listing=True)
     p.set_defaults(fn=cmd_firewall)
 
@@ -914,13 +945,16 @@ def build_parser():
     p.add_argument("--begin", help="RFC3339 begin timestamp")
     p.add_argument("--end", help="RFC3339 end timestamp")
     p.add_argument("--table", action="store_true")
+    p.add_argument("--show-secrets", action="store_true")
     p.set_defaults(fn=None)
     return ap
 
 
 def main(argv=None):
+    global SHOW_SECRETS
     ap = build_parser()
     args = ap.parse_args(argv)
+    SHOW_SECRETS = bool(getattr(args, "show_secrets", False))
     for attr, default in (("yes", False), ("dry_run", False), ("body", None), ("filter", None),
                           ("limit", None), ("table", False), ("site", None), ("id", None)):
         if not hasattr(args, attr):
@@ -941,6 +975,10 @@ def main(argv=None):
         die("%s %s needs an id" % (args.group, args.verb), EXIT_USAGE)
     if args.group == "devices" and args.verb.startswith("port-") and args.port is None:
         die("port-* verbs need --port <index>", EXIT_USAGE)
+    if args.group == "firewall" and args.kind == "policies" and args.verb in ("ordering", "reorder") \
+            and not getattr(args, "source_zone", None):
+        die("firewall policies %s needs --source-zone <zone id> (ordering is kept per zone pair; add --dest-zone if the API asks for it)"
+            % args.verb, EXIT_USAGE)
     try:
         if args.group == "cloud":
             cmd_cloud(args)

@@ -105,14 +105,18 @@ plugins/unifi/skills/unifi-ops/
 ## Verified live
 
 Read commands, `report health`, and the Site Manager commands were run against a UCG Fiber on
-Network 10.6.106 (7 devices, 67 clients). `devices locate` was removed after that run: the
-Integration API's device action enum is `RESTART` only. Port and client actions follow the
+Network 10.6.106 (7 devices, 67 clients). That run removed `devices locate` (the Integration
+API's device action enum is `RESTART` only), added `--source-zone` to firewall policy ordering,
+corrected the SSID field paths, and added passphrase redaction after `wifi get` returned the WPA
+key in cleartext. Port and client actions follow the
 published API but have not been exercised on real hardware yet; the CLI's dry run shows the
 request, and the controller's 400 lists the accepted values if one is rejected.
 
 ## Safety model
 
 - Reads never prompt. Writes print the exact request and exit until `--yes` is given.
+- Credentials the controller returns in cleartext (WiFi passphrases, RADIUS secrets, voucher
+  codes) are redacted in all output unless `--show-secrets` is passed.
 - Claude is instructed to show one plan per change, call out blast radius (dependent
   SSIDs/zones/policies, uplink ports, the management network, the gateway), and verify
   afterwards.

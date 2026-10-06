@@ -11,7 +11,7 @@
       "name": "unifi",
       "source": "./plugins/unifi",
       "description": "UniFi network operations: troubleshoot clients, health reports, guarded config changes and device actions via the official UniFi Network and Site Manager APIs.",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "category": "networking",
       "keywords": ["unifi", "ubiquiti", "network", "wifi", "firewall", "vlan"]
     }

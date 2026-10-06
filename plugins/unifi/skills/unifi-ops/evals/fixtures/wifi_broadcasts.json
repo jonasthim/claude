@@ -3,61 +3,88 @@
     "id": "w-home",
     "name": "Thim Home",
     "enabled": true,
-    "networkId": "n100-default",
-    "hidden": false,
-    "security": {
-      "type": "WPA2_WPA3_PERSONAL",
-      "pmfMode": "OPTIONAL"
-    },
-    "bands": [
-      "2.4GHz",
-      "5GHz",
-      "6GHz"
-    ],
     "broadcastingDeviceIds": [
       "d4d4-ap-living",
       "d5e5-ap-office",
       "d6f6-ap-hall"
     ],
-    "clientIsolationEnabled": false
+    "clientIsolationEnabled": false,
+    "type": "STANDARD",
+    "metadata": {
+      "origin": "USER_DEFINED"
+    },
+    "network": {
+      "type": "SPECIFIC",
+      "networkId": "n100-default"
+    },
+    "securityConfiguration": {
+      "type": "WPA2_WPA3_PERSONAL",
+      "fastRoamingEnabled": false,
+      "passphrase": "fixture-passphrase-w-home"
+    },
+    "hideName": false,
+    "broadcastingFrequenciesGHz": [
+      2.4,
+      5.0,
+      6.0
+    ],
+    "bandSteeringEnabled": true
   },
   {
     "id": "w-iot",
     "name": "Thim IoT",
     "enabled": true,
-    "networkId": "n120-iot",
-    "hidden": false,
-    "security": {
-      "type": "WPA2_PERSONAL",
-      "pmfMode": "DISABLED"
-    },
-    "bands": [
-      "2.4GHz"
-    ],
     "broadcastingDeviceIds": [
       "d4d4-ap-living",
       "d5e5-ap-office",
       "d6f6-ap-hall"
     ],
-    "clientIsolationEnabled": false
+    "clientIsolationEnabled": false,
+    "type": "STANDARD",
+    "metadata": {
+      "origin": "USER_DEFINED"
+    },
+    "network": {
+      "type": "SPECIFIC",
+      "networkId": "n120-iot"
+    },
+    "securityConfiguration": {
+      "type": "WPA2_PERSONAL",
+      "fastRoamingEnabled": false,
+      "passphrase": "fixture-passphrase-w-iot"
+    },
+    "hideName": false,
+    "broadcastingFrequenciesGHz": [
+      2.4
+    ],
+    "bandSteeringEnabled": true
   },
   {
     "id": "w-guest",
     "name": "Thim Guest",
     "enabled": true,
-    "networkId": "n130-guest",
-    "hidden": false,
-    "security": {
-      "type": "WPA2_PERSONAL",
-      "pmfMode": "OPTIONAL"
-    },
-    "bands": [
-      "2.4GHz",
-      "5GHz"
-    ],
     "broadcastingDeviceIds": [
       "d4d4-ap-living"
     ],
-    "clientIsolationEnabled": true
+    "clientIsolationEnabled": true,
+    "type": "STANDARD",
+    "metadata": {
+      "origin": "USER_DEFINED"
+    },
+    "network": {
+      "type": "SPECIFIC",
+      "networkId": "n130-guest"
+    },
+    "securityConfiguration": {
+      "type": "WPA2_PERSONAL",
+      "fastRoamingEnabled": false,
+      "passphrase": "fixture-passphrase-w-guest"
+    },
+    "hideName": false,
+    "broadcastingFrequenciesGHz": [
+      2.4,
+      5.0
+    ],
+    "bandSteeringEnabled": true
   }
 ]

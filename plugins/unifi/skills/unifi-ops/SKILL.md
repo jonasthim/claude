@@ -25,11 +25,11 @@ info                         sites list
 devices  list|get|stats|restart|action --action X|port-cycle|port-enable|port-disable --port N|unadopt|pending|adopt --macs
 clients  list|get|find <name|ip|mac>|block|unblock|authorize --minutes N|action --action X
 networks list|get|references|create|update|delete        wifi     list|get|create|update|delete
-firewall zones|policies  list|get|create|update|patch|delete|ordering|reorder
+firewall zones|policies  list|get|create|update|patch|delete|ordering|reorder  (--source-zone ID [--dest-zone ID] for ordering)
 acl      list|get|create|update|delete|ordering|reorder  dns / traffic / vouchers  list|get|create|update|delete
 wans list   vpn tunnels|servers   radius list   dpi categories|applications
 report health [--no-stats]   raw <METHOD> <path> [--body ...]   cloud hosts|sites|devices|isp-metrics|sdwan
-flags: --table  --filter "<expr>"  --limit N  --site NAME  --body <file|-|json>  --dry-run  --yes
+flags: --table  --filter "<expr>"  --limit N  --site NAME  --body <file|-|json>  --dry-run  --yes  --show-secrets
 ```
 
 `report health` already contains per-device uptime, CPU/mem and per-band `txRetriesPct_2g/5g/6g`,
@@ -101,6 +101,15 @@ are using, restarting the gateway, and power-cycling a port that is a switch or 
 firewall policies prefer `patch` when only one field changes. Never bulk-delete vouchers
 without a `--filter` (the script refuses anyway). `devices unadopt` factory-resets a
 device; only do it when the user asks for exactly that.
+
+## Secrets in API objects
+
+The controller returns credentials in cleartext: `wifi get` includes the WPA passphrase under
+`securityConfiguration.passphrase`, RADIUS profiles carry shared secrets, vouchers carry codes.
+`unifi.py` redacts credential-shaped keys in everything it prints (including dry-run bodies)
+unless `--show-secrets` is passed. Use that flag only when the user asked for the value itself
+and the output is going to them directly, never into a report, a file or a commit. When you quote
+an API object back to the user, quote the fields that matter rather than pasting the object.
 
 ## Answering
 

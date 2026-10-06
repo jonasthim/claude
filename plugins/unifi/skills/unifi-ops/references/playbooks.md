@@ -53,8 +53,11 @@ Goal: a diagnosis the user can act on in under a minute of reading, not a data d
 1. `U report health --table` — devices with state, firmware, uptime, CPU/mem; WANs; client
    counts. Use `--no-stats` first on very large sites, then fetch stats only for the devices that
    look wrong.
-2. `U cloud sites --table` (if `UNIFI_CLOUD_API_KEY` is set) — WAN uptime %, ISP, recent
-   internet issues, critical notification count.
+2. `U cloud sites --table` (if a Site Manager key is set) — WAN uptime %, ISP, recent
+   internet issues, critical notification count. This is the only source of WAN health:
+   `wans list` returns names and ids only, and ISP metrics can be empty when the collector
+   reports under an unused WAN port, so say "no WAN telemetry" rather than "WAN healthy" when
+   the numbers are missing.
 3. Optional depth: `U devices pending` (unadopted gear), `U wifi list --table`,
    `U networks list --table`, `U firewall policies list --table`.
 4. Write the report using the template in §5. Flag, in this order: OFFLINE devices,
@@ -75,8 +78,9 @@ and to `raw` with any method other than GET.
 3. **Check blast radius.**
    - Deleting or re-addressing a network: `U networks references <id>` lists SSIDs, zones
      and policies that depend on it. Mention every dependent object in the plan.
-   - Firewall: `U firewall policies ordering`. A new BLOCK that lands above an existing ALLOW
-     changes behaviour for everything the ALLOW covered.
+   - Firewall: `U firewall policies ordering --source-zone <zone id>` (ordering is kept per
+     zone pair; add `--dest-zone` if the API asks for it). A new BLOCK that lands above an
+     existing ALLOW changes behaviour for everything the ALLOW covered.
    - Anything touching the network marked `management: true`, the SSID or VLAN the user is
      on right now, or the zone/policy carrying Claude's own API path can cut the session off
      mid-change. Call that out explicitly and prefer doing those last, one at a time.
