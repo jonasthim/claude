@@ -17,7 +17,7 @@ receive an update.
   pvesm, pveum, ha-manager, VMID, hypervisor node, homelab cluster) and an
   exclusion line (PBS, PMG, VMware, libvirt, Docker, Kubernetes, plain Debian).
 - Action skills deduplicated and unnumbered: the safety contract, tooling
-  contract, env table and the empty-storage pitfall live only in the `pve`
+  contract, env table and the empty-storage pitfall have one authoritative copy in the `pve`
   skill; `vm`, `ct`, `snapshot`, `backup` and `status` point to it.
 - `/proxmox:status` and `/proxmox:doctor` declare `allowed-tools` for
   `pve-api.sh GET` calls, so read-only checks run without a permission prompt

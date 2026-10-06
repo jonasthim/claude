@@ -228,7 +228,7 @@ bash tests/run.sh
 
 Starts a mock Proxmox API (python3 standard library) on a free port, runs the script tests, the guard rule
 table (`tests/guard_cases.txt`), the plugin lint (`tests/lint_plugin.py`) and, when available, shellcheck and
-`claude plugin validate .`. No real cluster is touched.
+`claude plugin validate --strict .`. No real cluster is touched.
 
 ## Provenance and accuracy
 

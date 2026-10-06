@@ -36,7 +36,7 @@ Safety contract, tooling and workflow come from `proxmox:pve`; invoke it with th
 
 ## failures (free)
 
-1. Per node from `GET /nodes`: `${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh GET /nodes/<node>/tasks typefilter=vzdump errors=1 limit=20`. (item fields and the meaning of `status` are in the pve quick reference: `status` is `OK` or the error text itself); quote it before reading the log.
+1. Per node from `GET /nodes`: `${CLAUDE_PLUGIN_ROOT}/scripts/pve-api.sh GET /nodes/<node>/tasks typefilter=vzdump errors=1 limit=20` (item fields and the meaning of `status` are in the pve quick reference: `status` is `OK` or the error text itself); quote it before reading the log.
 2. For each failed task: `GET /nodes/<node>/tasks/<url-encoded UPID>/log limit=500` and quote the lines that mention `ERROR`, the vmid and the storage.
 3. Map the cause: no space on storage, snapshot not possible on that storage (suggest `mode=suspend` or `stop`), guest locked, storage not active, timeout. Compare with `GET /cluster/backup` to find the job and its options.
 4. Propose the fix as a plan; do not change jobs, delete backups or re-run a backup without the user asking.

@@ -407,6 +407,12 @@ assert_exit "pve-api dry run without PVE_TOKEN_SECRET exits 1" 1 "$rc"
 capture api_dry_bad_param env PVE_DRY_RUN=1 "$api" GET /version bogus
 assert_exit "pve-api dry run with a bad parameter exits 1" 1 "$rc"
 assert_not_contains "pve-api dry run never prints the secret" "$out" "0123-secret"
+capture api_dry_userinfo env PVE_HOST="http://user:hunter2@127.0.0.1:$port" PVE_DRY_RUN=1 "$api" GET /version
+assert_exit "pve-api dry run with userinfo exits 0" 0 "$rc"
+assert_not_contains "pve-api dry run strips userinfo from the URL" "$out" "hunter2"
+capture api_dry_dashkey env PVE_DRY_RUN=1 "$api" GET /version -x=1
+assert_exit "pve-api dry run accepts a key starting with -" 0 "$rc"
+assert_eq "pve-api dry run keeps a key starting with -" "1" "$(printf '%s' "$out" | jq -r '.params["-x"]')"
 capture api_help_dry "$api" --help
 assert_contains "pve-api --help documents PVE_DRY_RUN" "$out" "PVE_DRY_RUN"
 # The four read-only calls the doctor skill runs.

@@ -31,7 +31,7 @@ command is sent as one string, so "-comment 'two words'" stays one argument.
 Env: PVE_SSH_HOST (default: host part of PVE_HOST) PVE_SSH_USER (root)
      PVE_SSH_PORT (22) PVE_SSH_KEY PVE_SSH_OPTS
 Runs: ssh -o BatchMode=yes -o ConnectTimeout=10 [-p PORT] [-i KEY] $PVE_SSH_OPTS USER@HOST -- 'command args...'
-Exit: remote exit code | 1 usage/no host | 255 ssh failure
+Exit: remote exit code | 1 usage, no host or no ssh | 255 ssh failure
 EOF
 }
 
