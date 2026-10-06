@@ -1,7 +1,7 @@
 {
   "name": "jonasthim",
   "owner": { "name": "Jonas Thim", "url": "https://github.com/jonasthim" },
-  "metadata": { "description": "Claude Code plugins by Jonas Thim for running a homelab: TrueNAS, Proxmox VE and UniFi." },
+  "metadata": { "description": "Claude Code plugins by Jonas Thim for running a homelab: TrueNAS, Proxmox VE, UniFi, Pangolin and authentik." },
   "plugins": [
     {
       "name": "truenas",
@@ -23,6 +23,20 @@
       "description": "UniFi network operations: troubleshoot clients, health reports, guarded config changes and device actions via the official UniFi Network and Site Manager APIs.",
       "category": "networking",
       "keywords": ["unifi", "ubiquiti", "network", "wifi", "firewall", "vlan"]
+    },
+    {
+      "name": "pangolin",
+      "source": "./plugins/pangolin",
+      "description": "Pangolin reverse-proxy operations: troubleshoot published resources, tunnels and health checks, report what is exposed and how it is protected, and make guarded changes via the Integration API.",
+      "category": "networking",
+      "keywords": ["pangolin", "newt", "reverse-proxy", "tunnel", "sso", "homelab"]
+    },
+    {
+      "name": "authentik",
+      "source": "./plugins/authentik",
+      "description": "authentik identity-provider operations: explain refused logins, report on applications, providers and outposts, audit access, and make guarded changes via the REST API.",
+      "category": "security",
+      "keywords": ["authentik", "sso", "oidc", "identity-provider", "idp", "homelab"]
     }
   ]
 }

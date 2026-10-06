@@ -1,5 +1,5 @@
 title: jonasthim homelab plugins for Claude Code
-description: TrueNAS, Proxmox VE and UniFi plugins for Claude Code, from one marketplace.
+description: TrueNAS, Proxmox VE, UniFi, Pangolin and authentik plugins for Claude Code, from one marketplace.
 theme: jekyll-theme-primer
 exclude:
   - examples

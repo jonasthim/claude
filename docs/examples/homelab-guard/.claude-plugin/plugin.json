@@ -2,5 +2,5 @@
   "name": "homelab-guard",
   "version": "0.1.0",
   "author": { "name": "Jonas Thim" },
-  "description": "Asks before any confirmed destructive TrueNAS, Proxmox or UniFi call runs."
+  "description": "Asks before any confirmed TrueNAS, Proxmox, UniFi, Pangolin or authentik write runs, and before secrets are printed."
 }
