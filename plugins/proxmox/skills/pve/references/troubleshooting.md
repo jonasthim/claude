@@ -1,0 +1,91 @@
+# Troubleshooting
+
+Condensed from Proxmox 9.x sources (pve-http-server, pve-manager, pve-docs) and the
+plugin's script contracts; items marked UNVERIFIED were not confirmed.
+
+## HTTP codes and what to do
+
+| Code | Typical message | Cause | Do |
+|---|---|---|---|
+| 400 | `errors: {<param>: <msg>}` | parameter validation; `nextid` taken | fix the named parameter; re-run `GET /cluster/nextid` |
+| 401 | `authentication failure` (UNVERIFIED wording); `token '<id>' access expired` | wrong `PVE_TOKEN_ID`/`PVE_TOKEN_SECRET`, expired token | run `pve-doctor.sh`; ask the user for a new token; never guess credentials |
+| 403 | permission check failed, naming path and privilege (wording UNVERIFIED) | token lacks the role, or `privsep=1` token without its own ACL | map the privilege with `permissions.md`; do not escalate on your own |
+| 500 | `VM already running`, `VM <N> already exists`, `no such task` | state conflict or uncaught server error | re-discover state, re-plan; read the task log if a UPID exists |
+| 501 | `no such uri`; body on GET/DELETE | wrong path or method; a body sent with GET/DELETE | check the path in `api-cheatsheet.md`; use `pve-api.sh`, which never sends a body on GET/DELETE |
+| 506 | upload content type | wrong `content=` on upload | use `iso`, `vztmpl` or `import` |
+
+Auth failures are delayed 3 s server-side; a slow 401 is normal, not a timeout.
+`/api2/extjs` answers 200 on everything with `success:0`; if a call "succeeds" but nothing
+happened, check the base path is `/api2/json`.
+
+## Task problems
+
+- A call returned a UPID but the change did not happen: `pve-task.sh <UPID>` (or
+  `GET /nodes/N/tasks/UPID/status` and `.../log`). `exitstatus` must be `OK` or
+  `WARNINGS: n`; anything else is the error text.
+- Find recent failures: `GET /nodes/N/tasks errors=1 limit=20` (filters `typefilter`,
+  `vmid`, `userfilter`, `source active|archive|all`, `since`, `until`); cluster-wide
+  `GET /cluster/tasks`. CLI: `pvenode task list --errors --vmid 100`, `pvenode task log <upid>`.
+- Stop a stuck task: `DELETE /nodes/N/tasks/UPID` (gated). Task logs on disk:
+  `/var/log/pve/tasks/`.
+- `pve-task.sh` exit 4 (timeout) does not mean the task failed; it is still running.
+  Re-poll with a longer `--timeout` before planning anything else on that guest.
+
+## Guest locked or inconsistent
+
+- `GET .../status/current` shows `lock` (backup, snapshot, migrate, clone, ...). Wait for
+  the owning task; only after it is really gone use `qm unlock <vmid>` / `pct unlock`
+  over SSH (ask first; `skiplock` on the API is root@pam only).
+- Pending config: `GET .../config` shows pending values by default; `current=1` shows the
+  live config; `GET .../pending` lists `{key, value, pending, delete}`. Pending changes
+  apply on the next stop/start (reboot from inside the guest is not enough; UNVERIFIED).
+  Undo a pending change with `revert=<keys>` on `PUT .../config`.
+- Digest conflict on `PUT|POST .../config` or `resize`: the config changed since you read
+  it. Re-read `GET .../config`, re-check your plan, pass the new `digest`.
+- `GET /cluster/nextid` returned an id that then "already exists": another creator won the
+  race; call `nextid` again.
+- Destroy refused for an HA-managed or replicated guest: add `purge=1` (still gated).
+- CT live migration refused: running containers need `restart=1`.
+- Clone of a running CT refused: full clones of running containers only work from a
+  snapshot (`snapname=`).
+
+## Node and service checks
+
+```
+pve-ssh.sh -n N pveversion -v
+pve-ssh.sh -n N pvecm status
+pve-ssh.sh -n N systemctl status pvedaemon pveproxy pvestatd pvescheduler spiceproxy
+pve-ssh.sh -n N journalctl -eu pve-ha-crm
+pve-ssh.sh -n N qm showcmd V --pretty        # the exact QEMU command line
+pve-ssh.sh -n N pvereport                    # full support report (large)
+pve-api.sh GET /nodes/N/syslog
+pve-api.sh GET /nodes/N/journal
+```
+
+Daemons: `pvedaemon` (API worker), `pveproxy` (port 8006), `pvestatd` (status
+collection), `spiceproxy`, `pvescheduler` (jobs). Unit names `pve-cluster`, `pve-ha-lrm`
+and `corosync` are UNVERIFIED (standard names). `systemctl restart|stop` of any of them is
+gated. UNVERIFIED (standard behaviour): cluster-wide config under `/etc/pve` turns
+read-only when the node loses quorum (`pvecm status`), so every write fails until quorum
+returns.
+
+## Network lockout prevention
+
+Before `PUT /nodes/N/network`: confirm the management IP and gateway stay on a bridge
+that keeps its physical port, keep a console path (IPMI, physical) in the PLAN's revert
+line, and prefer `DELETE /nodes/N/network` (revert staged) over a second apply when the
+first one looks wrong.
+
+## Script exit codes
+
+| Script | 0 | 1 | 2 | 3 | 4 | 5 |
+|---|---|---|---|---|---|---|
+| `pve-api.sh` | 2xx | usage, missing env var, missing curl/jq | transport/TLS (curl failed) | HTTP 4xx | HTTP 5xx | |
+| `pve-task.sh` | task OK or WARNINGS | task failed (see log) | API/transport error | usage or bad UPID | timeout, task still running | |
+| `pve-doctor.sh` | all checks ok | prerequisite or env | transport/TLS | HTTP 401 | HTTP 403 | other API error |
+| `pve-ssh.sh` | remote exit 0 | usage or no host | | | | (255 = ssh failure; otherwise the remote exit code) |
+
+Error lines: `pve-api: HTTP <code> <METHOD> <path>: <message>` then `  <param>: <msg>`
+per entry in `errors`; `pve-api: curl failed (<exit>): <stderr>` for transport problems.
+`PVE_API_DEBUG=1` prints method and URL (never the header). TLS errors: set `PVE_CA_CERT`
+to the cluster CA; do not set `PVE_INSECURE=1` yourself.
