@@ -15,7 +15,7 @@ class GateTests(unittest.TestCase):
         for m in [
             "pool.dataset.delete", "pool.snapshot.delete", "pool.snapshot.rollback", "pool.export",
             "pool.create", "pool.detach", "disk.wipe", "system.reboot", "system.shutdown",
-            "update.update", "app.delete", "app.rollback", "app.stop", "replication.run",
+            "update.update", "update.run", "app.delete", "app.rollback", "app.stop", "replication.run",
             "filesystem.setacl", "sharing.smb.delete", "iscsi.target.delete", "user.delete",
             "user.update", "pool.dataset.lock", "zfs.snapshot.rollback", "service.stop",
             "boot.environment.activate", "interface.commit", "certificate.delete",
@@ -88,6 +88,8 @@ class ParsingTests(unittest.TestCase):
         self.assertEqual(tn.classify_connection_error(ssl.SSLCertVerificationError(
             "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed"))[0], "certificate")
         self.assertEqual(tn.classify_connection_error(Exception("Handshake status 200"))[0], "handshake")
+        self.assertEqual(tn.classify_connection_error(
+            ConnectionError("ssh to root@nas failed: root@10.0.0.1: Permission denied (publickey)."))[0], "ssh-auth")
         self.assertEqual(tn.classify_connection_error(Exception("something odd"))[0], "unknown")
         self.assertEqual(tn.classify_connection_error(socket.gaierror(-2, "Name or service not known"))[0], "dns")
         # websocket-client wraps errors in its own types; classification must work on the text too

@@ -109,11 +109,12 @@ tn.py call filesystem.listdir /mnt/tank/photos '[]' '{"limit": 50}'
 tn.py call filesystem.acltemplate.by_path '{"path": "/mnt/tank/photos", "format-options": {"canonicalize": true}}'
 ```
 
-Changing ACLs or ownership is gated and runs as a job:
+Changing ACLs, mode or ownership is gated and runs as a job. (`pool.dataset.permission`
+does not exist on 25.10; use the `filesystem.*` methods on the mount path.)
 
 ```
-tn.py call pool.dataset.permission tank/photos '{"user": "alice", "group": "family",
-  "mode": null, "acl": [], "options": {"stripacl": false, "recursive": true, "traverse": false}}' --confirm --job
+tn.py call filesystem.setperm '{"path": "/mnt/tank/photos", "mode": "770", "uid": 1001, "gid": 1001,
+  "options": {"stripacl": false, "recursive": true, "traverse": false}}' --confirm --job
 tn.py call filesystem.setacl '{"path": "/mnt/tank/photos", "dacl": [...], "uid": -1, "gid": -1,
   "options": {"recursive": true, "traverse": false, "stripacl": false}}' --confirm --job
 tn.py call filesystem.chown '{"path": "/mnt/tank/photos", "uid": 1001, "gid": 1001,

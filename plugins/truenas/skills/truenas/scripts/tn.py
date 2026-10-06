@@ -22,7 +22,8 @@ Subcommands:
   info                      connectivity check: version, hostname, uptime, alert summary
   host                      print the bare hostname from TRUENAS_HOST (for building an SSH target)
   call METHOD [ARG ...]     call any API method; ARGs are JSON (fallback: plain string)
-  methods [PREFIX]          list methods and their argument schema (core.get_methods)
+  methods [PREFIX]          list methods and their argument schema (core.get_methods); --exact to
+                            prove a single name exists before calling it
   jobs [--running|--id N]   inspect background jobs (core.get_jobs)
   query NAMESPACE [...]     sugar over NAMESPACE.query with --filter / --select / --limit
 
@@ -82,6 +83,7 @@ DESTRUCTIVE = [
     "system.reboot",
     "system.shutdown",
     "update.update",
+    "update.run",
     "update.manual",
     "update.download",
     "update.file",
@@ -213,6 +215,10 @@ def classify_connection_error(exc: BaseException) -> tuple[str, str]:
     if isinstance(exc, socket.gaierror) or "name or service not known" in text or "nodename" in text \
             or "getaddrinfo" in text:
         return ("dns", "the hostname in TRUENAS_HOST does not resolve from this machine")
+    if "permission denied" in text and ("publickey" in text or "ssh" in text):
+        return ("ssh-auth", "ssh reached the NAS but no key is authorized there for this user. The API "
+                "transport (TRUENAS_HOST + TRUENAS_API_KEY) is the primary path and may be the only one on "
+                "this system; the ssh transport only works once a public key is added to the NAS user")
     if "handshake" in text or "http " in text:
         return ("handshake", "the server answered but did not upgrade to a websocket: TRUENAS_HOST probably "
                 "points at the wrong port or a non-TrueNAS web server")
@@ -701,7 +707,7 @@ class Session:
             raise
         except Exception as exc:  # connection refused, TLS failure, DNS, timeout, ssh 255
             cause, hint = classify_connection_error(exc)
-            if self.transport == "ssh":
+            if self.transport == "ssh" and cause != "ssh-auth":
                 cause, hint = "ssh", ("ssh could not reach the NAS: check TRUENAS_SSH_HOST, your key, and any "
                                       "TRUENAS_SSH_OPTS jump host. Error above is ssh's own message")
             fail(f"could not connect to {self.where}: {exc}", EXIT_ERROR, cause=cause, hint=hint)
@@ -830,7 +836,13 @@ def cmd_methods(args):
         except ApiError as exc:
             fail("core.get_methods failed", EXIT_ERROR, **exc.as_dict())
     needle = (args.prefix or "").lower()
-    selected = {k: v for k, v in methods.items() if needle in k.lower()}
+    if args.exact:
+        selected = {k: v for k, v in methods.items() if k.lower() == needle}
+        if not selected:
+            close = sorted(k for k in methods if needle.rsplit(".", 1)[0] in k.lower())[:10]
+            fail(f"no such method {args.prefix!r} on this TrueNAS version", EXIT_ERROR, similar=close)
+    else:
+        selected = {k: v for k, v in methods.items() if needle in k.lower()}
     if not selected:
         fail(f"no methods match {args.prefix!r}", EXIT_ERROR)
     if args.full:
@@ -846,7 +858,7 @@ def cmd_methods(args):
         if meta.get("job"):
             entry["job"] = True
         if is_destructive(name):
-            entry["requires_confirm"] = True
+            entry["gated_by_tn"] = True  # tn.py's own --confirm gate, not server data
         if args.schema:
             for key in ("accepts", "returns", "filterable", "item_method", "examples"):
                 if key in meta and meta[key] not in (None, [], False, ""):
@@ -928,8 +940,12 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--confirm", action="store_true", help="allow a destructive method (after the user agreed)")
     s.set_defaults(func=cmd_call)
 
-    s = sub.add_parser("methods", help="discover methods and their schemas")
+    s = sub.add_parser("methods", help="discover methods and their schemas",
+                       description="Lists methods from core.get_methods. 'job' comes from the server; "
+                                   "'gated_by_tn' is this tool's own --confirm gate, not server data.")
     s.add_argument("prefix", nargs="?", help="substring to match, e.g. pool.dataset")
+    s.add_argument("--exact", action="store_true",
+                   help="match the full method name only; exit 1 if it does not exist on this version")
     s.add_argument("--schema", action="store_true", help="include accepts/returns schema")
     s.add_argument("--full", action="store_true", help="dump the raw core.get_methods entries")
     s.set_defaults(func=cmd_methods)

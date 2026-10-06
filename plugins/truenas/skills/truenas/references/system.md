@@ -35,27 +35,33 @@ calls are gated for `smb`, `nfs`, `iscsi.global`, `system.general`, `system.adva
 ## Updates
 
 ```
+tn.py call update.status                              # current state: version, available update, download/apply progress
+tn.py call update.available_versions                  # versions the NAS can update to
 tn.py call update.get_trains                          # current train and choices
-tn.py call update.check_available                     # {status: "AVAILABLE"|"UNAVAILABLE"|..., version, changelog}
 tn.py call update.get_pending                         # downloaded but not applied
 tn.py call update.config                              # autocheck setting
-tn.py call update.status                              # 25.10+: richer status object
 ```
+
+**Trap:** `update.update` exists but is *not* the updater. It writes the update configuration
+(autocheck, train) and returns immediately. An agent that calls it "to update the system"
+changes settings and nothing else. The OS update is `update.run`.
 
 Applying an update is gated and reboots the system when `reboot: true`:
 
 ```
 tn.py call update.download --job --confirm
-tn.py call update.update '{"reboot": false}' --job --confirm      # install to a new boot env, reboot later
-tn.py call update.update '{"train": "TrueNAS-SCALE-Goldeye", "reboot": true}' --job --confirm
+tn.py call update.run '{"reboot": false}' --job --confirm         # install to a new boot env, reboot later
+tn.py call update.run '{"train": "TrueNAS-SCALE-Goldeye", "reboot": true}' --job --confirm
+tn.py call update.manual /mnt/tank/updates/TrueNAS-SCALE.update --job --confirm   # from a file
 ```
 
-Before an update: check `pool.query` health, `alert` list, running jobs, and tell the user
-apps and shares go down during the reboot. After: `system.version`, `boot.environment.query`.
-If the websocket drops mid-update, that is expected; reconnect with `tn.py info` after a few
-minutes.
+Check `tn.py methods update.run --exact --schema` first; the options object differs between
+25.04 and 25.10. Before an update: check `pool.query` health, the alert list, running jobs,
+and tell the user apps and shares go down during the reboot. After: `system.version`,
+`boot.environment.query`. If the websocket drops mid-update, that is expected; reconnect with
+`tn.py info` after a few minutes.
 
-25.04 renamed `bootenv.*` to `boot.environment.*`:
+Boot environments (`boot.environment.*`; the old `bootenv.*` namespace is gone in 25.x):
 
 ```
 tn.py query boot.environment --select id,active,activated,created,used_bytes,keep
@@ -64,8 +70,9 @@ tn.py call boot.environment.keep '{"id": "...", "value": true}'
 tn.py call boot.get_state                             # boot pool health
 ```
 
-Reboot/shutdown (gated): `system.reboot "<reason>" '{"delay": 0}'`, `system.shutdown "<reason>"`.
-Check `methods system.reboot --schema`: 25.04 added the reason argument.
+Reboot/shutdown (gated, jobs): `system.reboot "<reason>" '{"delay": 0}' --job`,
+`system.shutdown "<reason>" --job`. Confirm the argument shape with `methods system.reboot
+--exact --schema`.
 
 ## Replication (ZFS send/receive)
 

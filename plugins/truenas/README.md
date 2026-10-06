@@ -133,11 +133,15 @@ API protocol).
 
 What has actually been exercised so far:
 
-- `tn.py` on Python 3.13 against `tests/fake_middleware.py` (websocket handshake and framing,
-  login, queries, large responses, a job with progress events, validation and call errors)
-  and against a fake `ssh`/`midclt` (same commands, sudo handling, jump options, errors).
-- Static review of the scripts and references by a second session.
-- Not yet: a run against a real TrueNAS. The method names and argument shapes in
-  `references/` are from documentation and memory. The first live target is a 25.10.6 system;
-  until that run lands, treat a reference example as a starting point and the live schema
-  from `tn.py methods <name> --schema` as the truth.
+- Live against TrueNAS SCALE 25.10.6 over the `ws` transport (through an SSH port-forward)
+  on Python 3.14: connectivity, a 49-method schema sweep against the live `core.get_methods`,
+  and the read-only health queries. The references were corrected from that sweep
+  (`update.run` is the updater, `update.update` only configures it; `filesystem.setperm`
+  replaces the non-existent `pool.dataset.permission`; no `smart.*` namespace; `pool.scrub.run`
+  is not a job).
+- Offline, on Python 3.13 and 3.14: `tn.py` against `tests/fake_middleware.py` (websocket
+  handshake and framing, login, queries, large responses, jobs, errors, redaction) and against
+  a fake `ssh`/`midclt` (same commands, sudo handling, jump options, errors).
+- Not yet live: the `ssh` transport (the test estate has no SSH key on the NAS) and any
+  mutating call. Treat a reference example as a starting point and the live schema from
+  `tn.py methods <name> --exact --schema` as the truth.

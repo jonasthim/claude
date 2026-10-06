@@ -52,7 +52,9 @@ Exit code 1 from `info` is a connection problem; the JSON names a `cause`:
   yours. The `ssh` fallback sidesteps TLS if the user prefers that trade.
 - **`refused`** or **`dns`**: wrong port or hostname, or the middleware is down. If SSH works,
   `midclt call system.info` on the box tells the two apart.
-- **`ssh`**: ssh itself failed (key, host, jump). The ssh error text is in the message.
+- **`ssh-auth`**: ssh reached the NAS but no key is authorized there. The API transport is
+  the primary path and on such a system the only one; say so rather than suggesting a variable.
+- **`ssh`**: ssh itself failed (host, jump, network). The ssh error text is in the message.
 
 Note the version from `info`. 25.04 and 25.10 differ in a few argument shapes (SMB share
 options, update methods), which is why the next rule exists.
@@ -63,13 +65,18 @@ The middleware is self-describing. Before calling any method whose arguments you
 certain of, look at its schema:
 
 ```
-$TN methods pool.dataset.create --schema
-$TN methods sharing.smb            # list everything in a namespace
+$TN methods pool.dataset.create --exact --schema   # prove this exact name exists, show its schema
+$TN methods sharing.smb                           # substring listing of a namespace
 ```
 
-The output marks methods that run as jobs (`"job": true`) and methods that need `--confirm`.
-Guessing argument names wastes a round trip and produces validation errors, so one `methods`
-call first is almost always cheaper. The references in this skill list the common methods and
+The output marks methods that run as jobs (`"job": true`, from the server) and methods this
+tool gates behind `--confirm` (`"gated_by_tn": true`, from the list in `tn.py`). Guessing
+argument names wastes a round trip and produces validation errors, so one `methods` call
+first is almost always cheaper. Discovery needs exact-match discipline: the plain listing is
+a substring match, so a result for `service.update` may really be `alertservice.update`, and
+a method can exist under a name that means something else (`update.update` configures
+updates; `update.run` performs one). Use `--exact` before an unfamiliar call and read the
+description, not just the name. The references in this skill list the common methods and
 argument shapes; treat them as a map, and the live schema as the truth.
 
 Nearly every namespace has `.query`, which takes query-filters and query-options:
@@ -91,9 +98,11 @@ $TN call service.restart cifs
 
 ## 3. Jobs
 
-Long-running methods return a job id instead of a result: scrubs, app install/upgrade/
-redeploy, replication runs, updates, recursive deletes, ACL changes, pool operations. Pass
-`--job` so `tn.py` waits, streams progress to stderr, and prints the final result:
+Long-running methods return a job id instead of a result: app install/upgrade/redeploy,
+replication runs, `update.run`, recursive deletes, ACL and permission changes, pool
+operations, `pool.scrub.scrub` (but not `pool.scrub.run`, which returns at once). `methods`
+shows `"job": true` for them. Pass `--job` so `tn.py` waits, streams progress to stderr, and
+prints the final result:
 
 ```
 $TN call app.upgrade jellyfin --job

@@ -40,6 +40,9 @@ def main(argv):
     if target is None or not remote:
         print("usage: ssh [opts] target command", file=sys.stderr)
         return 255
+    if target.endswith("@nokey"):
+        print(f"{target}: Permission denied (publickey).", file=sys.stderr)
+        return 255
     if target.endswith("@unreachable") or target == "unreachable":
         print("ssh: connect to host unreachable port 22: No route to host", file=sys.stderr)
         return 255

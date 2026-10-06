@@ -130,12 +130,22 @@ class WebsocketTransport(unittest.TestCase):
         code, out, err = self.tn("methods", "pool.dataset")
         self.assertEqual(code, 0, err)
         data = json.loads(out)
-        self.assertTrue(data["pool.dataset.delete"]["requires_confirm"])
+        self.assertTrue(data["pool.dataset.delete"]["gated_by_tn"])
         self.assertTrue(data["pool.dataset.delete"]["job"])
-        self.assertNotIn("requires_confirm", data["pool.dataset.create"])
+        self.assertNotIn("gated_by_tn", data["pool.dataset.create"])
         self.assertEqual(data["pool.dataset.create"]["description"], "Create a dataset.")
         code, out, _ = self.tn("methods", "pool.dataset.create", "--schema")
         self.assertIn("accepts", json.loads(out)["pool.dataset.create"])
+
+    def test_methods_exact(self):
+        code, out, err = self.tn("methods", "pool.dataset.create", "--exact")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(list(json.loads(out)), ["pool.dataset.create"])
+        code, out, err = self.tn("methods", "dataset.create", "--exact")   # substring would match; exact must not
+        self.assertEqual(code, 1)
+        info = json.loads(err)
+        self.assertIn("no such method", info["error"])
+        self.assertIn("pool.dataset.create", info["similar"])
 
     def test_jobs_by_id(self):
         code, out, err = self.tn("jobs", "--id", "7")
@@ -300,6 +310,14 @@ class SshTransport(unittest.TestCase):
         self.assertEqual(info["detail"], "Dataset is busy")
         self.assertEqual(info["server_exception"], "CallError: [EBUSY] Dataset is busy")
         self.assertNotIn("traceback", info)
+
+    def test_rejected_key_is_reported_as_ssh_auth(self):
+        env = dict(self.env, TRUENAS_SSH_HOST="root@nokey")
+        code, _, err = self.tn("info", env=env)
+        self.assertEqual(code, 1)
+        info = json.loads(err)
+        self.assertEqual(info["cause"], "ssh-auth")
+        self.assertIn("primary path", info["hint"])
 
     def test_unreachable_host_is_reported(self):
         env = dict(self.env, TRUENAS_SSH_HOST="root@unreachable")
