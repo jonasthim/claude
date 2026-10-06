@@ -289,14 +289,15 @@ Prefixes: `/cluster/firewall` (options, rules, groups, ipset, aliases, macros, r
 - `POST /cluster/ha/status/disarm-ha - params not in notes - n/a` (gated)
 - `POST /cluster/ha/status/arm-ha - params not in notes - n/a`
 
-Storage replication (none of these were in the notes; shapes and parameters UNVERIFIED):
+Storage replication (the two list routes are confirmed on a 3-node PVE 9 cluster; the write
+parameters were not in the notes and are UNVERIFIED):
 
-- `GET /cluster/replication - none - n/a` (job list; expected to be cluster-wide)
+- `GET /cluster/replication - none - n/a` (every job in the cluster; items `id, guest, jobnum, source, target, schedule, type`)
 - `POST /cluster/replication - id (<vmid>-<n>), target, type local, schedule, rate, comment, disable - n/a`
 - `GET /cluster/replication/{id} - none - n/a`
 - `PUT /cluster/replication/{id} - schedule, rate, comment, disable - n/a` (gated with `disable`)
 - `DELETE /cluster/replication/{id} - keep, force - n/a` (gated)
-- `GET /nodes/{node}/replication - guest - n/a` (status of the jobs on that node only, like `pvesr status`)
+- `GET /nodes/{node}/replication - guest (UNVERIFIED) - n/a` (only the jobs whose source is that node, the same set as `pvesr status` there; items add `fail_count, last_sync, last_try, next_sync, duration, vmtype`)
 - `POST /nodes/{node}/replication/{id}/schedule_now - none - n/a`
 
 ## 13. Access control

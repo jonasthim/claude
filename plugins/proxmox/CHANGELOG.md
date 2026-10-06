@@ -18,7 +18,10 @@ receive an update.
 
 - Storage replication in the `pve` skill: a "Storage replication" section in
   `references/cluster-ha.md` with a coverage check, `pvesr` in the CLI cheat sheet, the
-  replication endpoints in the API cheat sheet (UNVERIFIED), a quick-reference row and an eval.
+  replication endpoints in the API cheat sheet, a quick-reference row and an eval. The two
+  list routes are confirmed on a live cluster: `GET /cluster/replication` is cluster-wide and
+  carries the topology, `GET /nodes/{node}/replication` carries the health fields for that
+  node's own jobs only.
 - Guard rule 24: `pvesr delete`, `pvesr disable` and `pvesr update --disable` ask for
   confirmation, and rule 22 covers `PUT /cluster/replication/{id}` with `disable`, so pausing a
   replication job is gated on every path (deleting one through the API already was).
@@ -30,8 +33,9 @@ receive an update.
 - `pvesr status` lists only the replication jobs whose source is the node it runs on, and
   nothing in its output says so. Read from one node of a three-node cluster it showed a third
   of the jobs, which made a coverage check report most HA guests as unreplicated when all were
-  covered. The skill now names `/etc/pve/replication.cfg` as the cluster-wide read, and its
-  pitfalls tell Claude to check that a read was cluster-wide before reporting something missing.
+  covered. The skill now names `GET /cluster/replication` (or `/etc/pve/replication.cfg` over
+  SSH) as the cluster-wide read, and its pitfalls tell Claude to check that the per-node counts
+  add up to the cluster count before reporting something missing.
 - Guard hook matches case-insensitively: `pve-api.sh` upper-cases its method, so
   `pve-api.sh delete|post|put ...` ran without the confirmation prompt.
 - `PVE_DRY_RUN=1` masks credential-shaped parameters (`password`, `cipassword`,

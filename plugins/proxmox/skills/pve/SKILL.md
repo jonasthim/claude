@@ -188,7 +188,7 @@ Paths are relative to `/api2/json`; `N` is a node, `V` a vmid, `S` a storage id.
 | Storage | `GET /storage`; `GET /nodes/N/storage`; `GET /nodes/N/storage/S/status`; `GET .../content content=vztmpl` |
 | Templates/ISOs | `POST /nodes/N/storage/S/download-url url=... content=vztmpl filename=...` |
 | HA | `GET /cluster/ha/resources`; `POST /cluster/ha/resources sid=ct:105 state=started`; `GET /cluster/ha/rules`; `GET /cluster/ha/status/current` |
-| Replication | Coverage: `pve-ssh.sh -n N cat /etc/pve/replication.cfg` (every job in the cluster, with `source` and `target`). Health: `pve-ssh.sh -n N pvesr status`, **which lists only the jobs whose source is N**; run it on every node. See `references/cluster-ha.md` |
+| Replication | Coverage: `GET /cluster/replication` (every job in the cluster, with `guest`, `source`, `target`, `schedule`). Health: `GET /nodes/N/replication` (adds `fail_count`, `last_sync`, `next_sync`), **which lists only the jobs whose source is N**; call it for every node. Both confirmed on a PVE 9 cluster; see `references/cluster-ha.md` |
 | Node ops (gated) | `POST /nodes/N/status command=reboot`; `POST /nodes/N/stopall`; `POST /nodes/N/migrateall target=N2 (param name UNVERIFIED)` |
 | Updates | `POST /nodes/N/apt/update` (refresh, free); `GET /nodes/N/apt/update` (pending); `GET /nodes/N/apt/versions`; upgrade only via SSH (gated) |
 | Access | `GET /access/permissions` (object keyed by ACL path, each value `{privilege: 1}`; confirmed on a PVE 9.2 cluster); `GET /access/users`; token creation is the user's own step (its secret is returned once; see `references/permissions.md`); `PUT /access/acl path=/vms roles=PVEVMAdmin tokens=USER!NAME propagate=1` |
@@ -233,13 +233,13 @@ Read the guide before working in its area; each is self-contained.
   VM.PowerMgmt)` (confirmed on a PVE 9.2 cluster); map it with `references/permissions.md`.
   `Sys.PowerMgmt`/`Sys.Modify` live only in the Administrator role, which any user, group or
   token may hold on `/` or `/nodes/N`; "root-only" is a tier name, not root@pam.
-- A view can be narrower than the question, and nothing in the answer says so. `pvesr status`
-  lists only the replication jobs whose source is the node it runs on (confirmed on a 3-node
-  PVE 9 cluster: each node showed about a third of the jobs in `/etc/pve/replication.cfg`).
-  Every `/nodes/N/...` path and every node CLI answers for one node. Before reporting that
-  something is missing cluster-wide, check that the read was cluster-wide: compare the count
-  with the number of nodes, and with the cluster-level source (`/etc/pve/...`,
-  `GET /cluster/...`). Never create what "is missing" from a per-node view.
+- A view can be narrower than the question, and nothing in the answer says so.
+  `GET /nodes/N/replication` and `pvesr status` list only the replication jobs whose source is
+  that node (confirmed on a 3-node PVE 9 cluster: the nodes answered 18, 18 and 24 jobs, the
+  cluster route `GET /cluster/replication` 60). Every `/nodes/N/...` path and every node CLI
+  answers for one node. Before reporting that something is missing cluster-wide, check that
+  the read was cluster-wide: the per-node counts must add up to the cluster-level count
+  (`GET /cluster/...`, `/etc/pve/...`). Never create what "is missing" from a per-node view.
 - An empty `GET /nodes/N/storage/S/content` list (with or without `content=backup`) from a
   storage whose `used` or `disk` is non-zero is suspect: on a PVE 9.2 cluster a PVEAuditor
   token got HTTP 200 and `[]` from a storage holding 431 backup volumes (`pvesm list` on the

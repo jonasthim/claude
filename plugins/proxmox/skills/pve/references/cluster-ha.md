@@ -139,18 +139,24 @@ a schedule. An HA-managed guest on local storage can only be recovered on a node
 replica of it, so "which HA guests are replicated, and to where" is a question worth getting
 right.
 
-**`pvesr status` is per node, and its output does not say so.** It lists only the jobs whose
-source is the node it runs on (confirmed on a 3-node PVE 9 cluster: each node showed about a
-third of the jobs in the cluster's configuration, and a coverage check made from one node
-reported two thirds of the HA guests as unreplicated when every one of them was covered).
+Two routes answer two different questions, and neither answers the other's (both confirmed on
+a 3-node PVE 9 cluster):
 
-| Question | Read | Scope |
-|---|---|---|
-| Coverage: which guests are replicated, from where, to where | `pve-ssh.sh -n N cat /etc/pve/replication.cfg` | Whole cluster: `/etc/pve` is the cluster file system, identical on every node |
-| Health: `State`, `FailCount`, `LastSync`, `Duration` | `pve-ssh.sh -n N pvesr status` | Jobs whose source is N only; run it on every node from `GET /nodes` |
-| The same through the API | `pve-api.sh GET /cluster/replication` (job list), `GET /nodes/N/replication` (status on N) | Expected to match the two rows above; UNVERIFIED |
+| Question | Read | Scope | Fields |
+|---|---|---|---|
+| Coverage: which guests are replicated, from where, to where | `pve-api.sh GET /cluster/replication` | Whole cluster | `id`, `guest`, `jobnum`, `source`, `target`, `schedule`, `type` |
+| Health: is each job syncing | `pve-api.sh GET /nodes/N/replication`, once per node from `GET /nodes` | **Only the jobs whose source is N** | The above plus `fail_count`, `last_sync`, `last_try`, `next_sync`, `duration`, `vmtype` |
 
-A job in `replication.cfg` (tab-indented keys under the id, which is `<vmid>-<number>`):
+**The per-node view does not say that it is per node.** `GET /nodes/N/replication` and
+`pvesr status` on N return the same jobs: those N is the source of. On a cluster where the
+three nodes are the source of 18, 18 and 24 jobs, each node answers with its own 18 or 24 and
+the cluster route with 60. A coverage check made from one node there reported two thirds of
+the HA guests as unreplicated when every one of them was covered.
+
+SSH equivalents, when the API is not available: `pve-ssh.sh -n N cat /etc/pve/replication.cfg`
+is the cluster-wide job list (`/etc/pve` is the cluster file system, identical on every node),
+and `pve-ssh.sh -n N pvesr status` is the per-node health view. A job in the file (tab-indented
+keys under the id, which is `<vmid>-<number>`):
 
 ```
 local: 100-0
@@ -165,18 +171,21 @@ Coverage check:
 
 1. `GET /cluster/ha/resources` for the HA-managed guests, and `GET /cluster/resources type=vm`
    for where each runs. Only guests with disks on local storage need a replica.
-2. Read `replication.cfg` once and group the jobs by guest (the part of the id before `-`).
-3. A guest is covered for a failover to node X only when one of its jobs has `target X`.
-4. Before reporting a gap, check the arithmetic: the jobs seen by `pvesr status` on all nodes
-   must add up to the jobs in `replication.cfg`. A count near "total divided by the number of
-   nodes" means you read one node and called it the cluster.
+2. `GET /cluster/replication` once, and group the jobs by `guest`.
+3. A guest is covered for a failover to node X only when one of its jobs has `target` X.
+4. For health, `GET /nodes/N/replication` on every node: `fail_count` above 0 or an old
+   `last_sync` is a job that is not keeping its replica current.
+5. Before reporting a gap, check the arithmetic: the jobs from the node routes must add up to
+   the jobs from the cluster route (18 + 18 + 24 = 60 in the example). A count near "total
+   divided by the number of nodes" means you read one node and called it the cluster.
 
 Changing jobs:
 
-- Create (free): `pvesr create-local-job <vmid>-<n> <target> --schedule '*/15' [--rate MB/s]`
-  on the node that runs the guest, or `POST /cluster/replication id=<vmid>-<n> target=<node>
-  type=local schedule=...` (parameter names UNVERIFIED; `pvesh usage /cluster/replication -v`).
-  Read `replication.cfg` first: a job that "is missing" in a per-node view usually exists.
+- Create (free): `POST /cluster/replication id=<vmid>-<n> target=<node> type=local
+  schedule=...` (parameter names UNVERIFIED; `pvesh usage /cluster/replication -v`), or
+  `pvesr create-local-job <vmid>-<n> <target> --schedule '*/15' [--rate MB/s]` on the node that
+  runs the guest. Read `GET /cluster/replication` first: a job that "is missing" in a per-node
+  view usually exists.
 - Run now (free): `pvesr schedule-now <id>`.
 - Disable (gated): `pvesr disable <id>`, `pvesr update <id> --disable 1` or
   `PUT /cluster/replication/<id> disable=1`; the replica goes stale, so a failover would lose

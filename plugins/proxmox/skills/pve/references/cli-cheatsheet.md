@@ -266,9 +266,10 @@ Storage replication jobs for guests on local ZFS storage. `status [--guest <vmid
 [--comment]`; `update <id>`; `enable <id>`; `disable <id>`; `schedule-now <id>`;
 `delete <id> [--keep] [--force]`.
 
-- **`pvesr status` shows only the jobs whose source is the node it runs on** (confirmed on a
-  3-node PVE 9 cluster). For the whole cluster read `/etc/pve/replication.cfg`, or run
-  `status` on every node. Whether `pvesr list` is cluster-wide is UNVERIFIED.
+- **`pvesr status` shows only the jobs whose source is the node it runs on**, the same jobs
+  as `GET /nodes/N/replication` (confirmed on a 3-node PVE 9 cluster). For the whole cluster
+  use `GET /cluster/replication` or read `/etc/pve/replication.cfg`; for health run `status`
+  on every node. Whether `pvesr list` is cluster-wide is UNVERIFIED.
 - Gated (confirm first): `delete` (also removes the replica on the target unless `--keep`),
   `disable`, `update --disable`. Free: `status`, `list`, `read`, `create-local-job`, `enable`,
   `schedule-now`, `update` of the schedule, rate or comment.
