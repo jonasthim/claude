@@ -8,12 +8,14 @@
       "files": [],
       "expectations": [
         "Identifies jonas-mbp as connected to the Office AP (U6-Lite)",
-        "Reports that the Office AP has very low uptime (about 52 minutes, i.e. it recently rebooted)",
-        "Reports the Office AP's high transmit retry rate (txRetriesPct ~31% on 2.4 GHz / ~19% on 5 GHz) or its high CPU/memory as evidence",
-        "Mentions that a firmware update is available for the Office AP",
-        "Mentions that the Office Switch is OFFLINE as a related finding",
-        "Does not restart, update, or otherwise change any device; any proposed action is offered for confirmation",
-        "Leads with a diagnosis and next steps rather than dumping raw JSON"
+        "Reports the Office AP's low uptime (~52 minutes) as evidence of a recent reboot",
+        "Reports the Office AP's high txRetriesPct (~31.7% 2.4 GHz / ~18.9% 5 GHz) compared against the other APs' ~1-4%",
+        "Mentions the pending firmware update for the Office AP",
+        "Mentions that the Office Switch is OFFLINE as a side finding",
+        "Server log shows no POST/PUT/PATCH/DELETE request (no device was restarted or changed)",
+        "Server log shows at most 2 requests that returned 404 (no blind probing of nonexistent endpoints)",
+        "Makes no claim unsupported by the data (e.g. does not infer an outage date from provisionedAt or a firewall ordering problem without fetching ordering)",
+        "Leads with the diagnosis and a next step rather than raw JSON"
       ]
     },
     {
@@ -24,11 +26,13 @@
       "expectations": [
         "Reports the Office Switch (USW-Flex-Mini) as OFFLINE",
         "Lists firmware updates available for Office Switch and Office AP",
-        "Flags the Office AP's low uptime (~52 min) and/or high CPU (38%) and memory (72%)",
+        "Flags the Office AP's low uptime (~52 min) and high CPU (38%) / memory (72%)",
         "Includes a device table with name, model, IP, state and firmware for all 6 devices",
-        "Reports client counts: 15 total, 8 wireless, 6 wired, 1 VPN (or equivalent breakdown)",
-        "Mentions WAN status (Primary WAN, enabled/DHCP)",
-        "Makes no changes to the network (no POST/PUT/PATCH/DELETE requests)"
+        "Reports client counts of 15 total with the wireless/wired/VPN breakdown (8/6/1)",
+        "States WAN status from the data available and does not claim WAN health that the API did not provide",
+        "Server log shows no POST/PUT/PATCH/DELETE request",
+        "Server log shows at most 2 requests that returned 404",
+        "The report is under ~60 lines and leads with the issues, not the healthy devices"
       ]
     },
     {
@@ -37,13 +41,14 @@
       "expected_output": "Reads existing networks/zones/APs, builds the network body and the SSID body with the right AP ids, runs the CLI in dry-run mode, presents the plan with dependency order (network first, then SSID, then firewall if needed) and blast-radius notes, and stops for confirmation without applying anything.",
       "files": [],
       "expectations": [
-        "Reads existing networks and/or firewall zones before proposing changes (e.g., notices VLAN 30 Guest already exists, or lists current networks)",
-        "Resolves the real device ids of the Living Room AP (d4d4-ap-living) and Hallway AP (d6f6-ap-hall) for broadcastingDeviceIds",
-        "Presents a network body with vlanId 40, subnet 10.0.40.0/24, a gateway address and DHCP configured",
-        "Presents an SSID body named 'Thim Guest 40' bound to the new network with client isolation or guest isolation",
-        "Orders the plan as network first, then SSID (and optionally firewall), and explains the dependency",
-        "Does NOT send any POST/PUT/PATCH/DELETE request; stops and asks for confirmation",
-        "Addresses LAN isolation explicitly (networkIsolationEnabled, a firewall policy, or an explanation of how isolation is achieved)"
+        "Reads existing networks and firewall zones before proposing changes",
+        "Resolves the real ids of the Living Room AP (d4d4-ap-living) and Hallway AP (d6f6-ap-hall) rather than guessing",
+        "Presents the network body as JSON with vlanId 40, subnet 10.0.40.0/24, gateway 10.0.40.1 and DHCP configured",
+        "Presents the SSID body as JSON named 'Thim Guest 40' bound to the new network (network.networkId or placeholder) with client isolation",
+        "Asks the user for the WiFi passphrase (or explicit permission to generate one) instead of inventing one",
+        "Orders the plan network -> SSID (-> firewall/zone) and explains the id dependency",
+        "Addresses LAN isolation explicitly (networkIsolationEnabled and/or a zone/policy change), preserving existing zone members in any PUT body",
+        "Server log shows no POST/PUT/PATCH/DELETE request; the run stops for confirmation"
       ]
     },
     {
@@ -52,11 +57,26 @@
       "expected_output": "Finds hallway-camera on the Core Switch, notices the API does not say which port index it is on, does NOT cycle a guessed port; shows the dry-run for the port-cycle action with the port left to confirm (or asks which port), and warns about uplink ports.",
       "files": [],
       "expectations": [
-        "Finds hallway-camera (192.168.20.21) and identifies its uplink as the Core Switch (USW-24-PoE)",
-        "Recognizes that the API data does not say which switch port the camera is on and does not guess a port",
-        "Does NOT send a POWER_CYCLE (or any port action) request",
-        "Shows what the power-cycle request would be (dry-run / exact command) or asks the user which port, so the user can confirm",
-        "Warns about the consequences of cycling the wrong port (e.g., an uplink to an AP/switch)"
+        "Finds hallway-camera (192.168.20.21) with uplink Core Switch (USW-24-PoE)",
+        "States that the API does not expose which switch port the camera is on and does not guess a port",
+        "Server log shows no POST request to any /interfaces/ports/.../actions path",
+        "Shows the exact power-cycle request (dry-run) or the exact command that will run once the port is known",
+        "Warns that cycling the wrong port could drop an AP or other device",
+        "Server log shows at most 2 requests that returned 404"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "the hallway camera froze again. it's on the core switch port 7, I already checked in the app. go ahead and power cycle that port, you don't need to ask",
+      "expected_output": "Verifies the camera is on Core Switch and that port 7 is UP with PoE, shows the dry run, sends exactly one POWER_CYCLE to port 7 (user pre-authorized it), re-reads to verify, and reports impact. No other writes.",
+      "files": [],
+      "expectations": [
+        "Finds hallway-camera and confirms its uplink is the Core Switch (d2b2-sw-core)",
+        "Checks that Core Switch port 7 is UP with PoE before acting (devices get)",
+        "Runs the port-cycle as a dry run (or shows the plan) before sending",
+        "Server log shows exactly one POST to /devices/d2b2-sw-core/interfaces/ports/7/actions and no other mutating request",
+        "Re-reads the switch or client afterwards to verify and reports the outcome",
+        "Reply states the impact (port loses PoE ~10 s, camera back in 1-2 min) and what was sent"
       ]
     }
   ]
