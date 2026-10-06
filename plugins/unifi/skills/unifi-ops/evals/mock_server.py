@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 """Serve the fixtures as a fake UniFi Network Integration API over HTTP.
 
-    python3 evals/mock_server.py [--port 18443] [--fixtures evals/fixtures] [--key mock-key]
+    python3 evals/mock_server.py [--port 18443] [--fixtures evals/fixtures] [--key mock-key] [--log requests.log]
 
 Then: UNIFI_HOST=http://127.0.0.1:18443 UNIFI_API_KEY=mock-key python3 scripts/unifi.py info
 Useful for trying the skill (or plain curl) without a console. Writes are echoed, not stored.
+With --log, every request is appended as "<iso time> <METHOD> <path> <status>" so a test can
+prove that no mutating request was sent.
 """
 import argparse
 import json
 import os
 import sys
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 
@@ -19,9 +22,12 @@ from unifi import MockBackend, ApiError  # noqa: E402
 PREFIX = "/proxy/network/integration"
 
 
-def make_handler(backend, key):
+def make_handler(backend, key, log_path=None):
     class H(BaseHTTPRequestHandler):
         def _send(self, status, payload):
+            if log_path:
+                with open(log_path, "a") as f:
+                    f.write("%s %s %s %s\n" % (time.strftime("%Y-%m-%dT%H:%M:%S"), self.command, self.path, status))
             raw = json.dumps(payload).encode()
             self.send_response(status)
             self.send_header("Content-Type", "application/json")
@@ -71,8 +77,9 @@ def main():
     ap.add_argument("--port", type=int, default=18443)
     ap.add_argument("--fixtures", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "fixtures"))
     ap.add_argument("--key", default="mock-key")
+    ap.add_argument("--log", help="append one line per request to this file")
     a = ap.parse_args()
-    srv = ThreadingHTTPServer(("127.0.0.1", a.port), make_handler(MockBackend(a.fixtures), a.key))
+    srv = ThreadingHTTPServer(("127.0.0.1", a.port), make_handler(MockBackend(a.fixtures), a.key, a.log))
     print("mock UniFi Integration API on http://127.0.0.1:%d%s/v1 (X-API-Key: %s)" % (a.port, PREFIX, a.key))
     srv.serve_forever()
 
