@@ -138,7 +138,8 @@ destroy; stop/reset/shutdown/reboot/suspend of a guest; snapshot rollback/delete
 
 ### Free set (runs without confirmation)
 
-all GETs; start/resume; create VM/CT; clone; set config without `delete`; snapshot create; vzdump run without explicit prune; create backup job; HA resource add; SDN/network object create/edit (staged, not applied); storage add/edit; user/role/token create; apt update (refresh); task log reads.
+all GETs; start/resume; create VM/CT; clone; set config without `delete`; snapshot create; vzdump run without explicit prune; create backup job; HA resource add; SDN/network object create/edit (staged, not applied); storage add/edit; user/role create and ACL grants; apt update (refresh); task log reads. Token creation is
+yours to do, in the web UI or your own shell: the secret is printed once (see Create an API token).
 
 The `pve` skill's section 1 is the authoritative copy of both lists.
 
