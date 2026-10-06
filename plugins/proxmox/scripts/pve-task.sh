@@ -20,7 +20,8 @@ Usage: pve-task.sh <UPID|-> [--timeout SECS] [--interval SECS] [--no-log]
   --interval  poll interval in seconds (default 2)
   --no-log    do not print the task log, only the exit status
 
-Uses pve-api.sh next to this script (same PVE_* environment).
+Uses pve-api.sh next to this script (same PVE_* environment). With
+PVE_INSECURE=1 the TLS warning is printed once, not on every poll.
 Exit: 0 OK/WARNINGS | 1 task failed | 2 API error | 3 usage/bad UPID | 4 timeout
 EOF
 }
@@ -78,6 +79,13 @@ fi
 enc="$(jq -rn --arg u "$upid" '$u|@uri')"
 status_path="/nodes/$node/tasks/$enc/status"
 log_path="/nodes/$node/tasks/$enc/log"
+
+# Print the PVE_INSECURE warning once here and silence it in the polling calls
+# (pve-api.sh skips its own warning when PVE_API_QUIET_TLS=1).
+if [ "${PVE_INSECURE:-0}" = "1" ] && [ "${PVE_API_QUIET_TLS:-0}" != "1" ]; then
+  printf 'pve-task: warning: PVE_INSECURE=1, TLS certificate verification is disabled\n' >&2
+fi
+export PVE_API_QUIET_TLS=1
 
 start_ts="$(date +%s)"
 timeout_int="${timeout%%.*}"

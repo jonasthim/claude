@@ -4,7 +4,9 @@
 # Usage: pve-api.sh <GET|POST|PUT|DELETE> <path> [key=value ...]
 #
 # Environment:
-#   PVE_HOST          host[:port] (default port 8006) or a full URL with scheme
+#   PVE_HOST          host[:port] (default port 8006) or a full URL with scheme;
+#                     a trailing /api2/json or "/" is stripped; IPv6 literals
+#                     must be bracketed ([::1]:8006)
 #   PVE_TOKEN_ID      USER@REALM!TOKENID
 #   PVE_TOKEN_SECRET  token value (never printed)
 #   PVE_INSECURE=1    skip TLS verification (opt-in, prints a warning)
@@ -12,9 +14,12 @@
 #   PVE_TIMEOUT       curl --max-time in seconds (default 30)
 #   PVE_API_RAW=1     print the full response body instead of .data
 #   PVE_API_DEBUG=1   print method and URL on stderr (never the auth header)
+#   PVE_API_QUIET_TLS=1  suppress the PVE_INSECURE warning (set by pve-task.sh
+#                     for its polling calls; direct calls keep the warning)
 #
 # Exit codes: 0 success (2xx); 1 usage, missing env or missing curl/jq;
-#             2 transport or TLS failure; 3 HTTP 4xx; 4 HTTP 5xx (or other).
+#             2 transport or TLS failure; 3 HTTP 4xx;
+#             4 HTTP 5xx or any other non-2xx/non-4xx status.
 set -euo pipefail
 
 usage() {
@@ -26,11 +31,14 @@ Usage: pve-api.sh <GET|POST|PUT|DELETE> <path> [key=value ...]
          POST/PUT send them as a form-encoded body (--data-urlencode)
 
 Env: PVE_HOST PVE_TOKEN_ID PVE_TOKEN_SECRET [PVE_INSECURE=1] [PVE_CA_CERT]
-     [PVE_TIMEOUT=30] [PVE_API_RAW=1] [PVE_API_DEBUG=1]
+     [PVE_TIMEOUT=30] [PVE_API_RAW=1] [PVE_API_DEBUG=1] [PVE_API_QUIET_TLS=1]
+     PVE_HOST is host[:port] or a URL; a trailing /api2/json is stripped and
+     IPv6 literals must be bracketed ([::1]:8006).
 
 Output: .data of the JSON response (bare string for UPIDs, pretty JSON
         otherwise); PVE_API_RAW=1 prints the whole body.
-Exit:   0 2xx | 1 usage/env/deps | 2 transport/TLS | 3 HTTP 4xx | 4 HTTP 5xx
+Exit:   0 2xx | 1 usage/env/deps | 2 transport/TLS | 3 HTTP 4xx
+        4 HTTP 5xx or any other non-2xx/non-4xx status
 EOF
 }
 
@@ -66,9 +74,14 @@ for var in PVE_HOST PVE_TOKEN_ID PVE_TOKEN_SECRET; do
   fi
 done
 
-# Build the base URL. A value with "://" is used verbatim (useful for mocks);
-# otherwise assume https and add :8006 when no port is given.
+# Build the base URL. Strip trailing slashes and a trailing /api2/json first so
+# "https://pve:8006/api2/json" does not double the prefix. A value with "://"
+# is then used verbatim (useful for mocks); otherwise assume https and add
+# :8006 when no port is given. IPv6 literals must be bracketed ([::1]:8006).
 base="$PVE_HOST"
+while [[ "$base" == */ ]]; do base="${base%/}"; done
+base="${base%/api2/json}"
+while [[ "$base" == */ ]]; do base="${base%/}"; done
 if [[ "$base" != *"://"* ]]; then
   if [[ "$base" =~ :[0-9]+$ ]]; then
     base="https://$base"
@@ -76,7 +89,7 @@ if [[ "$base" != *"://"* ]]; then
     base="https://$base:8006"
   fi
 fi
-base="${base%/}"
+
 
 # Normalise the path: strip any /api2/json prefix and ensure a leading slash.
 path="${path#/}"
@@ -90,8 +103,11 @@ curl_args=(-sS --max-time "${PVE_TIMEOUT:-30}" -w '\n%{http_code}')
 curl_args+=(-H "Authorization: PVEAPIToken=${PVE_TOKEN_ID}=${PVE_TOKEN_SECRET}")
 
 if [ "${PVE_INSECURE:-0}" = "1" ]; then
-  printf 'pve-api: warning: PVE_INSECURE=1, TLS certificate verification is disabled\n' >&2
+  if [ "${PVE_API_QUIET_TLS:-0}" != "1" ]; then
+    printf 'pve-api: warning: PVE_INSECURE=1, TLS certificate verification is disabled\n' >&2
+  fi
   curl_args+=(-k)
+
 elif [ -n "${PVE_CA_CERT:-}" ]; then
   curl_args+=(--cacert "$PVE_CA_CERT")
 fi

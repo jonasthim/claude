@@ -120,8 +120,8 @@ rule '\b(qm|pct) +set\b.*--?delete\b' 'removes a config key or disk'
 # Rule 10: pvecm membership/quorum commands change cluster membership or quorum.
 rule '\bpvecm +(delnode|expected|add|create|qdevice)\b' 'changes cluster membership or quorum'
 
-# Rule 11: ha-manager remove/set/migrate/relocate/crm-command changes HA state or placement.
-rule '\bha-manager +(remove|set|migrate|relocate|crm-command)\b' 'changes HA state or placement'
+# Rule 11: ha-manager (rules) remove/set/migrate/relocate/crm-command changes HA state or placement.
+rule '\bha-manager +(rules +)?(remove|set|migrate|relocate|crm-command)\b' 'changes HA state or placement'
 
 # Rule 12: pvenode stopall/migrateall stops or migrates all guests on a node.
 rule '\bpvenode +(stopall|migrateall)\b' 'stops or migrates all guests on a node'
@@ -170,7 +170,9 @@ post_paths=(
   '/cluster/sdn/rollback\b' 'applies SDN configuration cluster-wide'
   '/nodes/[^/ ]+/storage/[^/ ]+/prunebackups\b' 'prunes existing backups'
   '/nodes/[^/ ]+/vzdump\b.*\b(remove[= ]1|prune-backups[= ])' 'prunes existing backups'
-  '/(qemu|lxc)/[0-9]+/config\b.*\bdelete[= ]' 'removes a config key or disk'
+  # "delete" only as a parameter key (delete=..., ?delete=, &delete=, "delete=) or a
+  # -delete/--delete flag, never as a word inside a value such as description=...
+  '/(qemu|lxc)/[0-9]+/config\b.*(^|[^[:alnum:]_=.-])(delete=|--?delete[= ])' 'removes a config key or disk'
 )
 is_post=0
 if has '\bpvesh +create\b' || has '\bpve-api\.sh +POST\b'; then
@@ -193,9 +195,12 @@ put_paths=(
   '/nodes/[^/ ]+/network([^/[:alnum:]_-]|$)' 'applies staged network changes (ifreload) and can cut connectivity'
   '/cluster/sdn([^/[:alnum:]_-]|$)' 'applies SDN configuration cluster-wide'
   '/cluster/ha/resources/[^/ ]+.*\bstate[= ](stopped|disabled)\b' 'changes HA state or placement'
-  '/(qemu|lxc)/[0-9]+/config\b.*\bdelete[= ]' 'removes a config key or disk'
+  # Same "delete" parameter/flag pattern as in post_paths above.
+  '/(qemu|lxc)/[0-9]+/config\b.*(^|[^[:alnum:]_=.-])(delete=|--?delete[= ])' 'removes a config key or disk'
+
 )
 is_put=0
+
 if has '\bpvesh +set\b' || has '\bpve-api\.sh +PUT\b'; then
   is_put=1
 elif has '\bcurl\b' && has '(-X *PUT|--request[ =]*PUT)'; then

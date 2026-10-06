@@ -3,6 +3,10 @@
 #
 # Usage: pve-ssh.sh [-n HOST] [--check] <command> [args...]
 #
+# Each argument is shell-quoted (printf %q) and the result is passed to ssh as
+# one remote command string, so whitespace and special characters survive.
+# --check runs "pveversion" and cannot be combined with a command.
+#
 # Environment:
 #   PVE_SSH_HOST  node to connect to (default: host part of PVE_HOST)
 #   PVE_SSH_USER  SSH user (default root)
@@ -19,11 +23,14 @@ usage() {
 Usage: pve-ssh.sh [-n HOST] [--check] <command> [args...]
 
   -n HOST   node to connect to (overrides PVE_SSH_HOST and PVE_HOST)
-  --check   run "pveversion" on the node to verify access
+  --check   run "pveversion" on the node to verify access (no command allowed)
+
+Each argument is shell-quoted for the remote side (printf %q) and the whole
+command is sent as one string, so "-comment 'two words'" stays one argument.
 
 Env: PVE_SSH_HOST (default: host part of PVE_HOST) PVE_SSH_USER (root)
      PVE_SSH_PORT (22) PVE_SSH_KEY PVE_SSH_OPTS
-Runs: ssh -o BatchMode=yes -o ConnectTimeout=10 [-p PORT] [-i KEY] $PVE_SSH_OPTS USER@HOST -- command...
+Runs: ssh -o BatchMode=yes -o ConnectTimeout=10 [-p PORT] [-i KEY] $PVE_SSH_OPTS USER@HOST -- 'command args...'
 Exit: remote exit code | 1 usage/no host | 255 ssh failure
 EOF
 }
@@ -45,6 +52,10 @@ while [ "$#" -gt 0 ]; do
 done
 
 if [ "$check" -eq 1 ]; then
+  if [ "$#" -gt 0 ]; then
+    printf 'pve-ssh: --check cannot be combined with a command (got: %s)\n' "$1" >&2
+    exit 1
+  fi
   set -- pveversion
 fi
 if [ "$#" -eq 0 ]; then
@@ -89,4 +100,8 @@ if [ -n "${PVE_SSH_OPTS:-}" ]; then
   ssh_args+=("${extra[@]}")
 fi
 
-exec ssh "${ssh_args[@]}" "$user@$host" -- "$@"
+# Quote every argument so the remote shell sees the same words we were given.
+remote_cmd="$(printf '%q ' "$@")"
+remote_cmd="${remote_cmd% }"
+exec ssh "${ssh_args[@]}" "$user@$host" -- "$remote_cmd"
+

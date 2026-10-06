@@ -37,8 +37,7 @@ warn() { printf '[warn] %s\n' "$1"; }
 info() { printf '[info] %s\n' "$1"; }
 fail() { printf '[fail] %s\n' "$1"; }
 
-# Keep the worst exit code seen so far; lower numbers do not override higher
-# severity except that 0 never overrides anything.
+# Keep the first non-zero exit code seen; later failures do not override it.
 set_rc() {
   if [ "$rc" -eq 0 ]; then
     rc="$1"
@@ -97,7 +96,9 @@ fi
 # 2. Environment.
 envfail=0
 if [ -n "${PVE_HOST:-}" ]; then
-  ok "PVE_HOST=$PVE_HOST"
+  # Never echo user:pass@ userinfo that may be embedded in the URL.
+  ok "PVE_HOST=$(printf '%s' "$PVE_HOST" | sed -e 's#://[^@/]*@#://#')"
+
 else
   fail "PVE_HOST is not set (host[:port] or https://host:8006)"
   envfail=1

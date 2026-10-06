@@ -8,6 +8,9 @@
 # Starts tests/mock_pve.py on a random port, runs the scripts against it,
 # checks the guard rule table and prints PASS/FAIL/SKIP lines plus a summary.
 # Exits 1 when any check fails.
+#
+# Commands in tests/guard_cases.txt pass through printf '%b' before reaching
+# the guard, so every backslash escape (\n, \t, \\, ...) is expanded.
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -120,6 +123,14 @@ capture api_version2 "$api" GET version
 assert_eq "pve-api path without leading slash identical" "$v1" "$out"
 capture api_version3 "$api" GET /api2/json/version
 assert_eq "pve-api path with /api2/json prefix identical" "$v1" "$out"
+capture api_version4 env "PVE_HOST=http://127.0.0.1:$port/api2/json" "$api" GET /version
+assert_exit "pve-api PVE_HOST with /api2/json suffix exits 0" 0 "$rc"
+assert_eq "pve-api PVE_HOST with /api2/json suffix identical" "$v1" "$out"
+capture api_version5 env "PVE_HOST=http://127.0.0.1:$port/api2/json/" "$api" GET /version
+assert_eq "pve-api PVE_HOST with /api2/json/ suffix identical" "$v1" "$out"
+capture api_version6 env PVE_API_DEBUG=1 "PVE_HOST=http://127.0.0.1:$port/api2/json" "$api" GET /version
+assert_contains "pve-api PVE_HOST suffix does not double the prefix" "$out" "pve-api: GET http://127.0.0.1:$port/api2/json/version"
+assert_not_contains "pve-api PVE_HOST suffix no api2/json/api2/json" "$out" "api2/json/api2/json"
 
 # ---------------------------------------------------------------- (4) RAW
 capture api_raw env PVE_API_RAW=1 "$api" GET /version
@@ -223,6 +234,17 @@ assert_contains "pve-task URL-encodes the UPID" "$(mock_get calls | jq -r '.[-1]
 capture task_nolog "$task" "UPID:pve1:000A1B2C:0001F3A4:66F00000:qmstart:100:test@pve!ci:" --interval 0.1 --no-log
 assert_exit "pve-task --no-log exits 0" 0 "$rc"
 assert_not_contains "pve-task --no-log omits log" "$out" "starting task"
+mock_reset
+set +e
+task_err="$(env PVE_INSECURE=1 "$task" "UPID:pve1:000A1B2C:0001F3A4:66F00000:qmstart:100:test@pve!ci:" --interval 0.1 2>&1 >/dev/null)"
+task_rc=$?
+set -e
+printf '%s\n' "$task_err" >"$tmp/task_insecure.err"
+assert_exit "pve-task PVE_INSECURE=1 exits 0" 0 "$task_rc"
+warn_count="$(printf '%s\n' "$task_err" | grep -c 'PVE_INSECURE=1' || true)"
+assert_eq "pve-task PVE_INSECURE=1 warns exactly once on stderr" "1" "$warn_count"
+polls="$(mock_get calls | jq '[.[] | select(.path | test("/tasks/"))] | length')"
+if [ "$polls" -ge 3 ]; then pass "pve-task PVE_INSECURE=1 made >= 3 API calls ($polls)"; else fail "pve-task PVE_INSECURE=1 made >= 3 API calls" "$polls"; fi
 
 # ---------------------------------------------------------------- (14) qmstop failed
 capture task_qmstop "$task" "UPID:pve1:000A1B2D:0001F3A5:66F00001:qmstop:101:test@pve!ci:" --interval 0.1
@@ -274,6 +296,9 @@ assert_exit "pve-doctor without PVE_HOST exits 1" 1 "$rc"
 assert_contains "pve-doctor without PVE_HOST names it" "$out" "PVE_HOST"
 capture doctor_help "$doctor" --help
 assert_exit "pve-doctor --help exits 0" 0 "$rc"
+capture doctor_userinfo env "PVE_HOST=http://user:hunter2@127.0.0.1:$port" PVE_TIMEOUT=5 "$doctor"
+assert_contains "pve-doctor strips userinfo from PVE_HOST" "$out" "[ok] PVE_HOST=http://127.0.0.1:$port"
+assert_not_contains "pve-doctor never prints the URL password" "$out" "hunter2"
 
 # ---------------------------------------------------------------- (18) pve-ssh
 capture ssh_no_host env -u PVE_HOST -u PVE_SSH_HOST "$sshtool" pveversion
@@ -284,6 +309,25 @@ assert_exit "pve-ssh without command exits 1" 1 "$rc"
 capture ssh_help "$sshtool" --help
 assert_exit "pve-ssh --help exits 0" 0 "$rc"
 assert_contains "pve-ssh --help prints usage" "$out" "Usage:"
+capture ssh_check_cmd env PVE_SSH_HOST=pve1 "$sshtool" --check pveversion
+assert_exit "pve-ssh --check with a command exits 1" 1 "$rc"
+assert_contains "pve-ssh --check with a command explains" "$out" "cannot be combined"
+# Fake ssh shim: prints each argument on its own line so we can inspect the
+# remote command string pve-ssh.sh builds.
+fakebin="$tmp/fakebin"
+mkdir -p "$fakebin"
+printf '#!/usr/bin/env bash\nfor a in "$@"; do printf "%%s\\n" "$a"; done\n' >"$fakebin/ssh"
+chmod +x "$fakebin/ssh"
+capture ssh_quoting env PATH="$fakebin:$PATH" "$sshtool" -n pve1 pveum user add t@pve -comment "two words"
+assert_exit "pve-ssh via shim exits 0" 0 "$rc"
+assert_contains "pve-ssh shim sees the host" "$out" "root@pve1"
+assert_contains "pve-ssh quotes whitespace in remote args" "$out" '-comment two\ words'
+ssh_last="$(printf '%s\n' "$out" | tail -n 1)"
+assert_eq "pve-ssh sends one remote command string" 'pveum user add t@pve -comment two\ words' "$ssh_last"
+capture ssh_check_ok env PATH="$fakebin:$PATH" PVE_SSH_HOST=pve2 "$sshtool" --check
+assert_exit "pve-ssh --check via shim exits 0" 0 "$rc"
+assert_eq "pve-ssh --check runs pveversion" "pveversion" "$(printf '%s\n' "$out" | tail -n 1)"
+
 
 # ---------------------------------------------------------------- (19) guard table
 guard_input() { # command -> hook JSON on stdout

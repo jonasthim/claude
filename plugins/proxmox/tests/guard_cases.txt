@@ -39,6 +39,8 @@ ask	pvecm expected 1
 ask	ha-manager set vm:100 --state stopped
 ask	ha-manager crm-command node-maintenance enable pve1
 ask	ha-manager remove ct:105
+ask	ha-manager rules remove r1
+ask	ha-manager rules set r1 --nodes pve2
 # rule 12
 ask	pvenode stopall
 ask	pvenode migrateall pve2 --with-local-disks
@@ -91,7 +93,11 @@ ask	pve-api.sh PUT /nodes/pve1/network
 ask	pve-api.sh PUT /cluster/sdn
 ask	pve-api.sh PUT /cluster/ha/resources/vm:100 state=stopped
 ask	pve-api.sh PUT /nodes/pve1/qemu/100/config delete=scsi1
+ask	pve-api.sh PUT /nodes/pve1/qemu/100/config --delete scsi1
 ask	curl -X PUT "$PVE_HOST/api2/json/nodes/pve1/network"
+ask	curl -X PUT "$PVE_HOST/api2/json/nodes/pve1/qemu/100/config?delete=scsi1"
+ask	curl -X PUT "$PVE_HOST/api2/json/nodes/pve1/qemu/100/config" -d delete=scsi1
+ask	curl -X PUT "$PVE_HOST/api2/json/nodes/pve1/qemu/100/config?memory=2048&delete=scsi1"
 # rule 23
 ask	rm -f /var/lib/vz/dump/vzdump-qemu-100.vma.zst
 ask	rm /mnt/backup/vzdump-lxc-105-2026_10_05.tar.zst
@@ -114,6 +120,12 @@ none	ssh root@pve1 pveversion
 none	grep reboot /var/log/syslog
 none	rm -rf build/
 none	ha-manager add vm:100
+none	ha-manager rules list
+none	ha-manager rules add node-affinity r1 --resources vm:100 --nodes pve1
+none	pve-api.sh PUT /nodes/pve1/qemu/100/config description=do-not-delete-this
+none	pve-api.sh PUT /nodes/pve1/qemu/100/config 'description=please do not delete this vm'
+none	pve-api.sh PUT /nodes/pve1/qemu/100/config description="do not delete this"
+
 none	pvecm status
 none	git stop-something
 none	pve-task.sh UPID:pve1:000A1B2C:0001F3A4:66F00000:qmstart:100:test@pve!ci:
