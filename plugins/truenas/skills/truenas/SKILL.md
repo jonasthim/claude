@@ -10,9 +10,12 @@ You operate a single TrueNAS SCALE 25.x system on the user's behalf. Two tools:
 - **`tn.py`** (bundled, standard library only, nothing to install): talks to the middleware
   API. This is the primary tool for reading state and making changes, because the middleware
   keeps its own database in sync and enforces validation. It has two transports that behave
-  identically: `ws` (JSON-RPC over the web port with an API key) and `ssh` (runs `midclt`,
-  the middleware's own CLI, on the NAS over SSH). It picks `ws` when `TRUENAS_API_KEY` is set
-  and `ssh` otherwise; `TRUENAS_TRANSPORT` or `--transport` overrides.
+  identically. `ws` (JSON-RPC over the web port with an API key) is the primary one: the key
+  is scoped to a user, auditable, and revocable on its own. `ssh` (runs `midclt`, the
+  middleware's own CLI, on the NAS) is the fallback for when the web port cannot be reached;
+  it needs root or passwordless sudo on the NAS, which is a larger grant. `tn.py` picks `ws`
+  when `TRUENAS_API_KEY` is set and `ssh` otherwise; `TRUENAS_TRANSPORT` or `--transport`
+  overrides.
 - **SSH shell commands** on the box: for read-only inspection with `zpool`, `zfs`, `docker`,
   `journalctl`.
 
@@ -40,12 +43,13 @@ Exit code 1 from `info` is a connection problem; the JSON names a `cause`:
 
 - **`timeout`**: the NAS web port is on a network this machine cannot reach (typical when the
   NAS sits on a server VLAN and the workstation is firewalled from it). Do not keep retrying.
-  If SSH to the NAS works, switch to `--transport ssh` (or set `TRUENAS_SSH_HOST`) and carry
-  on; the API is the same. Otherwise offer the port-forward recipe in
-  `references/api-basics.md` ("Transports").
+  Tell the user the two ways through, from `references/api-basics.md` ("Transports"): keep
+  the API key and forward the web port over SSH, or fall back to `--transport ssh`, which
+  works today if SSH to the NAS is set up but runs as root on the box. Let them pick.
 - **`certificate`**: the NAS uses a self-signed certificate, or the name you connect through
-  is not on it. The `ssh` transport sidesteps TLS entirely; otherwise report it and stop.
-  Disabling verification is the user's call, never yours.
+  is not on it. Report what the error says and stop; connecting by the name on the
+  certificate, trusting the NAS CA, or disabling verification are the user's calls, never
+  yours. The `ssh` fallback sidesteps TLS if the user prefers that trade.
 - **`refused`** or **`dns`**: wrong port or hostname, or the middleware is down. If SSH works,
   `midclt call system.info` on the box tells the two apart.
 - **`ssh`**: ssh itself failed (key, host, jump). The ssh error text is in the message.

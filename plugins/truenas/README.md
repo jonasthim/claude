@@ -31,9 +31,11 @@ Requires Python 3.10+ and, for the SSH transport, an `ssh` client. No packages.
 
 ## Configure
 
-Pick one transport (or set up both; the API key wins when present).
+Set up the API transport; add the SSH transport as a fallback if you want one. The API key
+wins when both are present.
 
-**API over the web port** (`ws`): best when the NAS web UI is reachable from where Claude runs.
+**API over the web port** (`ws`, primary): a key is scoped to one user, auditable, and
+revocable in the UI on its own.
 
 1. Create an API key in the TrueNAS web UI: click your user icon (top right) → *API Keys* →
    *Add*. Keys are linked to a user; a `FULL_ADMIN` user (root, truenas_admin, or any user
@@ -49,9 +51,10 @@ Pick one transport (or set up both; the API key wins when present).
    for an HTTP-only UI, `TRUENAS_VERIFY_SSL=0` for a self-signed certificate (Claude will not
    set this on its own).
 
-**SSH + midclt** (`ssh`): best when only SSH reaches the NAS, or you do not want to manage an
-API key. Put your public key on the NAS user (*Credentials → Users → edit → Authorized Keys*),
-enable the SSH service, then:
+**SSH + midclt** (`ssh`, fallback): for when the web port is unreachable from where Claude
+runs. It runs `midclt` as root (or via passwordless sudo) on the NAS, a broader grant than an
+API key, so prefer the port-forward in the next section when you can. Put your public key on
+the NAS user (*Credentials → Users → edit → Authorized Keys*), enable the SSH service, then:
 
 ```
 export TRUENAS_SSH_HOST=root@nas.example.lan   # a non-root user gets `sudo -n`; it must be NOPASSWD
@@ -114,11 +117,12 @@ evals/evals.json                example prompts for skill evaluation
 ## Reaching a NAS on another VLAN
 
 If the NAS web port is firewalled from where you run Claude but SSH works (directly or via a
-jump host), use the SSH transport; that is what it is for. If you want the API-key path
-anyway, forward the port (`ssh -fN -L 8443:<nas-ip>:443 <jump>` and `TRUENAS_HOST=127.0.0.1:8443`)
-and expect a certificate mismatch; `skills/truenas/references/api-basics.md` lists the options.
-Claude will report the certificate error and wait for your decision rather than disable
-verification.
+jump host), forward the port to keep the API key path: `ssh -fN -L 8443:<nas-ip>:443 <jump>`
+and `TRUENAS_HOST=127.0.0.1:8443`. Expect a certificate mismatch on the forwarded name;
+`skills/truenas/references/api-basics.md` lists the options, starting with connecting by a
+name the certificate carries. Claude will report the certificate error and wait for your
+decision rather than disable verification. The SSH transport is the fallback when you would
+rather not run a tunnel.
 
 ## Compatibility and verification status
 

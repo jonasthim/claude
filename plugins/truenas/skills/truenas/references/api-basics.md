@@ -12,7 +12,11 @@
 
 ## Transports
 
-`tn.py` speaks to the same middleware two ways. Pick by what the machine you run on can reach.
+`tn.py` speaks to the same middleware two ways. `ws` is the primary transport and `ssh` the
+fallback: an API key is scoped to one user, shows up in the audit log under that user, and can
+be revoked in the UI on its own; `midclt` over SSH runs as root (or via sudo) and an SSH key
+on a production NAS is a broader, less visible grant. Use `ssh` when the web port is
+unreachable or the user prefers it, not as the default.
 
 | | `ws` | `ssh` |
 |---|---|---|
@@ -29,17 +33,9 @@ Both produce the same JSON, the same error shape, and honour the same `--confirm
 
 A common homelab layout puts the NAS on a server VLAN and firewalls its web ports (443, 80,
 8080) from the admin workstation, while SSH is allowed, directly or through a jump host. `tn.py
-info` over `ws` then fails with `"cause": "timeout"`. The straightforward answer is the `ssh`
-transport:
+info` over `ws` then fails with `"cause": "timeout"`. Two ways through; present both.
 
-```
-export TRUENAS_SSH_HOST=root@<nas-ip>
-export TRUENAS_SSH_OPTS="-J <user>@<jump-host>"     # only if SSH itself must hop
-tn.py --transport ssh info
-```
-
-No key, no tunnel, no certificate decision. If the user would rather keep the API key path
-(for audit trails under a named user, or many calls in a loop), forward the port instead:
+**Keep the API key and forward the web port** (preferred: same audit trail, same scoped key):
 
 ```
 ssh -fN -L 8443:<nas-ip>:443 <user>@<jump-host>
@@ -47,11 +43,22 @@ export TRUENAS_HOST=127.0.0.1:8443
 ```
 
 The certificate on the NAS will not carry `127.0.0.1`, so `info` then fails with
-`"cause": "certificate"`. Options, in order of preference: forward to the NAS's real hostname
-instead (add `127.0.0.1 nas.example.lan` to `/etc/hosts` and connect by name, if the cert has
-that SAN), import the NAS CA into the system trust store, or `TRUENAS_VERIFY_SSL=0`. The last
-sends the API key over an unverified TLS session inside an SSH tunnel, so the exposure is the
-jump-host-to-NAS hop. State the trade-off and let the user choose.
+`"cause": "certificate"`. Check what the certificate actually has before proposing anything:
+`openssl s_client -connect 127.0.0.1:8443 -servername <nas-name> </dev/null 2>/dev/null | openssl x509 -noout -subject -issuer -ext subjectAltName`.
+Options, in order of preference: connect by a name that is on the certificate (add
+`127.0.0.1 nas.example.lan` to `/etc/hosts`, set `TRUENAS_HOST=nas.example.lan:8443`), import
+the NAS CA into the system trust store, or `TRUENAS_VERIFY_SSL=0`. The last sends the API key
+over an unverified TLS session inside an SSH tunnel, so the exposure is the jump-host-to-NAS
+hop. State the trade-off and let the user choose.
+
+**Fall back to the ssh transport** (works immediately if SSH to the NAS is already set up;
+runs as root on the box):
+
+```
+export TRUENAS_SSH_HOST=root@<nas-ip>
+export TRUENAS_SSH_OPTS="-J <user>@<jump-host>"     # only if SSH itself must hop
+tn.py --transport ssh info
+```
 
 ## Authentication
 
