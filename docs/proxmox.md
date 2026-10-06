@@ -5,7 +5,7 @@ vzdump backups and restores, cloud-init templates, storage, networking and SDN, 
 and ACLs. Access goes through the REST API with an API token; SSH to the nodes is an optional second tier. The
 scripts need `bash`, `curl` and `jq`.
 
-Full reference: [plugins/proxmox/README.md](../plugins/proxmox/README.md).
+Full reference: [plugins/proxmox/README.md](https://github.com/jonasthim/claude/blob/main/plugins/proxmox/README.md).
 
 ## Create an API token
 

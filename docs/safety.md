@@ -1,6 +1,6 @@
 # Safety model
 
-All three plugins follow the same rules, written down in [CONTRIBUTING.md](../CONTRIBUTING.md).
+All three plugins follow the same rules, written down in [CONTRIBUTING.md](https://github.com/jonasthim/claude/blob/main/CONTRIBUTING.md).
 
 1. **Reads run freely.** Status, listings, logs and health checks never ask.
 2. **Destructive or disruptive actions need your yes.** Claude first shows what it will do, to what, the

@@ -8,7 +8,7 @@ bundled CLI (`unifi.py`) is standard-library Python 3.8+.
 Needs a UniFi OS console (UDM, UDM Pro/SE, UCG, UDR, Cloud Key G2+) or a self-hosted Network application,
 Network 9.4 or newer (10.x for network, SSID and firewall writes), reachable from where Claude Code runs.
 
-Full reference: [plugins/unifi/README.md](../plugins/unifi/README.md).
+Full reference: [plugins/unifi/README.md](https://github.com/jonasthim/claude/blob/main/plugins/unifi/README.md).
 
 ## Create the keys
 

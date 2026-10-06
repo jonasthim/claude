@@ -5,7 +5,7 @@ marketplace named `jonasthim`. Each plugin installs on its own.
 
 | Plugin | Operates | Needs |
 |---|---|---|
-| [truenas](truenas.md) | TrueNAS SCALE 25.x: pools, datasets, snapshots, shares, apps, alerts, updates, replication | API key (SSH optional) |
+| [truenas](truenas.md) | TrueNAS SCALE 25.x: pools, datasets, snapshots, shares, apps, alerts, updates, replication | API key, or SSH to the NAS |
 | [proxmox](proxmox.md) | Proxmox VE 9: VMs, containers, snapshots, backups, storage, networking/SDN, HA, access control | API token (SSH optional) |
 | [unifi](unifi.md) | UniFi networks: clients, devices, health, networks/VLANs, SSIDs, firewall | Integration API key (Site Manager key and SSH optional) |
 

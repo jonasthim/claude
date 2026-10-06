@@ -74,9 +74,10 @@ import type { Register } from 'claude-code'
 
 // Commands that carry a plugin's own "I have confirmation" flag, or an HTTP DELETE.
 // Each entry: a pattern over the Bash command, then the reason the dialog shows.
+// The `s` flag lets `.` cross newlines, so a command split with `\` is matched too.
 const GATED: readonly [RegExp, string][] = [
-  [/\btn\.py\b.*\s--confirm\b/, 'a gated TrueNAS call (tn.py --confirm)'],
-  [/\bunifi\.py\b.*\s--yes\b/, 'a UniFi write (unifi.py --yes)'],
+  [/\btn\.py\b.*\s--confirm\b/s, 'a gated TrueNAS call (tn.py --confirm)'],
+  [/\bunifi\.py\b.*\s--yes\b/s, 'a UniFi write (unifi.py --yes)'],
   [/\bpve-api\.sh\s+delete\b/i, 'an HTTP DELETE against Proxmox (pve-api.sh DELETE)'],
 ]
 
@@ -129,6 +130,12 @@ describe('homelab-guard', () => {
     expect((await $.tool.check(check('pve-api.sh delete /nodes/pve1/qemu/100'))).decision).toBe('ask')
   })
 
+  test('asks when the command is split across lines', async ($, on) => {
+    on('tool.check', () => ({ decision: 'allow' }))
+    expect((await $.tool.check(check('python3 tn.py call pool.dataset.delete \\\n  \'["tank/x"]\' --confirm'))).decision).toBe('ask')
+    expect((await $.tool.check(check('python3 unifi.py wifi delete w1 \\\n  --yes'))).decision).toBe('ask')
+  })
+
   test('leaves reads and dry runs alone', async ($, on) => {
     on('tool.check', () => ({ decision: 'allow' }))
     expect((await $.tool.check(check('python3 tn.py call pool.query'))).decision).toBe('allow')
@@ -162,7 +169,7 @@ you in a session, hot-reloading it as you edit, before you copy it here.
    { "name": "<mod>", "source": "./plugins/<mod>", "description": "...", "category": "...", "keywords": [] }
    ```
 
-2. Add a `README.md`, `LICENSE` and `CHANGELOG.md` like the other plugins ([CONTRIBUTING.md](../CONTRIBUTING.md)).
+2. Add a `README.md`, `LICENSE` and `CHANGELOG.md` like the other plugins ([CONTRIBUTING.md](https://github.com/jonasthim/claude/blob/main/CONTRIBUTING.md)).
 3. Install it from a terminal session: `/plugin install <mod>@jonasthim`.
 
 ## Limits worth knowing

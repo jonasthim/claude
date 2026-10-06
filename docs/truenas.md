@@ -5,7 +5,7 @@ and ACLs; apps; alerts; services; system updates; replication and cloud sync. On
 script (`tn.py`) talks to the middleware over its JSON-RPC websocket API with an API key, or over SSH by
 running `midclt` on the NAS. Python 3.10+; no packages to install.
 
-Full reference: [plugins/truenas/README.md](../plugins/truenas/README.md).
+Full reference: [plugins/truenas/README.md](https://github.com/jonasthim/claude/blob/main/plugins/truenas/README.md).
 
 ## Create an API key
 
@@ -15,18 +15,21 @@ role) one that can make changes.
 
 ## Configure
 
-| Variable | Required | Purpose |
+Configure one transport. The API (`ws`) needs `TRUENAS_HOST` and `TRUENAS_API_KEY`; SSH needs
+`TRUENAS_SSH_HOST` (or just `TRUENAS_HOST`, used as `root@<host>`). With both configured the API is used.
+
+| Variable | Needed for | Purpose |
 |---|---|---|
-| `TRUENAS_HOST` | yes | `hostname[:port]`, or a full `wss://` URI |
-| `TRUENAS_API_KEY` | yes | The API key |
-| `TRUENAS_USER` | no | The key's user (switches to `auth.login_ex`) |
-| `TRUENAS_SCHEME` | no | `ws` for an HTTP-only web UI |
-| `TRUENAS_VERIFY_SSL` | no | `0` accepts a self-signed certificate. Set it yourself; Claude never does |
-| `TRUENAS_SSH_HOST` | no | `user@host` for the SSH transport and read-only shell diagnostics (`zpool status`, `docker logs`) |
-| `TRUENAS_SSH_OPTS` | no | Extra `ssh` options, for example `-J me@jump.lan` |
-| `TRUENAS_TRANSPORT` | no | `ws` or `ssh` to force a transport |
-| `TRUENAS_DEBUG` | no | `1` includes server tracebacks in errors |
-| `TRUENAS_SHOW_SECRETS` | no | `1` turns off redaction. Only when you need a credential shown |
+| `TRUENAS_HOST` | API (and SSH default host) | `hostname[:port]`, or a full `wss://` URI |
+| `TRUENAS_API_KEY` | API | The API key |
+| `TRUENAS_USER` | optional | The key's user (switches to `auth.login_ex`) |
+| `TRUENAS_SCHEME` | optional | `ws` for an HTTP-only web UI |
+| `TRUENAS_VERIFY_SSL` | optional | `0` accepts a self-signed certificate. Set it yourself; Claude never does |
+| `TRUENAS_SSH_HOST` | SSH | `[user@]host` for the SSH transport and read-only shell diagnostics (`zpool status`, `docker logs`) |
+| `TRUENAS_SSH_OPTS` | optional | Extra `ssh` options, for example `-J me@jump.lan` |
+| `TRUENAS_TRANSPORT` | optional | `ws` or `ssh` to force a transport (default: `ws` when an API key is set) |
+| `TRUENAS_DEBUG` | optional | `1` includes server tracebacks in errors |
+| `TRUENAS_SHOW_SECRETS` | optional | `1` turns off redaction. Only when you need a credential shown |
 
 The SSH transport runs `midclt` as root (or a user with passwordless sudo), a broader grant than an API key.
 Prefer the API, through a port forward if needed (below).

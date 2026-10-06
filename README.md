@@ -6,7 +6,7 @@ APIs. It asks before anything destructive.
 
 | Plugin | What it operates | You need | Contents |
 |---|---|---|---|
-| [`truenas`](plugins/truenas) | TrueNAS SCALE 25.x: pools, datasets, snapshots, shares, apps, alerts, updates, replication | API key; SSH optional | skill `truenas`, `tn.py` |
+| [`truenas`](plugins/truenas) | TrueNAS SCALE 25.x: pools, datasets, snapshots, shares, apps, alerts, updates, replication | API key, or SSH to the NAS | skill `truenas`, `tn.py` |
 | [`proxmox`](plugins/proxmox) | Proxmox VE 9: VMs, containers, snapshots, backups, storage, networking/SDN, HA, access control | API token; SSH optional | skill `pve`, `/proxmox:*` commands, `proxmox-operator` agent, guard hook |
 | [`unifi`](plugins/unifi) | UniFi networks: client troubleshooting, health reports, networks/VLANs, SSIDs, firewall, device actions | Integration API key; Site Manager key and SSH optional | skill `unifi-ops`, `unifi.py`, SSH diagnostics |
 

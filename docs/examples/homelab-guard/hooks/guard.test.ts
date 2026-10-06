@@ -15,6 +15,12 @@ describe('homelab-guard', () => {
     expect((await $.tool.check(check('pve-api.sh delete /nodes/pve1/qemu/100'))).decision).toBe('ask')
   })
 
+  test('asks when the command is split across lines', async ($, on) => {
+    on('tool.check', () => ({ decision: 'allow' }))
+    expect((await $.tool.check(check('python3 tn.py call pool.dataset.delete \\\n  \'["tank/x"]\' --confirm'))).decision).toBe('ask')
+    expect((await $.tool.check(check('python3 unifi.py wifi delete w1 \\\n  --yes'))).decision).toBe('ask')
+  })
+
   test('leaves reads and dry runs alone', async ($, on) => {
     on('tool.check', () => ({ decision: 'allow' }))
     expect((await $.tool.check(check('python3 tn.py call pool.query'))).decision).toBe('allow')
