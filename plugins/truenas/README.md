@@ -94,6 +94,11 @@ property updates, snapshots, service restarts and app starts/redeploys/upgrades 
 prompting. The pattern list is at the top of `skills/truenas/scripts/tn.py`; edit it to
 taste.
 
+Results are redacted by default: passwords, secrets, tokens, private keys, exported dataset
+keys and the attributes of cloud, SSH and alert-service credentials come back as
+`[REDACTED]`, with a note on stderr. `--show-secrets` (or `TRUENAS_SHOW_SECRETS=1`) turns
+that off; the skill tells Claude to use it only when you explicitly ask for a credential.
+
 ## Layout
 
 ```

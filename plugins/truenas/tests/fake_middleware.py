@@ -83,6 +83,14 @@ async def handler(ws):
                 await ws.send(json.dumps({"jsonrpc": "2.0", "method": "collection_update",
                                           "params": {"msg": msg_type, "collection": "core.get_jobs",
                                                      "id": JOB["id"], "fields": fields}}))
+        elif method == "cloudsync.credentials.query":
+            await reply([{"id": 1, "name": "b2", "provider": {"type": "B2", "account": "acct",
+                                                               "key": "k3y-material", "endpoint": ""},
+                          "attributes": {"type": "S3", "access_key_id": "AKIA", "secret_access_key": "sekrit"}}])
+        elif method == "app.config":
+            await reply({"network": {"web_port": 8096}, "jellyfin": {"admin_password": "hunter2", "name": "jf"}})
+        elif method == "pool.dataset.export_key":
+            await reply("0123456789abcdef")
         elif method == "test.big":
             await reply(list(range(params[0])))
         elif method == "test.failing_job":

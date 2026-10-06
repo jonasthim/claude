@@ -26,6 +26,11 @@ Subcommands:
   jobs [--running|--id N]   inspect background jobs (core.get_jobs)
   query NAMESPACE [...]     sugar over NAMESPACE.query with --filter / --select / --limit
 
+Results are redacted by default: values under credential-looking keys (password, secret,
+token, private key, API key, passphrase, hashes) and whole results of key-export methods are
+replaced with "[REDACTED]". Pass --show-secrets (or TRUENAS_SHOW_SECRETS=1) when the user has
+explicitly asked for a credential.
+
 Exit codes: 0 ok, 1 API or connection error, 2 blocked by the destructive-method gate,
 3 setup problem (missing env vars).
 """
@@ -257,6 +262,78 @@ def describe_exception(exc) -> dict:
     if isinstance(exc, ApiError):
         return exc.as_dict()
     return {"error_type": type(exc).__name__, "detail": str(exc)}
+
+
+# --------------------------------------------------------------------------- redaction
+
+REDACTED = "[REDACTED]"
+# Key names whose values are credentials wherever they appear (compared lower-case, exact).
+SECRET_KEYS = {
+    "password", "passwd", "pass", "passphrase", "secret", "peersecret", "token", "access_token",
+    "refresh_token", "id_token", "api_key", "apikey", "bindpw", "monpwd", "unixhash", "smbhash",
+    "privatekey", "private_key", "client_secret", "secret_key", "secret_access_key",
+    "v3_password", "v3_privpassphrase", "encryption_key", "key_data", "webhook_url",
+    "service_account_credentials", "credentials_json", "oauth_client_secret", "cert_key",
+}
+# Substrings that mark a key as secret-bearing (e.g. db_password, admin_passphrase, api_token).
+SECRET_KEY_PARTS = ("password", "passphrase", "secret", "private_key", "privkey", "_token", "api_key", "apikey")
+# Methods whose entire result is key material.
+SECRET_RESULT_METHODS = ("pool.dataset.export_key", "pool.dataset.export_keys", "api_key.create", "kmip.*key*")
+# In credential objects everything is secret except a few descriptive fields.
+CREDENTIAL_ATTRIBUTE_PARENTS = {"attributes"}
+CREDENTIAL_METHOD_PREFIXES = ("cloudsync", "cloud_backup", "keychaincredential", "alertservice", "acme.dns",
+                              "truecommand", "mail", "vmware", "activedirectory", "ldap", "ipa", "idmap")
+CREDENTIAL_ATTRIBUTE_ALLOW = {"type", "provider", "username", "user", "endpoint", "region", "url", "host",
+                             "hostname", "port", "remote_host_key", "bucket", "account", "level", "cert",
+                             "certificate", "email", "from", "fromemail", "fromname", "security", "smtp",
+                             "outgoingserver", "oauth"}
+
+
+def is_secret_key(key: str) -> bool:
+    k = str(key).lower()
+    return k in SECRET_KEYS or any(part in k for part in SECRET_KEY_PARTS)
+
+
+def redact(obj, method: str | None = None, counter: list | None = None):
+    """Return a copy of OBJ with credential-looking values replaced. counter[0] counts hits."""
+    counter = counter if counter is not None else [0]
+    if method and any(fnmatch.fnmatchcase(method, pat) for pat in SECRET_RESULT_METHODS):
+        counter[0] += 1
+        return REDACTED
+    in_credentials = bool(method) and method.startswith(CREDENTIAL_METHOD_PREFIXES)
+
+    def walk(node, parent_key=None):
+        if isinstance(node, dict):
+            out = {}
+            for k, v in node.items():
+                if is_secret_key(k) and v not in (None, "", [], {}):
+                    counter[0] += 1
+                    out[k] = REDACTED
+                elif in_credentials and parent_key in CREDENTIAL_ATTRIBUTE_PARENTS \
+                        and str(k).lower() not in CREDENTIAL_ATTRIBUTE_ALLOW and isinstance(v, (str, int)) \
+                        and not isinstance(v, bool) and v != "":
+                    counter[0] += 1
+                    out[k] = REDACTED
+                else:
+                    out[k] = walk(v, k)
+            return out
+        if isinstance(node, list):
+            return [walk(v, parent_key) for v in node]
+        return node
+
+    return walk(obj)
+
+
+def emit_result(obj, args, method: str | None = None):
+    """Print a call result, redacting unless the user asked to see secrets."""
+    show = args.show_secrets or os.environ.get("TRUENAS_SHOW_SECRETS", "") not in ("", "0", "false", "no")
+    if not show:
+        counter = [0]
+        obj = redact(obj, method, counter)
+        if counter[0]:
+            print(f"note: {counter[0]} credential-looking value(s) redacted; pass --show-secrets only if the "
+                  "user explicitly asked for them", file=sys.stderr)
+    emit(obj, args.compact)
 
 
 # --------------------------------------------------------------------------- websocket transport
@@ -743,7 +820,7 @@ def cmd_call(args):
             result = run_call(c, args.method, params, args.job, args.timeout)
         except ApiError as exc:
             fail(f"{args.method} failed", EXIT_ERROR, **exc.as_dict())
-    emit(result, args.compact)
+    emit_result(result, args, args.method)
 
 
 def cmd_methods(args):
@@ -785,7 +862,7 @@ def cmd_jobs(args):
                 jobs = c.call("core.get_jobs", [["id", "=", args.id]])
                 if not jobs:
                     fail(f"no job with id {args.id}", EXIT_ERROR)
-                emit(jobs[0], args.compact)
+                emit_result(jobs[0], args, "core.get_jobs")  # job arguments can carry passwords
                 return
             filters = [["state", "=", "RUNNING"]] if args.running else []
             jobs = c.call("core.get_jobs", filters, {"order_by": ["-id"], "limit": args.limit})
@@ -820,7 +897,7 @@ def cmd_query(args):
             result = c.call(method, filters, options)
         except ApiError as exc:
             fail(f"{method} failed", EXIT_ERROR, **exc.as_dict())
-    emit(result, args.compact)
+    emit_result(result, args, method)
 
 
 # --------------------------------------------------------------------------- main
@@ -834,6 +911,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--insecure", action="store_true", help="skip TLS certificate verification (ws)")
     p.add_argument("--timeout", type=float, default=None, help="seconds to wait for a call or job")
     p.add_argument("--compact", action="store_true", help="single-line JSON output")
+    p.add_argument("--show-secrets", action="store_true",
+                   help="do not redact credential-looking values (only when the user asked for them)")
     sub = p.add_subparsers(dest="command", required=True)
 
     s = sub.add_parser("info", help="connectivity and health summary")

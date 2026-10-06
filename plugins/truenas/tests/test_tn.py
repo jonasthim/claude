@@ -221,6 +221,37 @@ class SshTransportUnitTests(unittest.TestCase):
             os.environ.pop(k, None)
 
 
+class RedactionTests(unittest.TestCase):
+    def test_key_name_matching(self):
+        for k in ("password", "Password", "db_password", "admin_passphrase", "secret", "client_secret",
+                  "api_key", "auth_token", "privatekey", "ssh_private_key", "bindpw", "unixhash", "smbhash"):
+            self.assertTrue(tn.is_secret_key(k), k)
+        for k in ("name", "key_format", "key_loaded", "username", "hostname", "tokens_per_sec", "passthrough"):
+            # 'tokens_per_sec' and 'passthrough' are deliberate near-misses that must stay visible
+            self.assertFalse(tn.is_secret_key(k), k)
+
+    def test_nested_redaction_and_count(self):
+        counter = [0]
+        out = tn.redact({"a": {"password": "x", "list": [{"token": "t", "ok": 1}]}, "empty": {"password": ""}},
+                        "user.query", counter)
+        self.assertEqual(out, {"a": {"password": "[REDACTED]", "list": [{"token": "[REDACTED]", "ok": 1}]},
+                               "empty": {"password": ""}})
+        self.assertEqual(counter[0], 2)
+
+    def test_credential_attributes_block(self):
+        rec = {"attributes": {"type": "S3", "access_key_id": "AKIA", "whatever": "v", "port": 443, "enabled": True}}
+        out = tn.redact(rec, "keychaincredential.query")
+        self.assertEqual(out["attributes"], {"type": "S3", "access_key_id": "[REDACTED]", "whatever": "[REDACTED]",
+                                             "port": 443, "enabled": True})
+        # outside credential namespaces, 'attributes' is ordinary data
+        self.assertEqual(tn.redact(rec, "pool.dataset.query")["attributes"]["whatever"], "v")
+
+    def test_whole_result_methods(self):
+        self.assertEqual(tn.redact("deadbeef", "pool.dataset.export_key"), "[REDACTED]")
+        self.assertEqual(tn.redact({"key": "1-abc"}, "api_key.create"), "[REDACTED]")
+        self.assertEqual(tn.redact("fine", "system.version"), "fine")
+
+
 class CliTests(unittest.TestCase):
     def test_gated_call_exits_2_before_connecting(self):
         with self.assertRaises(SystemExit) as cm:

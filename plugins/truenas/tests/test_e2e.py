@@ -176,6 +176,30 @@ class WebsocketTransport(unittest.TestCase):
         self.assertEqual(info["cause"], "refused")
         self.assertIn("port", info["hint"])
 
+    def test_secrets_redacted_by_default(self):
+        code, out, err = self.tn("call", "cloudsync.credentials.query")
+        self.assertEqual(code, 0, err)
+        rec = json.loads(out)[0]
+        self.assertEqual(rec["attributes"]["secret_access_key"], "[REDACTED]")
+        self.assertEqual(rec["attributes"]["access_key_id"], "[REDACTED]")  # credential object: all but allowlist
+        self.assertEqual(rec["attributes"]["type"], "S3")
+        self.assertEqual(rec["name"], "b2")
+        self.assertIn("redacted", err)
+        code, out, err = self.tn("call", "app.config", "jellyfin")
+        data = json.loads(out)
+        self.assertEqual(data["jellyfin"]["admin_password"], "[REDACTED]")
+        self.assertEqual(data["jellyfin"]["name"], "jf")
+        self.assertEqual(data["network"]["web_port"], 8096)
+        code, out, err = self.tn("call", "pool.dataset.export_key", "tank/secure")
+        self.assertEqual(json.loads(out), "[REDACTED]")
+
+    def test_show_secrets_flag(self):
+        code, out, err = self.tn("--show-secrets", "call", "app.config", "jellyfin")
+        self.assertEqual(json.loads(out)["jellyfin"]["admin_password"], "hunter2")
+        self.assertNotIn("redacted", err)
+        code, out, _ = self.tn("call", "app.config", "jellyfin", env=dict(self.env, TRUENAS_SHOW_SECRETS="1"))
+        self.assertEqual(json.loads(out)["jellyfin"]["admin_password"], "hunter2")
+
     def test_gated_call_exits_2_before_connecting(self):
         env = dict(self.env, TRUENAS_HOST="ws://127.0.0.1:9")  # would fail to connect if it tried
         code, _, err = self.tn("call", "pool.dataset.delete", "tank/photos", env=env)

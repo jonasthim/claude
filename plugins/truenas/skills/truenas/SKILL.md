@@ -130,6 +130,10 @@ Habits that make the gate rarely matter:
 - Never pass `--insecure` or set `TRUENAS_VERIFY_SSL=0` on your own. If `info` fails with a
   certificate error, tell the user and let them decide.
 - On errors, read the validation message. The middleware says exactly which field is wrong.
+- `tn.py` replaces credential-looking values (passwords, secrets, tokens, private keys, dataset
+  encryption keys, cloud and SSH credential attributes) with `[REDACTED]` and says so on
+  stderr. Pass `--show-secrets` only when the user has explicitly asked for that credential,
+  and remember that whatever you print lands in the transcript.
 
 ## 5. SSH for inspection and logs
 
