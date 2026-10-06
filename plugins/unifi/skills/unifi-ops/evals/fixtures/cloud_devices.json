@@ -1,0 +1,93 @@
+[
+  {
+    "hostId": "A1B2C3D4E5F6A1B2C3D4E5F6A1B2C3D4E5F6A1B2",
+    "hostName": "Gateway",
+    "updatedAt": "2026-10-06T08:14:00Z",
+    "devices": [
+      {
+        "id": "d1a1-gw",
+        "mac": "74:ac:b9:11:22:01",
+        "name": "Gateway",
+        "model": "UDM-Pro",
+        "shortname": "UDMPro",
+        "ip": "192.168.1.1",
+        "status": "online",
+        "version": "4.3.6",
+        "firmwareUpdatable": false,
+        "isConsole": true,
+        "isManaged": true,
+        "productLine": "network"
+      },
+      {
+        "id": "d2b2-sw-core",
+        "mac": "74:ac:b9:11:22:02",
+        "name": "Core Switch",
+        "model": "USW-24-PoE",
+        "shortname": "USW24PoE",
+        "ip": "192.168.1.2",
+        "status": "online",
+        "version": "7.1.26",
+        "firmwareUpdatable": false,
+        "isConsole": false,
+        "isManaged": true,
+        "productLine": "network"
+      },
+      {
+        "id": "d3c3-sw-office",
+        "mac": "74:ac:b9:11:22:03",
+        "name": "Office Switch",
+        "model": "USW-Flex-Mini",
+        "shortname": "USWFlexMini",
+        "ip": "192.168.1.3",
+        "status": "offline",
+        "version": "2.0.9",
+        "firmwareUpdatable": true,
+        "isConsole": false,
+        "isManaged": true,
+        "productLine": "network"
+      },
+      {
+        "id": "d4d4-ap-living",
+        "mac": "74:ac:b9:11:22:04",
+        "name": "Living Room AP",
+        "model": "U6-Pro",
+        "shortname": "U6Pro",
+        "ip": "192.168.1.10",
+        "status": "online",
+        "version": "6.6.77",
+        "firmwareUpdatable": false,
+        "isConsole": false,
+        "isManaged": true,
+        "productLine": "network"
+      },
+      {
+        "id": "d5e5-ap-office",
+        "mac": "74:ac:b9:11:22:05",
+        "name": "Office AP",
+        "model": "U6-Lite",
+        "shortname": "U6Lite",
+        "ip": "192.168.1.11",
+        "status": "online",
+        "version": "6.6.55",
+        "firmwareUpdatable": true,
+        "isConsole": false,
+        "isManaged": true,
+        "productLine": "network"
+      },
+      {
+        "id": "d6f6-ap-hall",
+        "mac": "74:ac:b9:11:22:06",
+        "name": "Hallway AP",
+        "model": "U7-Pro",
+        "shortname": "U7Pro",
+        "ip": "192.168.1.12",
+        "status": "online",
+        "version": "7.1.68",
+        "firmwareUpdatable": false,
+        "isConsole": false,
+        "isManaged": true,
+        "productLine": "network"
+      }
+    ]
+  }
+]

@@ -1,0 +1,63 @@
+[
+  {
+    "id": "w-home",
+    "name": "Thim Home",
+    "enabled": true,
+    "networkId": "n100-default",
+    "hidden": false,
+    "security": {
+      "type": "WPA2_WPA3_PERSONAL",
+      "pmfMode": "OPTIONAL"
+    },
+    "bands": [
+      "2.4GHz",
+      "5GHz",
+      "6GHz"
+    ],
+    "broadcastingDeviceIds": [
+      "d4d4-ap-living",
+      "d5e5-ap-office",
+      "d6f6-ap-hall"
+    ],
+    "clientIsolationEnabled": false
+  },
+  {
+    "id": "w-iot",
+    "name": "Thim IoT",
+    "enabled": true,
+    "networkId": "n120-iot",
+    "hidden": false,
+    "security": {
+      "type": "WPA2_PERSONAL",
+      "pmfMode": "DISABLED"
+    },
+    "bands": [
+      "2.4GHz"
+    ],
+    "broadcastingDeviceIds": [
+      "d4d4-ap-living",
+      "d5e5-ap-office",
+      "d6f6-ap-hall"
+    ],
+    "clientIsolationEnabled": false
+  },
+  {
+    "id": "w-guest",
+    "name": "Thim Guest",
+    "enabled": true,
+    "networkId": "n130-guest",
+    "hidden": false,
+    "security": {
+      "type": "WPA2_PERSONAL",
+      "pmfMode": "OPTIONAL"
+    },
+    "bands": [
+      "2.4GHz",
+      "5GHz"
+    ],
+    "broadcastingDeviceIds": [
+      "d4d4-ap-living"
+    ],
+    "clientIsolationEnabled": true
+  }
+]

@@ -1,0 +1,33 @@
+[
+  {
+    "id": "A1B2C3D4E5F6A1B2C3D4E5F6A1B2C3D4E5F6A1B2",
+    "hardwareId": "7e2b1b2c-aaaa-4bbb-cccc-111122223333",
+    "type": "console",
+    "ipAddress": "203.0.113.42",
+    "owner": true,
+    "isBlocked": false,
+    "registrationTime": "2024-02-11T18:00:00Z",
+    "lastConnectionStateChange": "2026-10-01T06:10:00Z",
+    "reportedState": {
+      "hostname": "Gateway",
+      "state": "connected",
+      "version": "4.3.6",
+      "hardware": {
+        "shortname": "UDMPRO",
+        "name": "UniFi Dream Machine Pro"
+      },
+      "controllers": [
+        {
+          "name": "network",
+          "version": "10.1.68",
+          "state": "active"
+        },
+        {
+          "name": "protect",
+          "version": "6.1.45",
+          "state": "active"
+        }
+      ]
+    }
+  }
+]

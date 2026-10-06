@@ -1,0 +1,14 @@
+{
+  "name": "unifi",
+  "displayName": "UniFi Operations",
+  "version": "0.1.0",
+  "description": "Operate a Ubiquiti UniFi network from Claude Code: client troubleshooting, inventory and health reports, guarded changes to networks, SSIDs and firewall policies, and device actions.",
+  "author": {
+    "name": "Jonas Thim"
+  },
+  "homepage": "https://github.com/jonasthim/claude-unifi-skill",
+  "repository": "https://github.com/jonasthim/claude-unifi-skill",
+  "license": "MIT",
+  "keywords": ["unifi", "ubiquiti", "network", "wifi", "firewall", "vlan", "site-manager"],
+  "skills": "./skills/"
+}

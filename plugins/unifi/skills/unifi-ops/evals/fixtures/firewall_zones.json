@@ -1,0 +1,56 @@
+[
+  {
+    "id": "z-internal",
+    "name": "Internal",
+    "networkIds": [
+      "n100-default"
+    ],
+    "metadata": {
+      "origin": "SYSTEM_DEFINED"
+    }
+  },
+  {
+    "id": "z-external",
+    "name": "External",
+    "networkIds": [],
+    "metadata": {
+      "origin": "SYSTEM_DEFINED"
+    }
+  },
+  {
+    "id": "z-gateway",
+    "name": "Gateway",
+    "networkIds": [],
+    "metadata": {
+      "origin": "SYSTEM_DEFINED"
+    }
+  },
+  {
+    "id": "z-vpn",
+    "name": "VPN",
+    "networkIds": [],
+    "metadata": {
+      "origin": "SYSTEM_DEFINED"
+    }
+  },
+  {
+    "id": "z-hotspot",
+    "name": "Hotspot",
+    "networkIds": [
+      "n130-guest"
+    ],
+    "metadata": {
+      "origin": "SYSTEM_DEFINED"
+    }
+  },
+  {
+    "id": "z-iot",
+    "name": "IoT",
+    "networkIds": [
+      "n120-iot"
+    ],
+    "metadata": {
+      "origin": "USER_DEFINED"
+    }
+  }
+]

@@ -1,0 +1,8 @@
+{
+  "policyIds": [
+    "fp-iot-ha-allow",
+    "fp-iot-to-lan-block",
+    "fp-lan-to-iot-allow",
+    "fp-hotspot-internal-block"
+  ]
+}

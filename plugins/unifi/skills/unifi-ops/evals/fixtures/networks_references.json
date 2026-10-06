@@ -1,0 +1,44 @@
+{
+  "n100-default": [
+    {
+      "type": "WIFI_BROADCAST",
+      "id": "w-home",
+      "name": "Thim Home"
+    },
+    {
+      "type": "FIREWALL_ZONE",
+      "id": "z-internal",
+      "name": "Internal"
+    }
+  ],
+  "n120-iot": [
+    {
+      "type": "WIFI_BROADCAST",
+      "id": "w-iot",
+      "name": "Thim IoT"
+    },
+    {
+      "type": "FIREWALL_ZONE",
+      "id": "z-iot",
+      "name": "IoT"
+    },
+    {
+      "type": "FIREWALL_POLICY",
+      "id": "fp-iot-to-lan-block",
+      "name": "Block IoT -> Internal"
+    }
+  ],
+  "n130-guest": [
+    {
+      "type": "WIFI_BROADCAST",
+      "id": "w-guest",
+      "name": "Thim Guest"
+    },
+    {
+      "type": "FIREWALL_ZONE",
+      "id": "z-hotspot",
+      "name": "Hotspot"
+    }
+  ],
+  "_default": []
+}

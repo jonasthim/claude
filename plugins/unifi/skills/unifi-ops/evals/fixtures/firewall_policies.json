@@ -1,0 +1,86 @@
+[
+  {
+    "id": "fp-iot-to-lan-block",
+    "name": "Block IoT -> Internal",
+    "enabled": true,
+    "action": "BLOCK",
+    "source": {
+      "zoneId": "z-iot",
+      "matchingTarget": "ANY"
+    },
+    "destination": {
+      "zoneId": "z-internal",
+      "matchingTarget": "ANY"
+    },
+    "ipVersion": "BOTH",
+    "protocol": "all",
+    "loggingEnabled": false,
+    "metadata": {
+      "origin": "USER_DEFINED"
+    }
+  },
+  {
+    "id": "fp-lan-to-iot-allow",
+    "name": "Allow Internal -> IoT",
+    "enabled": true,
+    "action": "ALLOW",
+    "source": {
+      "zoneId": "z-internal",
+      "matchingTarget": "ANY"
+    },
+    "destination": {
+      "zoneId": "z-iot",
+      "matchingTarget": "ANY"
+    },
+    "ipVersion": "BOTH",
+    "protocol": "all",
+    "loggingEnabled": false,
+    "metadata": {
+      "origin": "USER_DEFINED"
+    }
+  },
+  {
+    "id": "fp-iot-ha-allow",
+    "name": "Allow IoT -> Home Assistant",
+    "enabled": true,
+    "action": "ALLOW",
+    "source": {
+      "zoneId": "z-iot",
+      "matchingTarget": "ANY"
+    },
+    "destination": {
+      "zoneId": "z-internal",
+      "matchingTarget": "IP",
+      "ipAddresses": [
+        "192.168.1.21"
+      ],
+      "port": "8123"
+    },
+    "ipVersion": "BOTH",
+    "protocol": "all",
+    "loggingEnabled": false,
+    "metadata": {
+      "origin": "USER_DEFINED"
+    }
+  },
+  {
+    "id": "fp-hotspot-internal-block",
+    "name": "Block Hotspot -> Internal",
+    "enabled": true,
+    "action": "BLOCK",
+    "source": {
+      "zoneId": "z-hotspot",
+      "matchingTarget": "ANY"
+    },
+    "destination": {
+      "zoneId": "z-internal",
+      "matchingTarget": "ANY"
+    },
+    "ipVersion": "BOTH",
+    "protocol": "all",
+    "loggingEnabled": false,
+    "metadata": {
+      "origin": "USER_DEFINED"
+    }
+  }
+]
